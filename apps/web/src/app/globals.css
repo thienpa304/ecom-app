@@ -19,7 +19,6 @@ html {
 body {
   color: var(--text);
   background: var(--bg);
-  font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @layer components {

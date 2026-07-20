@@ -1,6 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
 import { getBrands, getSiteSettings, listProducts } from "@/lib/data";
+import { absoluteUrl } from "@/lib/site";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSiteSettings();
+  return {
+    title: { absolute: `${s.siteName} — Catalog sản phẩm` },
+    description: s.metaDescription || s.tagline,
+    alternates: { canonical: "/" },
+    openGraph: {
+      url: absoluteUrl("/"),
+      title: `${s.siteName} — Catalog sản phẩm`,
+      description: s.metaDescription || s.tagline,
+    },
+  };
+}
 
 export default async function HomePage() {
   const [settings, { items }, brands] = await Promise.all([
@@ -69,11 +85,12 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((product) => (
+          {featured.map((product, index) => (
             <ProductCard
               key={product.id}
               product={product}
               brandName={brandNames[product.brandId]}
+              priority={index < 4}
             />
           ))}
         </div>

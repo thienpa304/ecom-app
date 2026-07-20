@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { STOCK_STATUS, type Product } from "@ecom/shared";
 import { discountPercent, formatVnd } from "@/lib/format";
@@ -5,24 +6,34 @@ import { discountPercent, formatVnd } from "@/lib/format";
 type Props = {
   product: Product;
   brandName?: string;
+  /** Prioritize LCP image (first cards above the fold). */
+  priority?: boolean;
 };
 
-export function ProductCard({ product, brandName }: Props) {
+const PLACEHOLDER = "/placeholder.svg";
+
+export function ProductCard({ product, brandName, priority = false }: Props) {
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
   const image = product.images[0];
+  const src = image?.url || PLACEHOLDER;
+  const alt = image?.alt || product.name;
   const specEntries = Object.entries(product.specs).slice(0, 3);
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition hover:border-accent/40 hover:shadow-md">
-      <Link href={`/san-pham/${product.slug}`} className="relative block bg-gray-50">
-        <div className="aspect-[4/3] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={image?.url ?? "https://placehold.co/600x450/f3f4f6/9ca3af?text=No+Image"}
-            alt={image?.alt ?? product.name}
-            className="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-[1.03]"
-            loading="lazy"
+      <Link
+        href={`/san-pham/${product.slug}`}
+        className="relative block bg-gray-50"
+      >
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-contain p-3 transition duration-300 group-hover:scale-[1.03]"
+            priority={priority}
           />
         </div>
         {pct != null && (

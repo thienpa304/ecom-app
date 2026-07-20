@@ -1,20 +1,17 @@
-"use client";
-
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
 type Props = {
   page: number;
   totalPages: number;
+  /** Current query string without leading `?` (e.g. brand=x&sort=y). */
+  queryString?: string;
 };
 
-export function Pagination({ page, totalPages }: Props) {
-  const searchParams = useSearchParams();
-
+export function Pagination({ page, totalPages, queryString = "" }: Props) {
   if (totalPages <= 1) return null;
 
   function hrefFor(p: number) {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(queryString);
     params.set("page", String(p));
     return `/san-pham?${params.toString()}`;
   }

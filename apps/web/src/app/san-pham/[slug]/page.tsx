@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { STOCK_STATUS } from "@ecom/shared";
+import { JsonLd } from "@/components/JsonLd";
 import { LeadForm } from "@/components/LeadForm";
 import { ProductGallery } from "@/components/ProductGallery";
 import {
@@ -9,10 +10,20 @@ import {
   getCategoryById,
   getProductBySlug,
   getSiteSettings,
+  listPublishedProductSlugs,
 } from "@/lib/data";
 import { discountPercent, formatVnd } from "@/lib/format";
+import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/site";
 
 type Params = Promise<{ slug: string }>;
+
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const slugs = await listPublishedProductSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -20,11 +31,50 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) return { title: "Không tìm thấy" };
+  const [product, settings] = await Promise.all([
+    getProductBySlug(slug),
+    getSiteSettings(),
+  ]);
+  if (!product) {
+    return {
+      title: "Không tìm thấy",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const description =
+    product.description ??
+    `${product.name} — model ${product.model}. Liên hệ ${settings.siteName}.`;
+  const path = `/san-pham/${product.slug}`;
+  const image = product.images[0]?.url;
+
   return {
     title: product.name,
-    description: product.description ?? `${product.name} — ${product.model}`,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: "website",
+      url: absoluteUrl(path),
+      title: product.name,
+      description,
+      siteName: settings.siteName,
+      ...(image
+        ? {
+            images: [
+              {
+                url: image,
+                alt: product.images[0]?.alt || product.name,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title: product.name,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
   };
 }
 
@@ -48,9 +98,29 @@ export default async function ProductDetailPage({
   const zalo = settings.zaloUrl;
   const telHref = `tel:${phone.replace(/\D/g, "")}`;
 
+  const crumbs = [
+    { name: "Trang chủ", path: "/" },
+    { name: "Sản phẩm", path: "/san-pham" },
+    ...(category
+      ? [
+          {
+            name: category.name,
+            path: `/san-pham?category=${category.slug}`,
+          },
+        ]
+      : []),
+    { name: product.name },
+  ];
+
   return (
     <div className="container-page py-6 sm:py-8">
-      <nav className="mb-4 text-xs text-gray-500 sm:text-sm">
+      <JsonLd data={productJsonLd(product, { brand, category })} />
+      <JsonLd data={breadcrumbJsonLd(crumbs)} />
+
+      <nav
+        className="mb-4 text-xs text-gray-500 sm:text-sm"
+        aria-label="Breadcrumb"
+      >
         <Link href="/" className="hover:text-accent">
           Trang chủ
         </Link>
@@ -144,17 +214,23 @@ export default async function ProductDetailPage({
             </a>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <div
+            id="lien-he"
+            className="rounded-lg border border-gray-200 bg-white p-4"
+          >
             <LeadForm productId={product.id} productName={product.name} />
           </div>
         </div>
       </div>
 
       <section className="mt-10 overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900">
+        <h2
+          id="specs-heading"
+          className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900"
+        >
           Thông số kỹ thuật
         </h2>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" aria-labelledby="specs-heading">
           <tbody>
             <tr className="border-b border-gray-50 odd:bg-gray-50/60">
               <th className="w-1/3 px-4 py-2.5 text-left font-medium text-gray-600">

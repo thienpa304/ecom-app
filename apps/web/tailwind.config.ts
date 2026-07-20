@@ -21,7 +21,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "Be Vietnam Pro",
+          "var(--font-be-vietnam)",
           "system-ui",
           "-apple-system",
           "Segoe UI",

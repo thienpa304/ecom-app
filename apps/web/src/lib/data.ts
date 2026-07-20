@@ -1,4 +1,5 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import {
   DEFAULT_SITE_SETTINGS,
   PRICE_RANGES,
@@ -53,6 +54,8 @@ type ProductWithImages = ProductRow & {
   product_images?: ProductImageRow[] | null;
 };
 
+const REVALIDATE_SECONDS = 60;
+
 function resolvePriceRange(params: ListProductsParams): {
   min?: number;
   max?: number;
@@ -69,77 +72,89 @@ function resolvePriceRange(params: ListProductsParams): {
   return { min: params.minPrice, max: params.maxPrice };
 }
 
-async function fetchPublishedProducts(): Promise<Product[]> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*, product_images(*)")
-    .eq("is_published", true);
+const loadSiteSettings = unstable_cache(
+  async (): Promise<SiteSettings> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
 
-  if (error) {
-    throw new Error(`Failed to fetch products: ${error.message}`);
-  }
+    if (error) {
+      console.error("getSiteSettings:", error.message);
+      return DEFAULT_SITE_SETTINGS;
+    }
+    if (!data) return DEFAULT_SITE_SETTINGS;
+    return mapSiteSettingsRow(data as SiteSettingsRow);
+  },
+  ["site-settings"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["site-settings"] },
+);
 
-  return ((data ?? []) as ProductWithImages[]).map((row) => {
-    const { product_images, ...product } = row;
-    return mapProductRow(product, product_images ?? []);
-  });
-}
+const loadBrands = unstable_cache(
+  async (): Promise<Brand[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase.from("brands").select("*");
+    if (error) {
+      throw new Error(`Failed to fetch brands: ${error.message}`);
+    }
+    return ((data ?? []) as BrandRow[]).map(mapBrandRow);
+  },
+  ["brands"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["brands"] },
+);
 
-export async function getSiteSettings(): Promise<SiteSettings> {
-  noStore();
-  const supabase = createServerClient();
-  const { data, error } = await supabase
-    .from("site_settings")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
+const loadCategories = unstable_cache(
+  async (): Promise<Category[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase.from("categories").select("*");
+    if (error) {
+      throw new Error(`Failed to fetch categories: ${error.message}`);
+    }
+    return ((data ?? []) as CategoryRow[]).map(mapCategoryRow);
+  },
+  ["categories"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["categories"] },
+);
 
-  if (error) {
-    console.error("getSiteSettings:", error.message);
-    return DEFAULT_SITE_SETTINGS;
-  }
-  if (!data) return DEFAULT_SITE_SETTINGS;
-  return mapSiteSettingsRow(data as SiteSettingsRow);
-}
+const loadPublishedProducts = unstable_cache(
+  async (): Promise<Product[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, product_images(*)")
+      .eq("is_published", true);
 
-export async function getBrands(): Promise<Brand[]> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase.from("brands").select("*");
-  if (error) {
-    throw new Error(`Failed to fetch brands: ${error.message}`);
-  }
-  return ((data ?? []) as BrandRow[]).map(mapBrandRow);
-}
+    if (error) {
+      throw new Error(`Failed to fetch products: ${error.message}`);
+    }
 
-export async function getCategories(): Promise<Category[]> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase.from("categories").select("*");
-  if (error) {
-    throw new Error(`Failed to fetch categories: ${error.message}`);
-  }
-  return ((data ?? []) as CategoryRow[]).map(mapCategoryRow);
-}
+    return ((data ?? []) as ProductWithImages[]).map((row) => {
+      const { product_images, ...product } = row;
+      return mapProductRow(product, product_images ?? []);
+    });
+  },
+  ["published-products"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["products"] },
+);
+
+/** Deduped within a single request. */
+export const getSiteSettings = cache(() => loadSiteSettings());
+export const getBrands = cache(() => loadBrands());
+export const getCategories = cache(() => loadCategories());
+const getPublishedProducts = cache(() => loadPublishedProducts());
 
 export async function getProductBySlug(
   slug: string,
 ): Promise<Product | undefined> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*, product_images(*)")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
+  const products = await getPublishedProducts();
+  return products.find((p) => p.slug === slug);
+}
 
-  if (error) {
-    throw new Error(`Failed to fetch product: ${error.message}`);
-  }
-  if (!data) return undefined;
-
-  const row = data as ProductWithImages;
-  const { product_images, ...product } = row;
-  return mapProductRow(product, product_images ?? []);
+export async function listPublishedProductSlugs(): Promise<string[]> {
+  const products = await getPublishedProducts();
+  return products.map((p) => p.slug);
 }
 
 export async function listProducts(
@@ -148,7 +163,7 @@ export async function listProducts(
   const [brands, categories, products] = await Promise.all([
     getBrands(),
     getCategories(),
-    fetchPublishedProducts(),
+    getPublishedProducts(),
   ]);
 
   const brandSlugs = normalizeSlugs(params.brandSlug);

@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Không tìm thấy sản phẩm",
+  robots: { index: false, follow: false },
+};
 
 export default function ProductNotFound() {
   return (
     <div className="container-page py-20 text-center">
-      <h1 className="text-2xl font-bold text-gray-900">Không tìm thấy sản phẩm</h1>
+      <h1 className="text-2xl font-bold text-gray-900">
+        Không tìm thấy sản phẩm
+      </h1>
       <p className="mt-2 text-sm text-gray-600">
         Sản phẩm có thể đã ngừng bán hoặc đường dẫn không đúng.
       </p>
