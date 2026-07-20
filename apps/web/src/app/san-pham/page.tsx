@@ -99,14 +99,8 @@ export default async function CatalogPage({
   const brandNames = Object.fromEntries(brands.map((b) => [b.id, b.name]));
 
   return (
-    <div className="container-page py-6 sm:py-8">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">Sản phẩm</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Lọc theo thương hiệu, khoảng giá và sắp xếp phù hợp nhu cầu của bạn.
-        </p>
-      </div>
-
+    <div className="container-page py-4 sm:py-6">
+      <h1 className="sr-only">Sản phẩm</h1>
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <Suspense
           fallback={
