@@ -2,7 +2,6 @@
 
 import { SORT_OPTIONS } from "@ecom/shared";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
 
 type Props = {
   shown: number;
@@ -12,7 +11,6 @@ type Props = {
 export function CatalogToolbar({ shown, total }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
 
   const sort = searchParams.get("sort") ?? "price_desc";
   const pageSize = searchParams.get("pageSize") ?? "12";
@@ -21,9 +19,7 @@ export function CatalogToolbar({ shown, total }: Props) {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     if (key !== "page") params.delete("page");
-    startTransition(() => {
-      router.push(`/san-pham?${params.toString()}`);
-    });
+    router.push(`/san-pham?${params.toString()}`);
   }
 
   return (

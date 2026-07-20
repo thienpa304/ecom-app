@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -6,6 +7,7 @@ import { ContactFab } from "@/components/ContactFab";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
+import { NavigationProgress } from "@/components/NavigationProgress";
 import { getSiteSettings } from "@/lib/data";
 import { organizationJsonLd } from "@/lib/seo";
 import { absoluteUrl, getSiteUrl } from "@/lib/site";
@@ -68,6 +70,9 @@ export default async function RootLayout({
         className={`${beVietnam.className} flex min-h-screen flex-col antialiased`}
       >
         <JsonLd data={organizationJsonLd(settings)} />
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <Header
           siteName={settings.siteName}
           phone={settings.phone}
