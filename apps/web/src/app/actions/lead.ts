@@ -29,7 +29,7 @@ export async function submitLead(input: {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ" };
   }
 
-  createLead({
+  await createLead({
     productId: parsed.data.productId ?? null,
     name: parsed.data.name,
     phone: parsed.data.phone,

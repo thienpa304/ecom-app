@@ -8,6 +8,7 @@ import {
   deleteProduct,
   toggleProductPublished,
   updateProduct,
+  uploadProductImage,
 } from "@/lib/store";
 
 function slugify(value: string): string {
@@ -74,12 +75,40 @@ function readProductForm(formData: FormData, productId: string): Omit<Product, "
   };
 }
 
+/** Optional file upload field `imageFile` — appends public URL to images. */
+async function appendUploadedImage(
+  formData: FormData,
+  product: Omit<Product, "id">,
+  productId: string,
+): Promise<Omit<Product, "id">> {
+  const file = formData.get("imageFile");
+  if (!(file instanceof File) || file.size === 0) {
+    return product;
+  }
+
+  const url = await uploadProductImage(file);
+  const nextIndex = product.images.length;
+  return {
+    ...product,
+    images: [
+      ...product.images,
+      {
+        id: `${productId}-img-${nextIndex}`,
+        productId,
+        url,
+        alt: `Ảnh ${nextIndex + 1}`,
+        sortOrder: nextIndex,
+      },
+    ],
+  };
+}
+
 export async function createProductAction(formData: FormData): Promise<void> {
   const tempId = `prod-${Date.now()}`;
-  const data = readProductForm(formData, tempId);
-  const product = createProduct(data);
-  // Fix image productIds to match created id
-  updateProduct(product.id, {
+  let data = readProductForm(formData, tempId);
+  data = await appendUploadedImage(formData, data, tempId);
+  const product = await createProduct(data);
+  await updateProduct(product.id, {
     images: data.images.map((img, i) => ({
       ...img,
       id: `${product.id}-img-${i}`,
@@ -95,8 +124,9 @@ export async function updateProductAction(
   id: string,
   formData: FormData,
 ): Promise<void> {
-  const data = readProductForm(formData, id);
-  updateProduct(id, data);
+  let data = readProductForm(formData, id);
+  data = await appendUploadedImage(formData, data, id);
+  await updateProduct(id, data);
   revalidatePath("/products");
   revalidatePath(`/products/${id}/edit`);
   revalidatePath("/");
@@ -104,13 +134,13 @@ export async function updateProductAction(
 }
 
 export async function deleteProductAction(id: string): Promise<void> {
-  deleteProduct(id);
+  await deleteProduct(id);
   revalidatePath("/products");
   revalidatePath("/");
 }
 
 export async function togglePublishAction(id: string): Promise<void> {
-  toggleProductPublished(id);
+  await toggleProductPublished(id);
   revalidatePath("/products");
   revalidatePath("/");
 }

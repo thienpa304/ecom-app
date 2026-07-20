@@ -48,4 +48,10 @@ Admin login password: `ADMIN_PASSWORD` (default `admin123`).
 | DB / Auth / Storage | Supabase Free |
 | Images (optional) | Cloudflare R2 |
 
-Set `NEXT_PUBLIC_USE_MOCK=false` and Supabase env vars when ready. Change `ADMIN_PASSWORD` in Vercel env for production.
+### Supabase (live)
+- Project: `ecom-app` (`mldnnchxmthiqecqmdml`)
+- URL: https://mldnnchxmthiqecqmdml.supabase.co
+- Tables seeded (15 products); Storage bucket `product-images`
+- Apps use `NEXT_PUBLIC_USE_MOCK=false` on Vercel
+
+Change `ADMIN_PASSWORD` in Vercel env for production.

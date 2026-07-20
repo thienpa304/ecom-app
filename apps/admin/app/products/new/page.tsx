@@ -4,9 +4,11 @@ import { ProductForm } from "@/components/ProductForm";
 import { createProductAction } from "@/lib/actions/products";
 import { getBrands, getCategories } from "@/lib/store";
 
-export default function NewProductPage() {
-  const brands = getBrands();
-  const categories = getCategories();
+export default async function NewProductPage() {
+  const [brands, categories] = await Promise.all([
+    getBrands(),
+    getCategories(),
+  ]);
 
   return (
     <AdminShell

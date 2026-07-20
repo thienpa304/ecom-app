@@ -2,13 +2,12 @@ import { AdminShell } from "@/components/AdminShell";
 import { formatDate } from "@/lib/format";
 import { getLeads, getProducts } from "@/lib/store";
 
-export default function LeadsPage() {
-  const leads = [...getLeads()].sort(
+export default async function LeadsPage() {
+  const [rawLeads, products] = await Promise.all([getLeads(), getProducts()]);
+  const leads = [...rawLeads].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
-  const productMap = Object.fromEntries(
-    getProducts().map((p) => [p.id, p.name]),
-  );
+  const productMap = Object.fromEntries(products.map((p) => [p.id, p.name]));
 
   return (
     <AdminShell title="Leads">

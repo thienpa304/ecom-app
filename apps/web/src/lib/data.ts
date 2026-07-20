@@ -1,13 +1,23 @@
 import {
   PRICE_RANGES,
+  mapBrandRow,
+  mapCategoryRow,
+  mapLeadRow,
+  mapProductRow,
   seedBrands,
   seedCategories,
   seedProducts,
   type Brand,
+  type BrandRow,
   type Category,
+  type CategoryRow,
   type Lead,
+  type LeadRow,
   type Product,
+  type ProductImageRow,
+  type ProductRow,
 } from "@ecom/shared";
+import { createServerClient } from "./supabase";
 
 export type SortValue =
   | "price_asc"
@@ -42,6 +52,10 @@ const useMock = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 /** In-memory leads for mock mode (module-scoped). */
 const mockLeads: Lead[] = [];
 
+type ProductWithImages = ProductRow & {
+  product_images?: ProductImageRow[] | null;
+};
+
 function publishedProducts(): Product[] {
   return seedProducts.filter((p) => p.isPublished);
 }
@@ -62,28 +76,87 @@ function resolvePriceRange(params: ListProductsParams): {
   return { min: params.minPrice, max: params.maxPrice };
 }
 
-export function getBrands(): Brand[] {
-  if (!useMock) {
-    // Supabase path reserved — fall back to seed until wired.
+async function fetchPublishedProducts(): Promise<Product[]> {
+  if (useMock) {
+    return publishedProducts();
+  }
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, product_images(*)")
+    .eq("is_published", true);
+
+  if (error) {
+    throw new Error(`Failed to fetch products: ${error.message}`);
+  }
+
+  return ((data ?? []) as ProductWithImages[]).map((row) => {
+    const { product_images, ...product } = row;
+    return mapProductRow(product, product_images ?? []);
+  });
+}
+
+export async function getBrands(): Promise<Brand[]> {
+  if (useMock) {
     return seedBrands;
   }
-  return seedBrands;
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase.from("brands").select("*");
+  if (error) {
+    throw new Error(`Failed to fetch brands: ${error.message}`);
+  }
+  return ((data ?? []) as BrandRow[]).map(mapBrandRow);
 }
 
-export function getCategories(): Category[] {
-  if (!useMock) {
+export async function getCategories(): Promise<Category[]> {
+  if (useMock) {
     return seedCategories;
   }
-  return seedCategories;
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase.from("categories").select("*");
+  if (error) {
+    throw new Error(`Failed to fetch categories: ${error.message}`);
+  }
+  return ((data ?? []) as CategoryRow[]).map(mapCategoryRow);
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return publishedProducts().find((p) => p.slug === slug);
+export async function getProductBySlug(
+  slug: string,
+): Promise<Product | undefined> {
+  if (useMock) {
+    return publishedProducts().find((p) => p.slug === slug);
+  }
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, product_images(*)")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch product: ${error.message}`);
+  }
+  if (!data) return undefined;
+
+  const row = data as ProductWithImages;
+  const { product_images, ...product } = row;
+  return mapProductRow(product, product_images ?? []);
 }
 
-export function listProducts(params: ListProductsParams = {}): ListProductsResult {
-  const brands = getBrands();
-  const categories = getCategories();
+export async function listProducts(
+  params: ListProductsParams = {},
+): Promise<ListProductsResult> {
+  const [brands, categories, products] = await Promise.all([
+    getBrands(),
+    getCategories(),
+    fetchPublishedProducts(),
+  ]);
+
   const brandSlugs = normalizeSlugs(params.brandSlug);
   const brandIds = brandSlugs.length
     ? new Set(
@@ -100,7 +173,7 @@ export function listProducts(params: ListProductsParams = {}): ListProductsResul
   const { min, max } = resolvePriceRange(params);
   const q = params.q?.trim().toLowerCase();
 
-  let filtered = publishedProducts().filter((p) => {
+  let filtered = products.filter((p) => {
     if (brandIds && !brandIds.has(p.brandId)) return false;
     if (categoryId && p.categoryId !== categoryId) return false;
 
@@ -127,37 +200,58 @@ export function listProducts(params: ListProductsParams = {}): ListProductsResul
   return { items, total, page, pageSize, totalPages };
 }
 
-export function createLead(input: {
+export async function createLead(input: {
   productId?: string | null;
   name: string;
   phone: string;
   note?: string;
-}): Lead {
-  const lead: Lead = {
-    id: `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    productId: input.productId ?? null,
-    name: input.name.trim(),
-    phone: input.phone.trim(),
-    note: (input.note ?? "").trim(),
-    createdAt: new Date().toISOString(),
-  };
-
+}): Promise<Lead> {
   if (useMock) {
+    const lead: Lead = {
+      id: `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      productId: input.productId ?? null,
+      name: input.name.trim(),
+      phone: input.phone.trim(),
+      note: (input.note ?? "").trim(),
+      createdAt: new Date().toISOString(),
+    };
     mockLeads.push(lead);
+    return lead;
   }
-  return lead;
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .insert({
+      product_id: input.productId ?? null,
+      name: input.name.trim(),
+      phone: input.phone.trim(),
+      note: (input.note ?? "").trim(),
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create lead: ${error.message}`);
+  }
+
+  return mapLeadRow(data as LeadRow);
 }
 
-export function getMockLeads(): Lead[] {
+export async function getMockLeads(): Promise<Lead[]> {
   return [...mockLeads];
 }
 
-export function getBrandById(id: string): Brand | undefined {
-  return getBrands().find((b) => b.id === id);
+export async function getBrandById(id: string): Promise<Brand | undefined> {
+  const brands = await getBrands();
+  return brands.find((b) => b.id === id);
 }
 
-export function getCategoryById(id: string): Category | undefined {
-  return getCategories().find((c) => c.id === id);
+export async function getCategoryById(
+  id: string,
+): Promise<Category | undefined> {
+  const categories = await getCategories();
+  return categories.find((c) => c.id === id);
 }
 
 function normalizeSlugs(value?: string | string[]): string[] {

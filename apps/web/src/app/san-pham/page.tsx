@@ -5,12 +5,7 @@ import { MobileFilters } from "@/components/MobileFilters";
 import { Pagination } from "@/components/Pagination";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductFilters } from "@/components/ProductFilters";
-import {
-  getBrandById,
-  getBrands,
-  getCategories,
-  listProducts,
-} from "@/lib/data";
+import { getBrands, getCategories, listProducts } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Sản phẩm",
@@ -38,17 +33,23 @@ export default async function CatalogPage({
   const page = Number(first(sp.page) ?? "1") || 1;
   const pageSize = Number(first(sp.pageSize) ?? "12") || 12;
 
-  const brands = getBrands();
-  const categories = getCategories();
-  const result = listProducts({
-    brandSlug: brand,
-    categorySlug: category,
-    price,
-    sort,
-    page,
-    pageSize,
-    q,
-  });
+  const [brands, categories, result] = await Promise.all([
+    getBrands(),
+    getCategories(),
+    listProducts({
+      brandSlug: brand,
+      categorySlug: category,
+      price,
+      sort,
+      page,
+      pageSize,
+      q,
+    }),
+  ]);
+
+  const brandNames = Object.fromEntries(
+    brands.map((b) => [b.id, b.name]),
+  );
 
   return (
     <div className="container-page py-6 sm:py-8">
@@ -87,7 +88,7 @@ export default async function CatalogPage({
                 <ProductCard
                   key={product.id}
                   product={product}
-                  brandName={getBrandById(product.brandId)?.name}
+                  brandName={brandNames[product.brandId]}
                 />
               ))}
             </div>

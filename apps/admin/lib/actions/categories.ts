@@ -18,7 +18,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
   if (!name) return;
   const slugRaw = String(formData.get("slug") ?? "").trim();
   const parentRaw = String(formData.get("parentId") ?? "").trim();
-  createCategory({
+  await createCategory({
     name,
     slug: slugRaw || slugify(name),
     parentId: parentRaw === "" ? null : parentRaw,
@@ -29,7 +29,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
 }
 
 export async function deleteCategoryAction(id: string): Promise<void> {
-  deleteCategory(id);
+  await deleteCategory(id);
   revalidatePath("/categories");
   revalidatePath("/");
 }

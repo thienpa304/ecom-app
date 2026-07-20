@@ -2,8 +2,8 @@ import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { getDashboardCounts } from "@/lib/store";
 
-export default function DashboardPage() {
-  const counts = getDashboardCounts();
+export default async function DashboardPage() {
+  const counts = await getDashboardCounts();
 
   const cards = [
     { label: "Sản phẩm", value: counts.products, href: "/products" },

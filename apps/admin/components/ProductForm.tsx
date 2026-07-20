@@ -29,7 +29,11 @@ export function ProductForm({
   const stockKeys = Object.keys(STOCK_STATUS) as StockStatus[];
 
   return (
-    <form action={action} className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+    <form
+      action={action}
+      encType="multipart/form-data"
+      className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className={label} htmlFor="name">
@@ -231,6 +235,19 @@ export function ProductForm({
             defaultValue={
               product?.images.map((img) => img.url).join("\n") ?? ""
             }
+            className={field}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={label} htmlFor="imageFile">
+            Upload ảnh (tùy chọn — bucket product-images)
+          </label>
+          <input
+            id="imageFile"
+            name="imageFile"
+            type="file"
+            accept="image/*"
             className={field}
           />
         </div>

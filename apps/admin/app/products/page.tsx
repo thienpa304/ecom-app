@@ -20,12 +20,15 @@ export default async function ProductsPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
-  const brands = getBrands();
-  const categories = getCategories();
+  const [brands, categories, allProducts] = await Promise.all([
+    getBrands(),
+    getCategories(),
+    getProducts(),
+  ]);
   const brandMap = Object.fromEntries(brands.map((b) => [b.id, b.name]));
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
-  let products = getProducts();
+  let products = allProducts;
 
   if (sp.q) {
     const q = sp.q.toLowerCase();

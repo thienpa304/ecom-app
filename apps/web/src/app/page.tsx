@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { getBrandById, listProducts } from "@/lib/data";
+import { getBrands, listProducts } from "@/lib/data";
 
-export default function HomePage() {
-  const { items } = listProducts({ sort: "sold_desc", pageSize: 12, page: 1 });
+export default async function HomePage() {
+  const [{ items }, brands] = await Promise.all([
+    listProducts({ sort: "sold_desc", pageSize: 12, page: 1 }),
+    getBrands(),
+  ]);
   const featured = items.slice(0, 8);
+  const brandNames = Object.fromEntries(brands.map((b) => [b.id, b.name]));
 
   return (
     <>
@@ -71,7 +75,7 @@ export default function HomePage() {
             <ProductCard
               key={product.id}
               product={product}
-              brandName={getBrandById(product.brandId)?.name}
+              brandName={brandNames[product.brandId]}
             />
           ))}
         </div>

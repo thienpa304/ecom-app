@@ -19,7 +19,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Không tìm thấy" };
   return {
     title: product.name,
@@ -33,11 +33,13 @@ export default async function ProductDetailPage({
   params: Params;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const brand = getBrandById(product.brandId);
-  const category = getCategoryById(product.categoryId);
+  const [brand, category] = await Promise.all([
+    getBrandById(product.brandId),
+    getCategoryById(product.categoryId),
+  ]);
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
   const phone = process.env.NEXT_PUBLIC_STORE_PHONE ?? "02839756686";

@@ -5,8 +5,8 @@ import {
 } from "@/lib/actions/categories";
 import { getCategories } from "@/lib/store";
 
-export default function CategoriesPage() {
-  const categories = getCategories();
+export default async function CategoriesPage() {
+  const categories = await getCategories();
   const nameMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
   return (

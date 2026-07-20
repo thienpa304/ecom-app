@@ -13,11 +13,13 @@ export default async function EditProductPage({
   params: Params;
 }) {
   const { id } = await params;
-  const product = getProduct(id);
+  const [product, brands, categories] = await Promise.all([
+    getProduct(id),
+    getBrands(),
+    getCategories(),
+  ]);
   if (!product) notFound();
 
-  const brands = getBrands();
-  const categories = getCategories();
   const action = updateProductAction.bind(null, id);
 
   return (

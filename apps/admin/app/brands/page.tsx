@@ -2,8 +2,8 @@ import { AdminShell } from "@/components/AdminShell";
 import { createBrandAction, deleteBrandAction } from "@/lib/actions/brands";
 import { getBrands } from "@/lib/store";
 
-export default function BrandsPage() {
-  const brands = getBrands();
+export default async function BrandsPage() {
+  const brands = await getBrands();
 
   return (
     <AdminShell title="Thương hiệu">
