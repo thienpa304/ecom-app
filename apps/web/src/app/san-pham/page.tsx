@@ -118,7 +118,7 @@ export default async function CatalogPage({
               <div className="h-12 animate-pulse rounded-lg bg-gray-100" />
             }
           >
-            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 sm:gap-3 sm:px-3 sm:py-2.5">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-2.5 sm:gap-3 sm:px-3 sm:py-2.5">
               <MobileFilters brands={brands} categories={categories} />
               <CatalogToolbar
                 shown={result.items.length}

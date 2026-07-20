@@ -3,7 +3,14 @@
 import Image from "next/image";
 import type { ProductMedia } from "@ecom/shared";
 import { galleryMedia, parseVideoUrl } from "@ecom/shared";
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type TouchEvent,
+} from "react";
 
 type Props = {
   media: ProductMedia[];
@@ -11,6 +18,7 @@ type Props = {
 };
 
 const PLACEHOLDER = "/placeholder.svg";
+const SWIPE_THRESHOLD = 48;
 
 type Slide = {
   key: string;
@@ -41,15 +49,83 @@ export function ProductGallery({ media, name }: Props) {
   }, [media, name]);
 
   const [active, setActive] = useState(0);
+  const touchX = useRef<number | null>(null);
   const current = slides[active] ?? slides[0]!;
+  const multi = slides.length > 1;
+  const isVideo = current.item.kind === "video";
+
+  const go = useCallback(
+    (dir: -1 | 1) => {
+      if (!multi) return;
+      setActive((i) => (i + dir + slides.length) % slides.length);
+    },
+    [multi, slides.length],
+  );
+
+  useEffect(() => {
+    if (!multi) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") go(1);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, multi]);
+
+  function onTouchStart(e: TouchEvent) {
+    if (isVideo) return;
+    touchX.current = e.touches[0]?.clientX ?? null;
+  }
+
+  function onTouchEnd(e: TouchEvent) {
+    if (isVideo || touchX.current == null) return;
+    const endX = e.changedTouches[0]?.clientX;
+    if (endX == null) {
+      touchX.current = null;
+      return;
+    }
+    const dx = endX - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    if (dx < 0) go(1);
+    else go(-1);
+  }
 
   return (
     <div className="min-w-0 space-y-3">
-      <div className="relative aspect-[4/3] w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-black/5">
+      <div
+        className="relative aspect-[4/3] w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-black/5"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <MediaSlide item={current.item} name={name} priority />
+
+        {multi ? (
+          <>
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              className="absolute left-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md ring-1 ring-black/5 transition hover:bg-white"
+              aria-label="Ảnh trước"
+            >
+              <ChevronIcon className="h-5 w-5 rotate-180" />
+            </button>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              className="absolute right-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md ring-1 ring-black/5 transition hover:bg-white"
+              aria-label="Ảnh sau"
+            >
+              <ChevronIcon className="h-5 w-5" />
+            </button>
+            <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white">
+              {active + 1}/{slides.length}
+            </span>
+          </>
+        ) : null}
       </div>
 
-      {slides.length > 1 && (
+      {multi ? (
         <div
           className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-webkit-overflow-scrolling:touch]"
           role="list"
@@ -75,8 +151,23 @@ export function ProductGallery({ media, name }: Props) {
             </button>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      aria-hidden
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
   );
 }
 
@@ -99,6 +190,7 @@ function MediaSlide({
         sizes="(max-width: 1024px) 100vw, 50vw"
         className="object-contain bg-white p-2 sm:p-4"
         priority={priority}
+        draggable={false}
       />
     );
   }

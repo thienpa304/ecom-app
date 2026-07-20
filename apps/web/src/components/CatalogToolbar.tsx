@@ -38,7 +38,7 @@ export function CatalogToolbar({ shown, total }: Props) {
             value={sort}
             onChange={(e) => update("sort", e.target.value)}
             aria-label="Sắp xếp"
-            className="max-w-[9.5rem] rounded-lg border border-gray-300 bg-white px-2 py-2 text-xs text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:max-w-none sm:text-sm"
+            className="min-h-10 max-w-[9.5rem] rounded-lg border border-gray-300 bg-white px-2 py-2 text-xs text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent sm:max-w-none sm:text-sm"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -53,7 +53,7 @@ export function CatalogToolbar({ shown, total }: Props) {
           <select
             value={pageSize}
             onChange={(e) => update("pageSize", e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="min-h-10 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-800 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           >
             <option value="12">12</option>
             <option value="24">24</option>
