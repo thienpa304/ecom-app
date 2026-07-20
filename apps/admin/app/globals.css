@@ -19,3 +19,31 @@ body {
 .ant-table-wrapper {
   max-width: 100%;
 }
+
+.admin-nav-progress {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 1100;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+  background: rgba(37, 99, 235, 0.15);
+}
+
+.admin-nav-progress-bar {
+  height: 100%;
+  width: 35%;
+  border-radius: 0 2px 2px 0;
+  background: #2563eb;
+  animation: admin-nav-progress 1s ease-in-out infinite;
+}
+
+@keyframes admin-nav-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}

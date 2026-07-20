@@ -11,11 +11,11 @@ import {
   ShoppingOutlined,
   TagsOutlined,
 } from "@ant-design/icons";
-import { Button, Drawer, Grid, Layout, Menu, Typography, theme } from "antd";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Button, Drawer, Grid, Layout, Menu, Spin, Typography, theme } from "antd";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { logoutAction } from "@/lib/actions/auth";
+import { startAdminNavigation } from "@/components/NavigationProgress";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -49,15 +49,31 @@ const NAV = [
   },
 ] as const;
 
+function resolveSelected(pathname: string) {
+  return (
+    NAV.find((item) =>
+      item.href === "/" ? pathname === "/" : pathname.startsWith(item.href),
+    )?.key ?? "/"
+  );
+}
+
 function NavPanel({
   selected,
   onNavigate,
   showBrand = true,
 }: {
   selected: string;
-  onNavigate?: () => void;
+  onNavigate: (href: string) => void;
   showBrand?: boolean;
 }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    for (const item of NAV) {
+      router.prefetch(item.href);
+    }
+  }, [router]);
+
   return (
     <div
       style={{
@@ -91,11 +107,15 @@ function NavPanel({
         mode="inline"
         selectedKeys={[selected]}
         style={{ background: "#1e293b", borderInlineEnd: 0, flex: 1 }}
-        onClick={onNavigate}
+        onClick={({ key }) => {
+          const item = NAV.find((n) => n.key === key);
+          if (!item) return;
+          onNavigate(item.href);
+        }}
         items={NAV.map((item) => ({
           key: item.key,
           icon: item.icon,
-          label: <Link href={item.href}>{item.label}</Link>,
+          label: item.label,
         }))}
       />
 
@@ -129,29 +149,36 @@ export function AdminShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { token } = theme.useToken();
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
   const [open, setOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
-  const selected =
-    NAV.find((item) =>
-      item.href === "/" ? pathname === "/" : pathname.startsWith(item.href),
-    )?.key ?? "/";
+  const selected = pendingHref
+    ? resolveSelected(pendingHref)
+    : resolveSelected(pathname);
+  const navigating = pendingHref != null && pendingHref !== pathname;
 
   useEffect(() => {
     setOpen(false);
+    setPendingHref(null);
   }, [pathname]);
+
+  function handleNavigate(href: string) {
+    setOpen(false);
+    if (href === pathname) return;
+    setPendingHref(href);
+    startAdminNavigation();
+    router.push(href);
+  }
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {!isMobile ? (
-        <Sider
-          width={220}
-          theme="dark"
-          style={{ background: "#1e293b" }}
-        >
-          <NavPanel selected={selected} />
+        <Sider width={220} theme="dark" style={{ background: "#1e293b" }}>
+          <NavPanel selected={selected} onNavigate={handleNavigate} />
         </Sider>
       ) : (
         <Drawer
@@ -176,7 +203,7 @@ export function AdminShell({
           <NavPanel
             selected={selected}
             showBrand={false}
-            onNavigate={() => setOpen(false)}
+            onNavigate={handleNavigate}
           />
         </Drawer>
       )}
@@ -231,8 +258,27 @@ export function AdminShell({
           style={{
             padding: isMobile ? 12 : 24,
             overflowX: "hidden",
+            position: "relative",
+            opacity: navigating ? 0.55 : 1,
+            transition: "opacity 0.15s ease",
+            pointerEvents: navigating ? "none" : "auto",
           }}
         >
+          {navigating ? (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "center",
+                paddingTop: 48,
+                zIndex: 5,
+              }}
+            >
+              <Spin tip="Đang tải..." />
+            </div>
+          ) : null}
           {children}
         </Content>
       </Layout>

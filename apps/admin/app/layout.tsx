@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { Suspense } from "react";
 import { AntdProvider } from "@/components/AntdProvider";
+import { NavigationProgress } from "@/components/NavigationProgress";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,7 +26,12 @@ export default function RootLayout({
     <html lang="vi">
       <body>
         <AntdRegistry>
-          <AntdProvider>{children}</AntdProvider>
+          <AntdProvider>
+            <Suspense fallback={null}>
+              <NavigationProgress />
+            </Suspense>
+            {children}
+          </AntdProvider>
         </AntdRegistry>
       </body>
     </html>
