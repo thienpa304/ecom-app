@@ -1,11 +1,13 @@
 import { AdminShell } from "@/components/AdminShell";
 import { ProductsManager } from "@/components/ProductsManager";
-import { getBrands, getCategories, getProducts } from "@/lib/store";
+import { getBrands, getCategories, listProducts } from "@/lib/store";
 
 type SearchParams = Promise<{
   q?: string;
   brand?: string;
   published?: string;
+  page?: string;
+  pageSize?: string;
 }>;
 
 export default async function ProductsPage({
@@ -14,36 +16,30 @@ export default async function ProductsPage({
   searchParams: SearchParams;
 }) {
   const sp = await searchParams;
-  const [brands, categories, allProducts] = await Promise.all([
+  const page = Math.max(1, Number(sp.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(sp.pageSize) || 20));
+
+  const [brands, categories, listed] = await Promise.all([
     getBrands(),
     getCategories(),
-    getProducts(),
+    listProducts({
+      page,
+      pageSize,
+      filters: {
+        q: sp.q,
+        brandId: sp.brand,
+        published: sp.published,
+      },
+    }),
   ]);
-
-  let products = allProducts;
-
-  if (sp.q) {
-    const q = sp.q.toLowerCase();
-    products = products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.model.toLowerCase().includes(q) ||
-        p.slug.toLowerCase().includes(q),
-    );
-  }
-  if (sp.brand) {
-    products = products.filter((p) => p.brandId === sp.brand);
-  }
-  if (sp.published === "1") {
-    products = products.filter((p) => p.isPublished);
-  } else if (sp.published === "0") {
-    products = products.filter((p) => !p.isPublished);
-  }
 
   return (
     <AdminShell title="Sản phẩm">
       <ProductsManager
-        products={products}
+        products={listed.items}
+        total={listed.total}
+        page={listed.page}
+        pageSize={listed.pageSize}
         brands={brands}
         categories={categories}
         filters={{

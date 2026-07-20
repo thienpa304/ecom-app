@@ -7,8 +7,19 @@ import {
   PlayCircleOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import { App, Button, Empty, Input, Segmented, Space, Spin, Typography, Upload } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  App,
+  Button,
+  Empty,
+  Input,
+  Pagination,
+  Segmented,
+  Space,
+  Spin,
+  Typography,
+  Upload,
+} from "antd";
+import { useCallback, useEffect, useState } from "react";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@ecom/shared";
 import {
   deleteMediaAction,
@@ -16,6 +27,8 @@ import {
   uploadMediaAction,
 } from "@/lib/actions/media";
 import type { MediaAsset } from "@/lib/store";
+
+const MEDIA_PAGE_SIZE = 24;
 
 type Filter = "all" | "image" | "video";
 
@@ -50,28 +63,38 @@ export function MediaLibraryPanel({
     accept === "all" ? "all" : accept,
   );
   const [assets, setAssets] = useState<MediaAsset[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await listMediaAction(filter === "all" ? "all" : filter);
-      setAssets(list);
+      const result = await listMediaAction({
+        filter: filter === "all" ? "all" : filter,
+        page,
+        pageSize: MEDIA_PAGE_SIZE,
+      });
+      setAssets(result.items);
+      setTotal(result.total);
     } catch {
       message.error("Không tải được thư viện media");
     } finally {
       setLoading(false);
     }
-  }, [filter, message]);
+  }, [filter, message, page]);
 
   useEffect(() => {
     if (!active) return;
     setFilter(accept === "all" ? "all" : accept);
     setSelected(new Set(initialSelectedUrls));
+    setSelectedAssets([]);
     setQuery("");
+    setPage(1);
   }, [active, accept, initialSelectedUrls]);
 
   useEffect(() => {
@@ -80,23 +103,8 @@ export function MediaLibraryPanel({
 
   useEffect(() => {
     if (!onSelectionChange || mode !== "pick") return;
-    const byUrl = new Map(assets.map((a) => [a.url, a]));
-    const ordered: MediaAsset[] = [];
-    for (const url of selected) {
-      const found = byUrl.get(url);
-      if (found) ordered.push(found);
-    }
-    onSelectionChange(ordered);
-  }, [assets, mode, onSelectionChange, selected]);
-
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return assets;
-    return assets.filter(
-      (a) =>
-        a.name.toLowerCase().includes(q) || a.path.toLowerCase().includes(q),
-    );
-  }, [assets, query]);
+    onSelectionChange(selectedAssets);
+  }, [mode, onSelectionChange, selectedAssets]);
 
   function toggle(asset: MediaAsset) {
     if (mode !== "pick") return;
@@ -111,7 +119,24 @@ export function MediaLibraryPanel({
       }
       return next;
     });
+    setSelectedAssets((prev) => {
+      if (multiple) {
+        const exists = prev.some((a) => a.url === asset.url);
+        if (exists) return prev.filter((a) => a.url !== asset.url);
+        return [...prev, asset];
+      }
+      return [asset];
+    });
   }
+
+  const visible = (() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return assets;
+    return assets.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) || a.path.toLowerCase().includes(q),
+    );
+  })();
 
   async function onUpload(files: File[]) {
     if (files.length === 0) return;
@@ -134,6 +159,7 @@ export function MediaLibraryPanel({
         return;
       }
       message.success(`Đã upload ${res.urls.length} file`);
+      setPage(1);
       await load();
       if (res.urls.length && mode === "pick") {
         setSelected((prev) => {
@@ -206,7 +232,10 @@ export function MediaLibraryPanel({
       <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
         <Segmented
           value={filter}
-          onChange={(v) => setFilter(v as Filter)}
+          onChange={(v) => {
+            setPage(1);
+            setFilter(v as Filter);
+          }}
           options={[
             { label: "Tất cả", value: "all", disabled: accept !== "all" },
             { label: "Ảnh", value: "image", disabled: accept === "video" },
@@ -216,7 +245,7 @@ export function MediaLibraryPanel({
         <Space>
           <Input.Search
             allowClear
-            placeholder="Tìm file..."
+            placeholder="Tìm trên trang này..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{ width: 200 }}
@@ -346,6 +375,18 @@ export function MediaLibraryPanel({
             })}
           </div>
         )}
+        {total > MEDIA_PAGE_SIZE ? (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+            <Pagination
+              current={page}
+              pageSize={MEDIA_PAGE_SIZE}
+              total={total}
+              onChange={(p) => setPage(p)}
+              showSizeChanger={false}
+              showTotal={(t) => `${t} file`}
+            />
+          </div>
+        ) : null}
       </Spin>
     </Space>
   );

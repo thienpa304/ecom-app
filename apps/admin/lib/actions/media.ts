@@ -7,16 +7,18 @@ import {
   deleteMediaAsset,
   listMediaAssets,
   uploadProductMedia,
+  type ListMediaParams,
+  type ListMediaResult,
   type MediaAsset,
 } from "@/lib/store";
 
 const STORAGE_PATH_RE = /^(img|video|media)\/.+/;
 
 export async function listMediaAction(
-  filter: "image" | "video" | "all" = "all",
-): Promise<MediaAsset[]> {
+  filterOrParams: "image" | "video" | "all" | ListMediaParams = "all",
+): Promise<ListMediaResult> {
   await requireAdmin();
-  return listMediaAssets(filter);
+  return listMediaAssets(filterOrParams);
 }
 
 export async function uploadMediaAction(
@@ -79,3 +81,6 @@ export async function deleteMediaAction(
     };
   }
 }
+
+/** @deprecated Prefer ListMediaResult.items — kept for type re-exports */
+export type { MediaAsset };

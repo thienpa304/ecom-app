@@ -17,6 +17,7 @@ import {
   type Lead,
   type LeadRow,
   type Product,
+  type StockStatus,
   type ProductMedia,
   type ProductMediaRow,
   type ProductRow,
@@ -181,56 +182,89 @@ export async function uploadProductMedia(
   return publicUrlFor(path);
 }
 
-/** List assets in product-images bucket (Strapi-like media library). */
+export type ListMediaParams = {
+  filter?: "image" | "video" | "all";
+  page?: number;
+  pageSize?: number;
+};
+
+export type ListMediaResult = {
+  items: MediaAsset[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+/** List assets in product-images bucket — parallel folder fetch + pagination. */
 export async function listMediaAssets(
-  filter?: "image" | "video" | "all",
-): Promise<MediaAsset[]> {
+  filterOrParams: "image" | "video" | "all" | ListMediaParams = "all",
+): Promise<ListMediaResult> {
+  const params: ListMediaParams =
+    typeof filterOrParams === "string"
+      ? { filter: filterOrParams }
+      : filterOrParams;
+  const filter = params.filter ?? "all";
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 24));
+
   const supabase = createServerClient();
-  const folders = ["img", "video", "media", ""];
-  const assets: MediaAsset[] = [];
+  const folders =
+    filter === "image"
+      ? ["img", "media", ""]
+      : filter === "video"
+        ? ["video", "media", ""]
+        : ["img", "video", "media", ""];
 
-  for (const folder of folders) {
-    const { data, error } = await supabase.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .list(folder || undefined, {
-        limit: 200,
-        sortBy: { column: "created_at", order: "desc" },
-      });
+  const folderResults = await Promise.all(
+    folders.map(async (folder) => {
+      const { data, error } = await supabase.storage
+        .from(PRODUCT_IMAGES_BUCKET)
+        .list(folder || undefined, {
+          limit: 200,
+          sortBy: { column: "created_at", order: "desc" },
+        });
+      if (error) {
+        console.error("listMediaAssets(" + folder + "):", error.message);
+        return [] as MediaAsset[];
+      }
+      const assets: MediaAsset[] = [];
+      for (const item of data ?? []) {
+        if (!item.name || item.id == null) continue;
+        const storagePath = folder ? folder + "/" + item.name : item.name;
+        const kind = mediaKindFromName(item.name);
+        if (filter === "image" && kind !== "image") continue;
+        if (filter === "video" && kind !== "video") continue;
+        assets.push({
+          path: storagePath,
+          url: publicUrlFor(storagePath),
+          name: item.name,
+          size: item.metadata?.size ?? null,
+          kind,
+          updatedAt: item.updated_at ?? item.created_at ?? null,
+        });
+      }
+      return assets;
+    }),
+  );
 
-    if (error) {
-      console.error(`listMediaAssets(${folder}):`, error.message);
-      continue;
-    }
-
-    for (const item of data ?? []) {
-      // Folders have null id in Supabase Storage listing
-      if (!item.name || item.id == null) continue;
-
-      const path = folder ? `${folder}/${item.name}` : item.name;
-      const kind = mediaKindFromName(item.name);
-      if (filter === "image" && kind !== "image") continue;
-      if (filter === "video" && kind !== "video") continue;
-
-      assets.push({
-        path,
-        url: publicUrlFor(path),
-        name: item.name,
-        size: item.metadata?.size ?? null,
-        kind,
-        updatedAt: item.updated_at ?? item.created_at ?? null,
-      });
-    }
-  }
-
-  // de-dupe by path, newest first
   const seen = new Set<string>();
-  return assets
+  const all = folderResults
+    .flat()
     .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""))
     .filter((a) => {
       if (seen.has(a.path)) return false;
       seen.add(a.path);
       return true;
     });
+
+  const total = all.length;
+  const from = (page - 1) * pageSize;
+  return {
+    items: all.slice(from, from + pageSize),
+    total,
+    page,
+    pageSize,
+  };
 }
 
 export async function deleteMediaAsset(path: string): Promise<void> {
@@ -241,6 +275,114 @@ export async function deleteMediaAsset(path: string): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete media: ${error.message}`);
   }
+}
+
+
+export type ProductListItem = {
+  id: string;
+  name: string;
+  slug: string;
+  model: string;
+  brandId: string;
+  categoryId: string;
+  price: number;
+  salePrice: number | null;
+  stockStatus: StockStatus;
+  isPublished: boolean;
+};
+
+export type ListProductsParams = {
+  page?: number;
+  pageSize?: number;
+  filters?: {
+    q?: string;
+    brandId?: string;
+    published?: string;
+  };
+};
+
+export type ListProductsResult = {
+  items: ProductListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+const PRODUCT_LIST_COLUMNS =
+  "id, name, slug, model, brand_id, category_id, price, sale_price, stock_status, is_published";
+
+function mapProductListRow(row: {
+  id: string;
+  name: string;
+  slug: string;
+  model: string;
+  brand_id: string;
+  category_id: string;
+  price: number | string;
+  sale_price: number | string | null;
+  stock_status: StockStatus;
+  is_published: boolean;
+}): ProductListItem {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    model: row.model,
+    brandId: row.brand_id,
+    categoryId: row.category_id,
+    price: Number(row.price),
+    salePrice: row.sale_price == null ? null : Number(row.sale_price),
+    stockStatus: row.stock_status,
+    isPublished: row.is_published,
+  };
+}
+
+/** Paginated product list for admin — slim columns, no media join. */
+export async function listProducts(
+  params: ListProductsParams = {},
+): Promise<ListProductsResult> {
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 20));
+  const filters = params.filters ?? {};
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const supabase = createServerClient();
+  let query = supabase
+    .from("products")
+    .select(PRODUCT_LIST_COLUMNS, { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  const q = filters.q?.trim();
+  if (q) {
+    const escaped = q.replace(/[%_,]/g, (ch) => "\\" + ch);
+    query = query.or(
+      "name.ilike.%" + escaped + "%,model.ilike.%" + escaped + "%,slug.ilike.%" + escaped + "%",
+    );
+  }
+  if (filters.brandId) {
+    query = query.eq("brand_id", filters.brandId);
+  }
+  if (filters.published === "1") {
+    query = query.eq("is_published", true);
+  } else if (filters.published === "0") {
+    query = query.eq("is_published", false);
+  }
+
+  const { data, error, count } = await query;
+  if (error) {
+    throw new Error("Failed to list products: " + error.message);
+  }
+
+  return {
+    items: ((data ?? []) as Parameters<typeof mapProductListRow>[0][]).map(
+      mapProductListRow,
+    ),
+    total: count ?? 0,
+    page,
+    pageSize,
+  };
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -295,6 +437,8 @@ export async function getCategories(): Promise<Category[]> {
   return ((data ?? []) as CategoryRow[]).map(mapCategoryRow);
 }
 
+export type LeadWithProductName = Lead & { productName: string };
+
 export async function getLeads(): Promise<Lead[]> {
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -302,9 +446,35 @@ export async function getLeads(): Promise<Lead[]> {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) {
-    throw new Error(`Failed to fetch leads: ${error.message}`);
+    throw new Error("Failed to fetch leads: " + error.message);
   }
   return ((data ?? []) as LeadRow[]).map(mapLeadRow);
+}
+
+/** Leads with product name via FK join — no full catalog load. */
+export async function getLeadsWithProductNames(): Promise<LeadWithProductName[]> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*, products(name)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error("Failed to fetch leads: " + error.message);
+  }
+
+  type LeadJoinRow = LeadRow & {
+    products: { name: string } | { name: string }[] | null;
+  };
+
+  return ((data ?? []) as LeadJoinRow[]).map((row) => {
+    const lead = mapLeadRow(row);
+    const joined = row.products;
+    const productName = Array.isArray(joined)
+      ? (joined[0]?.name ?? lead.productId ?? "—")
+      : (joined?.name ?? (lead.productId ? lead.productId : "—"));
+    return { ...lead, productName };
+  });
 }
 
 export async function createProduct(
@@ -365,6 +535,9 @@ export async function updateProduct(
       specs: row.specs,
       is_published: row.is_published,
       description: row.description,
+      meta_title: row.meta_title,
+      meta_description: row.meta_description,
+      seo_keywords: row.seo_keywords,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

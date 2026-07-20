@@ -11,8 +11,14 @@ import {
 import type { ProductMedia } from "@ecom/shared";
 import { inferMediaKindFromUrl } from "@ecom/shared";
 import { Button, Card, Empty, Input, Space, Tag, Typography } from "antd";
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { MediaLibraryModal } from "./MediaLibraryModal";
+
+const MediaLibraryModal = dynamic(
+  () =>
+    import("./MediaLibraryModal").then((m) => m.MediaLibraryModal),
+  { ssr: false },
+);
 
 /** Draft media item before save (no productId required). */
 export type MediaDraftItem = {

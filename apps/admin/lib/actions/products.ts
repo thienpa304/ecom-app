@@ -3,6 +3,7 @@
 import {
   inferMediaKindFromUrl,
   productFormSchema,
+  sanitizeProductHtml,
   storagePathFromPublicUrl,
   type Product,
 } from "@ecom/shared";
@@ -16,6 +17,11 @@ import {
   updateProduct,
 } from "@/lib/store";
 import { formatZodError } from "@/lib/validate-form";
+
+export type ProductActionState = {
+  ok: boolean;
+  message: string;
+};
 
 function slugify(value: string): string {
   return value
@@ -41,7 +47,10 @@ function parseSpecs(raw: string): Record<string, string> {
   return specs;
 }
 
-function readProductForm(formData: FormData, productId: string): Omit<Product, "id"> {
+function readProductForm(
+  formData: FormData,
+  productId: string,
+): Omit<Product, "id"> {
   const name = String(formData.get("name") ?? "").trim();
   const slugRaw = String(formData.get("slug") ?? "").trim();
   const saleRaw = String(formData.get("salePrice") ?? "").trim();
@@ -70,7 +79,13 @@ function readProductForm(formData: FormData, productId: string): Omit<Product, "
     motor: motorRaw === "" ? null : motorRaw,
     specs: parseSpecs(String(formData.get("specs") ?? "")),
     isPublished: formData.get("isPublished") === "on",
-    description: String(formData.get("description") ?? "").trim() || undefined,
+    description:
+      sanitizeProductHtml(String(formData.get("description") ?? "")).trim() ||
+      undefined,
+    metaTitle: String(formData.get("metaTitle") ?? "").trim() || undefined,
+    metaDescription:
+      String(formData.get("metaDescription") ?? "").trim() || undefined,
+    seoKeywords: String(formData.get("seoKeywords") ?? "").trim() || undefined,
     media: Array.isArray(mediaDrafts) ? mediaDrafts : [],
   });
 
@@ -99,24 +114,46 @@ function readProductForm(formData: FormData, productId: string): Omit<Product, "
   };
 }
 
-export async function createProductAction(formData: FormData): Promise<void> {
+export async function createProductAction(
+  formData: FormData,
+): Promise<ProductActionState> {
   await requireAdmin();
-  const id = `prod-${Date.now()}`;
-  const data = readProductForm(formData, id);
-  const product = await createProduct({ ...data, id });
-  revalidatePath("/products");
-  redirect(`/products/${product.id}/edit`);
+
+  let productId: string;
+  try {
+    const id = `prod-${Date.now()}`;
+    const data = readProductForm(formData, id);
+    const product = await createProduct({ ...data, id });
+    productId = product.id;
+    revalidatePath("/products");
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Không tạo được sản phẩm",
+    };
+  }
+
+  redirect(`/products/${productId}/edit`);
 }
 
 export async function updateProductAction(
   id: string,
   formData: FormData,
-): Promise<void> {
+): Promise<ProductActionState> {
   await requireAdmin();
-  const data = readProductForm(formData, id);
-  await updateProduct(id, data);
-  revalidatePath("/products");
-  revalidatePath(`/products/${id}/edit`);
+
+  try {
+    const data = readProductForm(formData, id);
+    await updateProduct(id, data);
+    revalidatePath("/products");
+    revalidatePath(`/products/${id}/edit`);
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Không lưu được sản phẩm",
+    };
+  }
+
   redirect("/products");
 }
 

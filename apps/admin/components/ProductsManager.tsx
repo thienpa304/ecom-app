@@ -1,7 +1,7 @@
 "use client";
 
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import type { Brand, Category, Product } from "@ecom/shared";
+import type { Brand, Category } from "@ecom/shared";
 import { STOCK_STATUS } from "@ecom/shared";
 import {
   App,
@@ -26,9 +26,13 @@ import {
   togglePublishAction,
 } from "@/lib/actions/products";
 import { formatVnd } from "@/lib/format";
+import type { ProductListItem } from "@/lib/store";
 
 type Props = {
-  products: Product[];
+  products: ProductListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
   brands: Brand[];
   categories: Category[];
   filters: {
@@ -40,6 +44,9 @@ type Props = {
 
 export function ProductsManager({
   products,
+  total,
+  page,
+  pageSize,
   brands,
   categories,
   filters,
@@ -59,17 +66,41 @@ export function ProductsManager({
     [categories],
   );
 
+  function pushQuery(next: {
+    q?: string;
+    brand?: string;
+    published?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const params = new URLSearchParams();
+    const q = next.q ?? filters.q;
+    const brand = next.brand ?? filters.brand;
+    const published = next.published ?? filters.published;
+    const p = next.page ?? page;
+    const ps = next.pageSize ?? pageSize;
+
+    if (q?.trim()) params.set("q", q.trim());
+    if (brand) params.set("brand", brand);
+    if (published) params.set("published", published);
+    if (p > 1) params.set("page", String(p));
+    if (ps !== 20) params.set("pageSize", String(ps));
+
+    const qs = params.toString();
+    router.push(qs ? `/products?${qs}` : "/products");
+  }
+
   function applyFilters(values: {
     q?: string;
     brand?: string;
     published?: string;
   }) {
-    const params = new URLSearchParams();
-    if (values.q?.trim()) params.set("q", values.q.trim());
-    if (values.brand) params.set("brand", values.brand);
-    if (values.published) params.set("published", values.published);
-    const qs = params.toString();
-    router.push(qs ? `/products?${qs}` : "/products");
+    pushQuery({
+      q: values.q,
+      brand: values.brand,
+      published: values.published,
+      page: 1,
+    });
   }
 
   function onToggle(id: string) {
@@ -198,16 +229,20 @@ export function ProductsManager({
         size={isMobile ? "small" : "middle"}
         scroll={{ x: isMobile ? 720 : 900 }}
         pagination={{
-          pageSize: isMobile ? 10 : 20,
+          current: page,
+          pageSize,
+          total,
           showSizeChanger: !isMobile,
           simple: isMobile,
+          showTotal: (t) => `${t} sản phẩm`,
+          onChange: (p, ps) => pushQuery({ page: p, pageSize: ps }),
         }}
         locale={{ emptyText: "Không có sản phẩm." }}
         columns={[
           {
             title: "Sản phẩm",
             dataIndex: "name",
-            render: (_: unknown, p: Product) => (
+            render: (_: unknown, p: ProductListItem) => (
               <>
                 <Typography.Text strong>{p.name}</Typography.Text>
                 <br />
@@ -234,7 +269,7 @@ export function ProductsManager({
           {
             title: "Giá",
             width: 120,
-            render: (_: unknown, p: Product) =>
+            render: (_: unknown, p: ProductListItem) =>
               p.salePrice != null ? (
                 <>
                   <Typography.Text type="danger" strong>
@@ -258,13 +293,14 @@ export function ProductsManager({
             width: 100,
             dataIndex: "stockStatus",
             responsive: ["sm"],
-            render: (s: Product["stockStatus"]) => STOCK_STATUS[s].labelVi,
+            render: (s: ProductListItem["stockStatus"]) =>
+              STOCK_STATUS[s].labelVi,
           },
           {
             title: "XB",
             width: 80,
             dataIndex: "isPublished",
-            render: (published: boolean, p: Product) => (
+            render: (published: boolean, p: ProductListItem) => (
               <Tag
                 color={published ? "success" : "default"}
                 style={{ cursor: "pointer" }}
@@ -278,7 +314,7 @@ export function ProductsManager({
             title: "Thao tác",
             width: isMobile ? 96 : 140,
             fixed: "right",
-            render: (_: unknown, p: Product) => (
+            render: (_: unknown, p: ProductListItem) => (
               <Space size={0}>
                 <Link href={`/products/${p.id}/edit`}>
                   <Button

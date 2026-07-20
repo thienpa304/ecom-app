@@ -53,6 +53,9 @@ export const productSchema = z.object({
   specs: z.record(z.string(), z.string()),
   isPublished: z.boolean(),
   description: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  seoKeywords: z.string().optional(),
   media: z.array(productMediaSchema),
 });
 
@@ -132,6 +135,9 @@ export const productFormSchema = z
     specs: z.record(z.string(), z.string()),
     isPublished: z.boolean(),
     description: z.string().optional(),
+    metaTitle: z.string().optional(),
+    metaDescription: z.string().optional(),
+    seoKeywords: z.string().optional(),
     media: z.array(productMediaDraftSchema),
   })
   .refine((d) => d.salePrice == null || d.salePrice <= d.price, {

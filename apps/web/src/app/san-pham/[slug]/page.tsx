@@ -4,6 +4,10 @@ import type { Metadata } from "next";
 import { STOCK_STATUS, primaryImage } from "@ecom/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { LeadForm } from "@/components/LeadForm";
+import {
+  descriptionPlainText,
+  ProductDescription,
+} from "@/components/ProductDescription";
 import { ProductGallery } from "@/components/ProductGallery";
 import {
   getBrandById,
@@ -43,19 +47,26 @@ export async function generateMetadata({
   }
 
   const description =
-    product.description ??
+    product.metaDescription?.trim() ||
+    descriptionPlainText(product.description, 160) ||
     `${product.name} — model ${product.model}. Liên hệ ${settings.siteName}.`;
+  const title = product.metaTitle?.trim() || product.name;
   const path = `/san-pham/${product.slug}`;
   const image = primaryImage(product)?.url;
+  const keywords = product.seoKeywords
+    ?.split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
 
   return {
-    title: product.name,
+    title,
     description,
+    ...(keywords?.length ? { keywords } : {}),
     alternates: { canonical: path },
     openGraph: {
       type: "website",
       url: absoluteUrl(path),
-      title: product.name,
+      title,
       description,
       siteName: settings.siteName,
       ...(image
@@ -71,7 +82,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: image ? "summary_large_image" : "summary",
-      title: product.name,
+      title,
       description,
       ...(image ? { images: [image] } : {}),
     },
@@ -195,9 +206,7 @@ export default async function ProductDetailPage({
           </div>
 
           {product.description && (
-            <p className="text-sm leading-relaxed text-gray-700">
-              {product.description}
-            </p>
+            <ProductDescription html={product.description} />
           )}
 
           <div className="flex flex-wrap gap-3">

@@ -111,6 +111,9 @@ export type ProductRow = {
   is_published: boolean;
 
   description: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  seo_keywords?: string | null;
 
 };
 
@@ -295,6 +298,9 @@ export function mapProductRow(
     isPublished: row.is_published,
 
     description: row.description ?? undefined,
+    metaTitle: row.meta_title || undefined,
+    metaDescription: row.meta_description || undefined,
+    seoKeywords: row.seo_keywords || undefined,
 
     media: mappedMedia,
 
@@ -441,6 +447,9 @@ export function productToRow(
     is_published: product.isPublished,
 
     description: product.description ?? null,
+    meta_title: product.metaTitle ?? '',
+    meta_description: product.metaDescription ?? '',
+    seo_keywords: product.seoKeywords ?? '',
 
   };
 
