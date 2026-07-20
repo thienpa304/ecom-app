@@ -6,7 +6,7 @@ import { NavigationProgress } from "@/components/NavigationProgress";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Admin — Điện Máy Của Thiên",
+  title: "Admin — Điện Máy Lộc Phát Đạt",
   description: "Quản trị danh mục và cấu hình cửa hàng",
 };
 

@@ -101,7 +101,7 @@ function NavPanel({
               letterSpacing: 0.6,
             }}
           >
-            Điện Máy Của Thiên
+            Điện Máy Lộc Phát Đạt
           </Typography.Text>
           <Typography.Text strong style={{ color: "#fff" }}>
             Quản trị cửa hàng

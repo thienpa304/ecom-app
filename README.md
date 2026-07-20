@@ -32,13 +32,15 @@ Admin login password: `ADMIN_PASSWORD` (default `admin123`).
 - **Admin:** cookie auth, CRUD products/brands/categories, leads list, publish toggle
 - **Shared:** Dekton-style seed (~15 products)
 
-## Live (Vercel Hobby)
+## Live
 
 | App | URL |
 |-----|-----|
-| Storefront | https://ecom-app-beta-eight.vercel.app |
-| Admin | https://ecom-app-admin-omega.vercel.app (password `admin123`) |
+| Storefront | https://dienmaylocphatdat.vn |
+| Admin | https://ecom-app-admin-omega.vercel.app |
 | GitHub | https://github.com/thienpa304/ecom-app |
+
+Domain: **dienmaylocphatdat.vn** — set `NEXT_PUBLIC_SITE_URL=https://dienmaylocphatdat.vn` on Vercel (web project).
 
 ## Deploy (free)
 

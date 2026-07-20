@@ -3,20 +3,20 @@ import type { SiteSettings, StockStatus } from "./types";
 /** Fallback when DB row missing (local/dev). */
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   id: 1,
-  siteName: "Điện Máy Của Thiên",
-  tagline: "Cửa hàng điện máy — xem catalog, gọi tư vấn trực tiếp.",
+  siteName: "Điện Máy Lộc Phát Đạt",
+  tagline: "Cửa hàng điện máy — catalog sản phẩm, gọi tư vấn trực tiếp.",
   phone: "02839756686",
   zaloUrl: "https://zalo.me/",
   address: "",
-  email: "",
+  email: "lienhe@dienmaylocphatdat.vn",
   heroTitle: "Catalog điện máy & thiết bị gia dụng",
   heroSubtitle:
     "Xem thông số, giá khuyến mãi và liên hệ trực tiếp — không cần giỏ hàng, không thanh toán online.",
   metaDescription:
-    "Điện Máy Của Thiên — catalog sản phẩm, gọi điện hoặc để lại SĐT tư vấn.",
+    "Điện Máy Lộc Phát Đạt (dienmaylocphatdat.vn) — catalog máy xịt rửa, điện máy; gọi điện hoặc để lại SĐT tư vấn.",
   footerBlurb:
-    "Cửa hàng điện máy uy tín — hỗ trợ tư vấn chọn mua nhanh chóng.",
-  searchPlaceholder: "Tìm máy giặt, tủ lạnh, model...",
+    "Điện Máy Lộc Phát Đạt — hỗ trợ tư vấn chọn mua nhanh chóng tại dienmaylocphatdat.vn.",
+  searchPlaceholder: "Tìm máy xịt rửa, model…",
 };
 
 export const STOCK_STATUS: Record<
