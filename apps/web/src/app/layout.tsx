@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ContactFab } from "@/components/ContactFab";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
@@ -74,6 +75,7 @@ export default async function RootLayout({
         />
         <main className="flex-1">{children}</main>
         <Footer settings={settings} />
+        <ContactFab phone={settings.phone} zaloUrl={settings.zaloUrl} />
         <Analytics />
         <SpeedInsights />
       </body>
