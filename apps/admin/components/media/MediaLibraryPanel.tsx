@@ -29,6 +29,7 @@ import {
 import type { MediaAsset } from "@/lib/store";
 
 const MEDIA_PAGE_SIZE = 24;
+const EMPTY_URLS: string[] = [];
 
 type Filter = "all" | "image" | "video";
 
@@ -53,7 +54,7 @@ function formatBytes(n: number | null) {
 export function MediaLibraryPanel({
   accept = "all",
   multiple = true,
-  initialSelectedUrls = [],
+  initialSelectedUrls = EMPTY_URLS,
   mode = "manage",
   active = true,
   onSelectionChange,
@@ -70,6 +71,8 @@ export function MediaLibraryPanel({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
+
+  const initialKey = initialSelectedUrls.join("\0");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,7 +98,9 @@ export function MediaLibraryPanel({
     setSelectedAssets([]);
     setQuery("");
     setPage(1);
-  }, [active, accept, initialSelectedUrls]);
+    // initialSelectedUrls via initialKey — avoid [] default identity churn
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialKey captures urls
+  }, [active, accept, initialKey]);
 
   useEffect(() => {
     if (active) void load();

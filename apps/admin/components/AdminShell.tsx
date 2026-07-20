@@ -14,7 +14,7 @@ import {
 } from "@ant-design/icons";
 import { Button, Drawer, Grid, Layout, Menu, Spin, Typography, theme } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { logoutAction } from "@/lib/actions/auth";
 import { startAdminNavigation } from "@/components/NavigationProgress";
 
@@ -162,23 +162,35 @@ export function AdminShell({
   const isMobile = !screens.lg;
   const [open, setOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const selected = pendingHref
     ? resolveSelected(pendingHref)
     : resolveSelected(pathname);
-  const navigating = pendingHref != null && pendingHref !== pathname;
+  // Soft-nav overlay: React transition OR menu target not yet matched
+  const navigating =
+    isPending || (pendingHref != null && pendingHref !== pathname);
 
   useEffect(() => {
     setOpen(false);
     setPendingHref(null);
   }, [pathname]);
 
+  // Safety: never leave overlay stuck if soft-nav hangs / is interrupted
+  useEffect(() => {
+    if (!navigating) return;
+    const t = setTimeout(() => setPendingHref(null), 5000);
+    return () => clearTimeout(t);
+  }, [navigating, pendingHref]);
+
   function handleNavigate(href: string) {
     setOpen(false);
     if (href === pathname) return;
     setPendingHref(href);
     startAdminNavigation();
-    router.push(href);
+    startTransition(() => {
+      router.push(href);
+    });
   }
 
   return (
