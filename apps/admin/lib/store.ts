@@ -1,11 +1,13 @@
 import {
   DEFAULT_SITE_SETTINGS,
-  imageToRow,
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_MB,
   mapBrandRow,
   mapCategoryRow,
   mapLeadRow,
   mapProductRow,
   mapSiteSettingsRow,
+  mediaToRow,
   productToRow,
   siteSettingsToRow,
   type Brand,
@@ -15,8 +17,8 @@ import {
   type Lead,
   type LeadRow,
   type Product,
-  type ProductImage,
-  type ProductImageRow,
+  type ProductMedia,
+  type ProductMediaRow,
   type ProductRow,
   type SiteSettings,
   type SiteSettingsRow,
@@ -26,44 +28,42 @@ import {
   createServerClient,
 } from "./supabase";
 
-type ProductWithImages = ProductRow & {
-  product_images?: ProductImageRow[] | null;
+type ProductWithMedia = ProductRow & {
+  product_media?: ProductMediaRow[] | null;
 };
 
-function mapProductWithImages(row: ProductWithImages): Product {
-  const { product_images, ...product } = row;
-  return mapProductRow(product, product_images ?? []);
+function mapProductWithMedia(row: ProductWithMedia): Product {
+  const { product_media, ...product } = row;
+  return mapProductRow(product, product_media ?? []);
 }
 
-async function replaceProductImages(
+async function replaceProductMedia(
   productId: string,
-  images: ProductImage[],
+  media: ProductMedia[],
 ): Promise<void> {
   const supabase = createServerClient();
   const { error: delError } = await supabase
-    .from("product_images")
+    .from("product_media")
     .delete()
     .eq("product_id", productId);
   if (delError) {
-    throw new Error(`Failed to clear product images: ${delError.message}`);
+    throw new Error(`Failed to clear product media: ${delError.message}`);
   }
 
-  if (images.length === 0) return;
+  if (media.length === 0) return;
 
-  const rows = images.map((img, index) =>
-    imageToRow({
-      ...img,
-      id: img.id || `${productId}-img-${index}`,
+  const rows = media.map((item, index) =>
+    mediaToRow({
+      ...item,
+      id: item.id || `${productId}-media-${index}`,
       productId,
-      sortOrder: img.sortOrder ?? index,
+      sortOrder: item.sortOrder ?? index,
     }),
   );
 
-  const { error: insError } = await supabase
-    .from("product_images")
-    .insert(rows);
+  const { error: insError } = await supabase.from("product_media").insert(rows);
   if (insError) {
-    throw new Error(`Failed to insert product images: ${insError.message}`);
+    throw new Error(`Failed to insert product media: ${insError.message}`);
   }
 }
 
@@ -89,6 +89,46 @@ const IMAGE_EXT = new Set([
   "bmp",
 ]);
 const VIDEO_EXT = new Set(["mp4", "webm", "mov", "ogg", "m4v"]);
+const ALLOWED_IMAGE_MIME = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+  "image/svg+xml",
+  "image/bmp",
+]);
+
+const ALLOWED_VIDEO_MIME = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/ogg",
+  "video/x-m4v",
+]);
+
+function validateUploadFile(file: File): void {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(
+      `File "${file.name}" vượt quá ${MAX_UPLOAD_MB}MB (giới hạn upload)`,
+    );
+  }
+
+  const kind = mediaKindFromName(file.name);
+  if (kind === "other") {
+    throw new Error(`File "${file.name}" không phải ảnh hoặc video`);
+  }
+
+  if (file.type) {
+    if (kind === "image" && !ALLOWED_IMAGE_MIME.has(file.type)) {
+      throw new Error(`Định dạng ảnh không hỗ trợ: ${file.type}`);
+    }
+    if (kind === "video" && !ALLOWED_VIDEO_MIME.has(file.type)) {
+      throw new Error(`Định dạng video không hỗ trợ: ${file.type}`);
+    }
+  }
+}
+
 
 function mediaKindFromName(name: string): MediaKind {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
@@ -113,6 +153,8 @@ export async function uploadProductMedia(
   file: File,
   prefix = "media",
 ): Promise<string> {
+  validateUploadFile(file);
+
   const supabase = createServerClient();
   const kind = mediaKindFromName(file.name);
   const folder =
@@ -205,20 +247,20 @@ export async function getProducts(): Promise<Product[]> {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, product_images(*)")
+    .select("*, product_media(*)")
     .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch products: ${error.message}`);
   }
-  return ((data ?? []) as ProductWithImages[]).map(mapProductWithImages);
+  return ((data ?? []) as ProductWithMedia[]).map(mapProductWithMedia);
 }
 
 export async function getProduct(id: string): Promise<Product | undefined> {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, product_images(*)")
+    .select("*, product_media(*)")
     .eq("id", id)
     .maybeSingle();
 
@@ -226,7 +268,7 @@ export async function getProduct(id: string): Promise<Product | undefined> {
     throw new Error(`Failed to fetch product: ${error.message}`);
   }
   if (!data) return undefined;
-  return mapProductWithImages(data as ProductWithImages);
+  return mapProductWithMedia(data as ProductWithMedia);
 }
 
 export async function getBrands(): Promise<Brand[]> {
@@ -266,9 +308,9 @@ export async function getLeads(): Promise<Lead[]> {
 }
 
 export async function createProduct(
-  input: Omit<Product, "id">,
+  input: Omit<Product, "id"> & { id?: string },
 ): Promise<Product> {
-  const id = `prod-${Date.now()}`;
+  const id = input.id ?? `prod-${Date.now()}`;
   const supabase = createServerClient();
   const row = productToRow({ ...input, id });
 
@@ -282,15 +324,15 @@ export async function createProduct(
     throw new Error(`Failed to create product: ${error.message}`);
   }
 
-  const images = input.images.map((img, i) => ({
-    ...img,
-    id: `${id}-img-${i}`,
+  const media = input.media.map((item, i) => ({
+    ...item,
+    id: item.id || `${id}-media-${i}`,
     productId: id,
     sortOrder: i,
   }));
-  await replaceProductImages(id, images);
+  await replaceProductMedia(id, media);
 
-  return mapProductRow(data as ProductRow, images.map(imageToRow));
+  return mapProductRow(data as ProductRow, media.map(mediaToRow));
 }
 
 export async function updateProduct(
@@ -301,7 +343,7 @@ export async function updateProduct(
   if (!existing) return null;
 
   const merged: Product = { ...existing, ...input, id };
-  const { images, ...rest } = merged;
+  const { media, ...rest } = merged;
   const row = productToRow(rest);
 
   const supabase = createServerClient();
@@ -323,7 +365,6 @@ export async function updateProduct(
       specs: row.specs,
       is_published: row.is_published,
       description: row.description,
-      video_url: row.video_url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -334,28 +375,28 @@ export async function updateProduct(
     throw new Error(`Failed to update product: ${error.message}`);
   }
 
-  if (input.images) {
-    const normalized = input.images.map((img, i) => ({
-      ...img,
-      id: img.id || `${id}-img-${i}`,
+  if (input.media) {
+    const normalized = input.media.map((item, i) => ({
+      ...item,
+      id: item.id || `${id}-media-${i}`,
       productId: id,
-      sortOrder: img.sortOrder ?? i,
+      sortOrder: item.sortOrder ?? i,
     }));
-    await replaceProductImages(id, normalized);
-    return mapProductRow(data as ProductRow, normalized.map(imageToRow));
+    await replaceProductMedia(id, normalized);
+    return mapProductRow(data as ProductRow, normalized.map(mediaToRow));
   }
 
-  const { data: imageRows, error: imgError } = await supabase
-    .from("product_images")
+  const { data: mediaRows, error: mediaError } = await supabase
+    .from("product_media")
     .select("*")
     .eq("product_id", id)
     .order("sort_order");
 
-  if (imgError) {
-    throw new Error(`Failed to fetch product images: ${imgError.message}`);
+  if (mediaError) {
+    throw new Error(`Failed to fetch product media: ${mediaError.message}`);
   }
 
-  return mapProductRow(data as ProductRow, (imageRows ?? []) as ProductImageRow[]);
+  return mapProductRow(data as ProductRow, (mediaRows ?? []) as ProductMediaRow[]);
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
@@ -444,17 +485,29 @@ export async function deleteCategory(id: string): Promise<boolean> {
 }
 
 export async function getDashboardCounts() {
-  const [products, brands, leads] = await Promise.all([
-    getProducts(),
-    getBrands(),
-    getLeads(),
+  const supabase = createServerClient();
+
+  const [productsRes, publishedRes, brandsRes, leadsRes] = await Promise.all([
+    supabase.from("products").select("*", { count: "exact", head: true }),
+    supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("is_published", true),
+    supabase.from("brands").select("*", { count: "exact", head: true }),
+    supabase.from("leads").select("*", { count: "exact", head: true }),
   ]);
 
+  for (const res of [productsRes, publishedRes, brandsRes, leadsRes]) {
+    if (res.error) {
+      throw new Error(`Failed to count dashboard: ${res.error.message}`);
+    }
+  }
+
   return {
-    products: products.length,
-    published: products.filter((p) => p.isPublished).length,
-    brands: brands.length,
-    leads: leads.length,
+    products: productsRes.count ?? 0,
+    published: publishedRes.count ?? 0,
+    brands: brandsRes.count ?? 0,
+    leads: leadsRes.count ?? 0,
   };
 }
 

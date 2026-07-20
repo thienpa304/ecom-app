@@ -1,6 +1,6 @@
 -- Sample data matching packages/shared/src/seed.ts
 
-truncate table public.leads, public.product_images, public.products, public.brands, public.categories restart identity cascade;
+truncate table public.leads, public.product_media, public.products, public.brands, public.categories restart identity cascade;
 
 insert into public.categories (id, name, slug, parent_id, sort_order) values
   ('cat-may-xit-rua', 'Máy Xịt Rửa Áp Lực', 'may-xit-rua-ap-luc', null, 1),
@@ -214,27 +214,27 @@ insert into public.products (
   'Đầu phun xoay làm sạch khe gạch, bánh xe hiệu quả hơn đầu thẳng.'
 );
 
-insert into public.product_images (id, product_id, url, alt, sort_order) values
-  ('prod-dekton-dk-1400-img-0', 'prod-dekton-dk-1400', 'https://picsum.photos/seed/prod-dekton-dk-1400-0/800/800', 'Dekton DK-1400 mặt trước', 0),
-  ('prod-dekton-dk-1400-img-1', 'prod-dekton-dk-1400', 'https://picsum.photos/seed/prod-dekton-dk-1400-1/800/800', 'Dekton DK-1400 phụ kiện', 1),
-  ('prod-dekton-dk-1800-img-0', 'prod-dekton-dk-1800', 'https://picsum.photos/seed/prod-dekton-dk-1800-0/800/800', 'Dekton DK-1800', 0),
-  ('prod-dekton-dk-1800-img-1', 'prod-dekton-dk-1800', 'https://picsum.photos/seed/prod-dekton-dk-1800-1/800/800', 'Dekton DK-1800 đang sử dụng', 1),
-  ('prod-dekton-dk-2200-img-0', 'prod-dekton-dk-2200', 'https://picsum.photos/seed/prod-dekton-dk-2200-0/800/800', 'Dekton DK-2200', 0),
-  ('prod-dekton-dk-3000-img-0', 'prod-dekton-dk-3000', 'https://picsum.photos/seed/prod-dekton-dk-3000-0/800/800', 'Dekton DK-3000 Pro', 0),
-  ('prod-dekton-dk-3000-img-1', 'prod-dekton-dk-3000', 'https://picsum.photos/seed/prod-dekton-dk-3000-1/800/800', 'Dekton DK-3000 chi tiết', 1),
-  ('prod-dekton-dk-3500-img-0', 'prod-dekton-dk-3500', 'https://picsum.photos/seed/prod-dekton-dk-3500-0/800/800', 'Dekton DK-3500', 0),
-  ('prod-dekton-dk-mini-img-0', 'prod-dekton-dk-mini', 'https://picsum.photos/seed/prod-dekton-dk-mini-0/800/800', 'Dekton Mini DK-M20', 0),
-  ('prod-bosch-aquatak-110-img-0', 'prod-bosch-aquatak-110', 'https://picsum.photos/seed/prod-bosch-aquatak-110-0/800/800', 'Bosch EasyAquatak 110', 0),
-  ('prod-bosch-aquatak-110-img-1', 'prod-bosch-aquatak-110', 'https://picsum.photos/seed/prod-bosch-aquatak-110-1/800/800', 'Bosch EasyAquatak 110 hộp', 1),
-  ('prod-bosch-aquatak-150-img-0', 'prod-bosch-aquatak-150', 'https://picsum.photos/seed/prod-bosch-aquatak-150-0/800/800', 'Bosch UniversalAquatak 150', 0),
-  ('prod-karcher-k2-img-0', 'prod-karcher-k2', 'https://picsum.photos/seed/prod-karcher-k2-0/800/800', 'Kärcher K2 Compact', 0),
-  ('prod-karcher-k2-img-1', 'prod-karcher-k2', 'https://picsum.photos/seed/prod-karcher-k2-1/800/800', 'Kärcher K2 đang xịt', 1),
-  ('prod-karcher-k5-img-0', 'prod-karcher-k5', 'https://picsum.photos/seed/prod-karcher-k5-0/800/800', 'Kärcher K5 Premium', 0),
-  ('prod-dekton-dk-2500-img-0', 'prod-dekton-dk-2500', 'https://picsum.photos/seed/prod-dekton-dk-2500-0/800/800', 'Dekton DK-2500', 0),
-  ('prod-dekton-dk-legacy-img-0', 'prod-dekton-dk-legacy', 'https://picsum.photos/seed/prod-dekton-dk-legacy-0/800/800', 'Dekton DK-1000', 0),
-  ('prod-acc-sung-phun-img-0', 'prod-acc-sung-phun', 'https://picsum.photos/seed/prod-acc-sung-phun-0/800/800', 'Súng phun Dekton', 0),
-  ('prod-acc-day-cao-ap-img-0', 'prod-acc-day-cao-ap', 'https://picsum.photos/seed/prod-acc-day-cao-ap-0/800/800', 'Dây cao áp 10m', 0),
-  ('prod-acc-voi-xoay-img-0', 'prod-acc-voi-xoay', 'https://picsum.photos/seed/prod-acc-voi-xoay-0/800/800', 'Đầu phun xoay 360', 0);
+insert into public.product_media (id, product_id, kind, url, alt, sort_order, storage_path, poster_url) values
+  ('prod-dekton-dk-1400-media-0', 'prod-dekton-dk-1400', 'image', 'https://picsum.photos/seed/prod-dekton-dk-1400-0/800/800', 'Dekton DK-1400 mặt trước', 0, null, null),
+  ('prod-dekton-dk-1400-media-1', 'prod-dekton-dk-1400', 'image', 'https://picsum.photos/seed/prod-dekton-dk-1400-1/800/800', 'Dekton DK-1400 phụ kiện', 1, null, null),
+  ('prod-dekton-dk-1800-media-0', 'prod-dekton-dk-1800', 'image', 'https://picsum.photos/seed/prod-dekton-dk-1800-0/800/800', 'Dekton DK-1800', 0, null, null),
+  ('prod-dekton-dk-1800-media-1', 'prod-dekton-dk-1800', 'image', 'https://picsum.photos/seed/prod-dekton-dk-1800-1/800/800', 'Dekton DK-1800 đang sử dụng', 1, null, null),
+  ('prod-dekton-dk-2200-media-0', 'prod-dekton-dk-2200', 'image', 'https://picsum.photos/seed/prod-dekton-dk-2200-0/800/800', 'Dekton DK-2200', 0, null, null),
+  ('prod-dekton-dk-3000-media-0', 'prod-dekton-dk-3000', 'image', 'https://picsum.photos/seed/prod-dekton-dk-3000-0/800/800', 'Dekton DK-3000 Pro', 0, null, null),
+  ('prod-dekton-dk-3000-media-1', 'prod-dekton-dk-3000', 'image', 'https://picsum.photos/seed/prod-dekton-dk-3000-1/800/800', 'Dekton DK-3000 chi tiết', 1, null, null),
+  ('prod-dekton-dk-3500-media-0', 'prod-dekton-dk-3500', 'image', 'https://picsum.photos/seed/prod-dekton-dk-3500-0/800/800', 'Dekton DK-3500', 0, null, null),
+  ('prod-dekton-dk-mini-media-0', 'prod-dekton-dk-mini', 'image', 'https://picsum.photos/seed/prod-dekton-dk-mini-0/800/800', 'Dekton Mini DK-M20', 0, null, null),
+  ('prod-bosch-aquatak-110-media-0', 'prod-bosch-aquatak-110', 'image', 'https://picsum.photos/seed/prod-bosch-aquatak-110-0/800/800', 'Bosch EasyAquatak 110', 0, null, null),
+  ('prod-bosch-aquatak-110-media-1', 'prod-bosch-aquatak-110', 'image', 'https://picsum.photos/seed/prod-bosch-aquatak-110-1/800/800', 'Bosch EasyAquatak 110 hộp', 1, null, null),
+  ('prod-bosch-aquatak-150-media-0', 'prod-bosch-aquatak-150', 'image', 'https://picsum.photos/seed/prod-bosch-aquatak-150-0/800/800', 'Bosch UniversalAquatak 150', 0, null, null),
+  ('prod-karcher-k2-media-0', 'prod-karcher-k2', 'image', 'https://picsum.photos/seed/prod-karcher-k2-0/800/800', 'Kärcher K2 Compact', 0, null, null),
+  ('prod-karcher-k2-media-1', 'prod-karcher-k2', 'image', 'https://picsum.photos/seed/prod-karcher-k2-1/800/800', 'Kärcher K2 đang xịt', 1, null, null),
+  ('prod-karcher-k5-media-0', 'prod-karcher-k5', 'image', 'https://picsum.photos/seed/prod-karcher-k5-0/800/800', 'Kärcher K5 Premium', 0, null, null),
+  ('prod-dekton-dk-2500-media-0', 'prod-dekton-dk-2500', 'image', 'https://picsum.photos/seed/prod-dekton-dk-2500-0/800/800', 'Dekton DK-2500', 0, null, null),
+  ('prod-dekton-dk-legacy-media-0', 'prod-dekton-dk-legacy', 'image', 'https://picsum.photos/seed/prod-dekton-dk-legacy-0/800/800', 'Dekton DK-1000', 0, null, null),
+  ('prod-acc-sung-phun-media-0', 'prod-acc-sung-phun', 'image', 'https://picsum.photos/seed/prod-acc-sung-phun-0/800/800', 'Súng phun Dekton', 0, null, null),
+  ('prod-acc-day-cao-ap-media-0', 'prod-acc-day-cao-ap', 'image', 'https://picsum.photos/seed/prod-acc-day-cao-ap-0/800/800', 'Dây cao áp 10m', 0, null, null),
+  ('prod-acc-voi-xoay-media-0', 'prod-acc-voi-xoay', 'image', 'https://picsum.photos/seed/prod-acc-voi-xoay-0/800/800', 'Đầu phun xoay 360', 0, null, null);
 
 insert into public.leads (id, product_id, name, phone, note, created_at) values
   ('lead-001', 'prod-dekton-dk-1800', 'Nguyễn Văn An', '0901234567', 'Muốn tư vấn máy rửa xe máy + sân nhà', '2026-07-18T09:30:00.000Z'),

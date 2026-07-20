@@ -20,13 +20,21 @@ export const brandSchema = z.object({
   slug: z.string(),
 });
 
-export const productImageSchema = z.object({
+export const productMediaKindSchema = z.enum(["image", "video", "embed"]);
+
+export const productMediaSchema = z.object({
   id: z.string(),
   productId: z.string(),
+  kind: productMediaKindSchema,
   url: z.string().url(),
   alt: z.string(),
   sortOrder: z.number().int(),
+  storagePath: z.string().nullable().optional(),
+  posterUrl: z.string().nullable().optional(),
 });
+
+/** @deprecated alias — use productMediaSchema */
+export const productImageSchema = productMediaSchema;
 
 export const productSchema = z.object({
   id: z.string(),
@@ -45,9 +53,7 @@ export const productSchema = z.object({
   specs: z.record(z.string(), z.string()),
   isPublished: z.boolean(),
   description: z.string().optional(),
-  /** YouTube, TikTok, or direct mp4/webm URL */
-  videoUrl: z.string().nullable().optional(),
-  images: z.array(productImageSchema),
+  media: z.array(productMediaSchema),
 });
 
 export const leadSchema = z.object({
@@ -79,3 +85,56 @@ export const siteSettingsUpdateSchema = siteSettingsSchema.omit({
   id: true,
   updatedAt: true,
 });
+
+const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const slugInputSchema = z
+  .string()
+  .trim()
+  .min(1, "Slug không được để trống")
+  .regex(slugPattern, "Slug chỉ gồm chữ thường, số và dấu gạch ngang");
+
+export const brandInputSchema = z.object({
+  name: z.string().trim().min(1, "Nhập tên thương hiệu"),
+  slug: slugInputSchema,
+});
+
+export const categoryInputSchema = z.object({
+  name: z.string().trim().min(1, "Nhập tên danh mục"),
+  slug: slugInputSchema,
+  parentId: z.string().nullable(),
+  sortOrder: z.number().int().nonnegative(),
+});
+
+export const productMediaDraftSchema = z.object({
+  id: z.string().optional(),
+  kind: productMediaKindSchema.optional(),
+  url: z.string().url("URL media không hợp lệ"),
+  alt: z.string().optional(),
+  storagePath: z.string().nullable().optional(),
+  posterUrl: z.string().nullable().optional(),
+});
+
+export const productFormSchema = z
+  .object({
+    name: z.string().trim().min(1, "Nhập tên sản phẩm"),
+    slug: slugInputSchema,
+    model: z.string().trim().min(1, "Nhập model"),
+    brandId: z.string().min(1, "Chọn thương hiệu"),
+    categoryId: z.string().min(1, "Chọn danh mục"),
+    price: z.number().finite().nonnegative("Giá phải >= 0"),
+    salePrice: z.number().finite().nonnegative().nullable(),
+    stockStatus: stockStatusSchema,
+    soldCount: z.number().int().nonnegative(),
+    warranty: z.string(),
+    origin: z.string(),
+    motor: z.string().nullable(),
+    specs: z.record(z.string(), z.string()),
+    isPublished: z.boolean(),
+    description: z.string().optional(),
+    media: z.array(productMediaDraftSchema),
+  })
+  .refine((d) => d.salePrice == null || d.salePrice <= d.price, {
+    message: "Giá khuyến mãi phải nhỏ hơn hoặc bằng giá gốc",
+    path: ["salePrice"],
+  });

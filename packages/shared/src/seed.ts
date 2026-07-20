@@ -37,17 +37,20 @@ export const seedBrands: Brand[] = [
   { id: "brand-karcher", name: "Kärcher", slug: "karcher" },
 ];
 
-function img(
+function mediaImg(
   productId: string,
   index: number,
   alt: string,
-): Product["images"][number] {
+): Product["media"][number] {
   return {
-    id: `${productId}-img-${index}`,
+    id: `${productId}-media-${index}`,
     productId,
+    kind: "image",
     url: `https://picsum.photos/seed/${productId}-${index}/800/800`,
     alt,
     sortOrder: index,
+    storagePath: null,
+    posterUrl: null,
   };
 }
 
@@ -76,9 +79,9 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Máy xịt rửa áp lực Dekton DK-1400 phù hợp vệ sinh xe máy, sân nhà, ban công. Motor cảm ứng bền, vận hành êm.",
-    images: [
-      img("prod-dekton-dk-1400", 0, "Dekton DK-1400 mặt trước"),
-      img("prod-dekton-dk-1400", 1, "Dekton DK-1400 phụ kiện"),
+    media: [
+      mediaImg("prod-dekton-dk-1400", 0, "Dekton DK-1400 mặt trước"),
+      mediaImg("prod-dekton-dk-1400", 1, "Dekton DK-1400 phụ kiện"),
     ],
   },
   {
@@ -105,9 +108,9 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Dekton DK-1800 công suất cao hơn, rửa xe ô tô và sân vườn hiệu quả, kèm đầu phun đa chế độ.",
-    images: [
-      img("prod-dekton-dk-1800", 0, "Dekton DK-1800"),
-      img("prod-dekton-dk-1800", 1, "Dekton DK-1800 đang sử dụng"),
+    media: [
+      mediaImg("prod-dekton-dk-1800", 0, "Dekton DK-1800"),
+      mediaImg("prod-dekton-dk-1800", 1, "Dekton DK-1800 đang sử dụng"),
     ],
   },
   {
@@ -134,7 +137,7 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "DK-2200 dòng gia đình cao cấp, áp lực mạnh, dây dài tiện di chuyển quanh nhà.",
-    images: [img("prod-dekton-dk-2200", 0, "Dekton DK-2200")],
+    media: [mediaImg("prod-dekton-dk-2200", 0, "Dekton DK-2200")],
   },
   {
     id: "prod-dekton-dk-3000",
@@ -160,9 +163,9 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Dekton DK-3000 Pro dành cho gara, quán rửa xe nhỏ — áp lực cao, motor công nghiệp.",
-    images: [
-      img("prod-dekton-dk-3000", 0, "Dekton DK-3000 Pro"),
-      img("prod-dekton-dk-3000", 1, "Dekton DK-3000 chi tiết"),
+    media: [
+      mediaImg("prod-dekton-dk-3000", 0, "Dekton DK-3000 Pro"),
+      mediaImg("prod-dekton-dk-3000", 1, "Dekton DK-3000 chi tiết"),
     ],
   },
   {
@@ -189,7 +192,7 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "DK-3500 công suất lớn cho tiệm rửa xe, vệ sinh nhà xưởng nhẹ.",
-    images: [img("prod-dekton-dk-3500", 0, "Dekton DK-3500")],
+    media: [mediaImg("prod-dekton-dk-3500", 0, "Dekton DK-3500")],
   },
   {
     id: "prod-dekton-dk-mini",
@@ -214,7 +217,7 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Máy xịt cầm tay pin sạc Dekton Mini — rửa xe máy, kính, ban công không cần ổ điện.",
-    images: [img("prod-dekton-dk-mini", 0, "Dekton Mini DK-M20")],
+    media: [mediaImg("prod-dekton-dk-mini", 0, "Dekton Mini DK-M20")],
   },
   {
     id: "prod-bosch-aquatak-110",
@@ -240,9 +243,9 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Bosch EasyAquatak 110 gọn nhẹ, thương hiệu Đức tin cậy cho hộ gia đình.",
-    images: [
-      img("prod-bosch-aquatak-110", 0, "Bosch EasyAquatak 110"),
-      img("prod-bosch-aquatak-110", 1, "Bosch EasyAquatak 110 hộp"),
+    media: [
+      mediaImg("prod-bosch-aquatak-110", 0, "Bosch EasyAquatak 110"),
+      mediaImg("prod-bosch-aquatak-110", 1, "Bosch EasyAquatak 110 hộp"),
     ],
   },
   {
@@ -269,7 +272,7 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "UniversalAquatak 150 áp lực mạnh, phù hợp rửa xe SUV và sân rộng.",
-    images: [img("prod-bosch-aquatak-150", 0, "Bosch UniversalAquatak 150")],
+    media: [mediaImg("prod-bosch-aquatak-150", 0, "Bosch UniversalAquatak 150")],
   },
   {
     id: "prod-karcher-k2",
@@ -295,9 +298,9 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Kärcher K2 Compact siêu gọn, lý tưởng căn hộ / nhà phố nhỏ.",
-    images: [
-      img("prod-karcher-k2", 0, "Kärcher K2 Compact"),
-      img("prod-karcher-k2", 1, "Kärcher K2 đang xịt"),
+    media: [
+      mediaImg("prod-karcher-k2", 0, "Kärcher K2 Compact"),
+      mediaImg("prod-karcher-k2", 1, "Kärcher K2 đang xịt"),
     ],
   },
   {
@@ -324,7 +327,7 @@ export const seedProducts: Product[] = [
     isPublished: true,
     description:
       "Kärcher K5 Premium dòng cao cấp, điều chỉnh áp lực thông minh, bền bỉ.",
-    images: [img("prod-karcher-k5", 0, "Kärcher K5 Premium")],
+    media: [mediaImg("prod-karcher-k5", 0, "Kärcher K5 Premium")],
   },
   {
     id: "prod-dekton-dk-2500",
@@ -348,7 +351,7 @@ export const seedProducts: Product[] = [
     },
     isPublished: true,
     description: "DK-2500 tạm hết hàng — đặt trước để nhận khi về kho.",
-    images: [img("prod-dekton-dk-2500", 0, "Dekton DK-2500")],
+    media: [mediaImg("prod-dekton-dk-2500", 0, "Dekton DK-2500")],
   },
   {
     id: "prod-dekton-dk-legacy",
@@ -371,7 +374,7 @@ export const seedProducts: Product[] = [
     },
     isPublished: false,
     description: "Model cũ đã ngừng sản xuất — chỉ hiển thị nội bộ admin.",
-    images: [img("prod-dekton-dk-legacy", 0, "Dekton DK-1000")],
+    media: [mediaImg("prod-dekton-dk-legacy", 0, "Dekton DK-1000")],
   },
   {
     id: "prod-acc-sung-phun",
@@ -394,7 +397,7 @@ export const seedProducts: Product[] = [
     },
     isPublished: true,
     description: "Súng phun thay thế / nâng cấp cho máy xịt Dekton và tương thích.",
-    images: [img("prod-acc-sung-phun", 0, "Súng phun Dekton")],
+    media: [mediaImg("prod-acc-sung-phun", 0, "Súng phun Dekton")],
   },
   {
     id: "prod-acc-day-cao-ap",
@@ -417,7 +420,7 @@ export const seedProducts: Product[] = [
     },
     isPublished: true,
     description: "Dây cao áp gia cố, chống xoắn, dùng cho máy gia đình và bán công nghiệp.",
-    images: [img("prod-acc-day-cao-ap", 0, "Dây cao áp 10m")],
+    media: [mediaImg("prod-acc-day-cao-ap", 0, "Dây cao áp 10m")],
   },
   {
     id: "prod-acc-voi-xoay",
@@ -440,7 +443,7 @@ export const seedProducts: Product[] = [
     },
     isPublished: true,
     description: "Đầu phun xoay làm sạch khe gạch, bánh xe hiệu quả hơn đầu thẳng.",
-    images: [img("prod-acc-voi-xoay", 0, "Đầu phun xoay 360")],
+    media: [mediaImg("prod-acc-voi-xoay", 0, "Đầu phun xoay 360")],
   },
 ];
 

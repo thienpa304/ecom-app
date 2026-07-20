@@ -5,19 +5,48 @@ import {
   ArrowRightOutlined,
   DeleteOutlined,
   FolderOpenOutlined,
+  LinkOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Empty, Input, Space, Typography } from "antd";
+import type { ProductMedia } from "@ecom/shared";
+import { inferMediaKindFromUrl } from "@ecom/shared";
+import { Button, Card, Empty, Input, Space, Tag, Typography } from "antd";
 import { useState } from "react";
 import { MediaLibraryModal } from "./MediaLibraryModal";
 
-type ImageFieldProps = {
-  value: string[];
-  onChange: (urls: string[]) => void;
+/** Draft media item before save (no productId required). */
+export type MediaDraftItem = {
+  id?: string;
+  kind: ProductMedia["kind"];
+  url: string;
+  alt: string;
+  storagePath?: string | null;
+  posterUrl?: string | null;
 };
 
-export function ProductImagesField({ value, onChange }: ImageFieldProps) {
+type Props = {
+  value: MediaDraftItem[];
+  onChange: (items: MediaDraftItem[]) => void;
+};
+
+const KIND_LABEL: Record<ProductMedia["kind"], string> = {
+  image: "Ảnh",
+  video: "Video",
+  embed: "Embed",
+};
+
+function kindFromAsset(
+  assetKind: "image" | "video" | "other",
+  url: string,
+): ProductMedia["kind"] {
+  if (assetKind === "image") return "image";
+  if (assetKind === "video") return "video";
+  return inferMediaKindFromUrl(url);
+}
+
+export function ProductMediaField({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
+  const [embedInput, setEmbedInput] = useState("");
 
   function removeAt(index: number) {
     onChange(value.filter((_, i) => i !== index));
@@ -33,6 +62,29 @@ export function ProductImagesField({ value, onChange }: ImageFieldProps) {
     onChange(next);
   }
 
+  function addEmbedUrl() {
+    const url = embedInput.trim();
+    if (!url) return;
+    const kind = inferMediaKindFromUrl(url);
+    onChange([
+      ...value,
+      {
+        kind: kind === "image" ? "embed" : kind,
+        url,
+        alt: kind === "image" ? "Media" : "Video sản phẩm",
+        storagePath: null,
+        posterUrl: null,
+      },
+    ]);
+    setEmbedInput("");
+  }
+
+  function updateAlt(index: number, alt: string) {
+    const next = [...value];
+    next[index] = { ...next[index]!, alt };
+    onChange(next);
+  }
+
   return (
     <div>
       <Space style={{ marginBottom: 12 }} wrap>
@@ -44,7 +96,8 @@ export function ProductImagesField({ value, onChange }: ImageFieldProps) {
           Chọn từ thư viện
         </Button>
         <Typography.Text type="secondary">
-          {value.length} ảnh — kéo thứ tự bằng mũi tên (ảnh đầu = ảnh chính)
+          {value.length} mục — sắp xếp chung ảnh & video (mục đầu = ảnh chính
+          nếu là ảnh)
         </Typography.Text>
       </Space>
 
@@ -61,47 +114,91 @@ export function ProductImagesField({ value, onChange }: ImageFieldProps) {
         >
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chưa có ảnh — bấm để mở thư viện media"
+            description="Chưa có media — bấm để mở thư viện"
           >
             <Button icon={<PlusOutlined />} type="dashed">
-              Thêm ảnh
+              Thêm media
             </Button>
           </Empty>
         </Card>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-            gap: 10,
-          }}
-        >
-          {value.map((url, index) => (
-            <Card
-              key={`${url}-${index}`}
-              size="small"
-              styles={{ body: { padding: 8 } }}
-              cover={
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={url}
-                  alt={`Ảnh ${index + 1}`}
-                  style={{
-                    aspectRatio: "1",
-                    objectFit: "cover",
-                    width: "100%",
-                    display: "block",
-                  }}
-                />
-              }
-            >
-              <Space
-                size={4}
-                style={{ width: "100%", justifyContent: "space-between" }}
+        <div className="space-y-2">
+          {value.map((item, index) => (
+            <Card key={`${item.url}-${index}`} size="small">
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
               >
-                <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                  {index === 0 ? "Chính" : `#${index + 1}`}
-                </Typography.Text>
+                <div
+                  style={{
+                    width: 88,
+                    height: 88,
+                    flexShrink: 0,
+                    borderRadius: 6,
+                    overflow: "hidden",
+                    background: "#f5f5f5",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.kind === "image" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.url}
+                      alt={item.alt}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : item.kind === "video" ? (
+                    <video
+                      src={item.url}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        background: "#000",
+                      }}
+                    />
+                  ) : (
+                    <LinkOutlined style={{ fontSize: 28, color: "#999" }} />
+                  )}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Space size={4} style={{ marginBottom: 6 }}>
+                    <Tag>{KIND_LABEL[item.kind]}</Tag>
+                    {index === 0 && item.kind === "image" ? (
+                      <Tag color="blue">Ảnh chính</Tag>
+                    ) : (
+                      <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                        #{index + 1}
+                      </Typography.Text>
+                    )}
+                  </Space>
+                  <Input
+                    size="small"
+                    value={item.alt}
+                    onChange={(e) => updateAlt(index, e.target.value)}
+                    placeholder="Alt text"
+                    style={{ marginBottom: 6 }}
+                  />
+                  <Typography.Paragraph
+                    type="secondary"
+                    ellipsis={{ rows: 1 }}
+                    style={{ marginBottom: 0, fontSize: 11 }}
+                    copyable
+                  >
+                    {item.url}
+                  </Typography.Paragraph>
+                </div>
+
                 <Space size={0}>
                   <Button
                     type="text"
@@ -125,139 +222,60 @@ export function ProductImagesField({ value, onChange }: ImageFieldProps) {
                     onClick={() => removeAt(index)}
                   />
                 </Space>
-              </Space>
+              </div>
             </Card>
           ))}
-          <Card
-            size="small"
-            style={{
-              borderStyle: "dashed",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 140,
-            }}
-            styles={{
-              body: {
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "100%",
-              },
-            }}
+
+          <Button
+            type="dashed"
+            block
+            icon={<PlusOutlined />}
             onClick={() => setOpen(true)}
           >
-            <Button type="dashed" icon={<PlusOutlined />}>
-              Thêm
-            </Button>
-          </Card>
+            Thêm từ thư viện
+          </Button>
         </div>
       )}
 
-      <MediaLibraryModal
-        open={open}
-        onClose={() => setOpen(false)}
-        accept="image"
-        multiple
-        title="Chọn ảnh sản phẩm"
-        initialSelectedUrls={value}
-        onSelect={(assets) => {
-          // merge newly selected, keep previous order for overlaps, append new
-          const prev = value.filter((u) => assets.some((a) => a.url === u));
-          const added = assets
-            .map((a) => a.url)
-            .filter((u) => !prev.includes(u));
-          onChange([...prev, ...added]);
-        }}
-      />
-    </div>
-  );
-}
-
-type VideoFieldProps = {
-  value: string;
-  onChange: (url: string) => void;
-};
-
-export function ProductVideoField({ value, onChange }: VideoFieldProps) {
-  const [open, setOpen] = useState(false);
-  const isFile =
-    Boolean(value) &&
-    (/\/storage\/v1\/object\/public\//i.test(value) ||
-      /\.(mp4|webm|mov|ogg)(\?|$)/i.test(value));
-
-  return (
-    <div>
-      <Space style={{ marginBottom: 12 }} wrap>
-        <Button
-          type="primary"
-          icon={<FolderOpenOutlined />}
-          onClick={() => setOpen(true)}
-        >
-          Chọn video từ thư viện
-        </Button>
-        {value ? (
-          <Button danger type="link" onClick={() => onChange("")}>
-            Gỡ video
-          </Button>
-        ) : null}
-      </Space>
-
-      {value ? (
-        <Card size="small" styles={{ body: { padding: 8 } }}>
-          {isFile ? (
-            <video
-              src={value}
-              controls
-              style={{
-                width: "100%",
-                maxHeight: 280,
-                background: "#000",
-                borderRadius: 6,
-              }}
-            />
-          ) : (
-            <Typography.Paragraph style={{ marginBottom: 8 }} copyable>
-              {value}
-            </Typography.Paragraph>
-          )}
-        </Card>
-      ) : (
-        <Card
-          size="small"
-          style={{ borderStyle: "dashed", cursor: "pointer" }}
-          onClick={() => setOpen(true)}
-        >
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chưa có video — chọn từ thư viện hoặc dán link bên dưới"
-          />
-        </Card>
-      )}
-
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 16 }}>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
           Hoặc dán link YouTube / TikTok / mp4
         </Typography.Text>
-        <Input
-          style={{ marginTop: 6 }}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="https://www.youtube.com/watch?v=..."
-          allowClear
-        />
+        <Space.Compact style={{ width: "100%", marginTop: 6 }}>
+          <Input
+            value={embedInput}
+            onChange={(e) => setEmbedInput(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            onPressEnter={addEmbedUrl}
+          />
+          <Button icon={<LinkOutlined />} onClick={addEmbedUrl}>
+            Thêm
+          </Button>
+        </Space.Compact>
       </div>
 
       <MediaLibraryModal
         open={open}
         onClose={() => setOpen(false)}
-        accept="video"
-        multiple={false}
-        title="Chọn video sản phẩm"
-        initialSelectedUrls={value ? [value] : []}
+        accept="all"
+        multiple
+        title="Chọn media sản phẩm"
+        initialSelectedUrls={value.map((m) => m.url)}
         onSelect={(assets) => {
-          onChange(assets[0]?.url ?? "");
+          const prev = value.filter((m) => assets.some((a) => a.url === m.url));
+          const added = assets
+            .filter((a) => !prev.some((m) => m.url === a.url))
+            .map((a) => ({
+              kind: kindFromAsset(a.kind, a.url),
+              url: a.url,
+              alt:
+                a.kind === "video"
+                  ? "Video sản phẩm"
+                  : `Ảnh ${value.length + 1}`,
+              storagePath: a.path,
+              posterUrl: null,
+            }));
+          onChange([...prev, ...added]);
         }}
       />
     </div>

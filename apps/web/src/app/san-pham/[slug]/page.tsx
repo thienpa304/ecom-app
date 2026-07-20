@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { STOCK_STATUS } from "@ecom/shared";
+import { STOCK_STATUS, primaryImage } from "@ecom/shared";
 import { JsonLd } from "@/components/JsonLd";
 import { LeadForm } from "@/components/LeadForm";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -46,7 +46,7 @@ export async function generateMetadata({
     product.description ??
     `${product.name} — model ${product.model}. Liên hệ ${settings.siteName}.`;
   const path = `/san-pham/${product.slug}`;
-  const image = product.images[0]?.url;
+  const image = primaryImage(product)?.url;
 
   return {
     title: product.name,
@@ -63,7 +63,7 @@ export async function generateMetadata({
             images: [
               {
                 url: image,
-                alt: product.images[0]?.alt || product.name,
+                alt: primaryImage(product)?.alt || product.name,
               },
             ],
           }
@@ -144,11 +144,7 @@ export default async function ProductDetailPage({
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <ProductGallery
-          images={product.images}
-          name={product.name}
-          videoUrl={product.videoUrl}
-        />
+        <ProductGallery media={product.media} name={product.name} />
 
         <div className="space-y-5">
           {brand && (

@@ -28,6 +28,10 @@ export const STOCK_STATUS: Record<
   discontinued: { value: "discontinued", labelVi: "Ngừng kinh doanh" },
 };
 
+/** Max upload size for admin media (Server Actions body limit). */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+export const MAX_UPLOAD_MB = 10;
+
 export const SORT_OPTIONS = [
   { value: "price_asc", labelVi: "Giá tăng dần" },
   { value: "price_desc", labelVi: "Giá giảm dần" },

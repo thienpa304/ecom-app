@@ -15,7 +15,7 @@ import {
   type Lead,
   type LeadRow,
   type Product,
-  type ProductImageRow,
+  type ProductMediaRow,
   type ProductRow,
   type SiteSettings,
   type SiteSettingsRow,
@@ -50,8 +50,8 @@ export type ListProductsResult = {
   totalPages: number;
 };
 
-type ProductWithImages = ProductRow & {
-  product_images?: ProductImageRow[] | null;
+type ProductWithMedia = ProductRow & {
+  product_media?: ProductMediaRow[] | null;
 };
 
 const REVALIDATE_SECONDS = 60;
@@ -83,10 +83,10 @@ function normalizeSlugs(value?: string | string[]): string[] {
   return arr.map((s) => s.trim()).filter(Boolean);
 }
 
-function mapRows(data: ProductWithImages[] | null | undefined): Product[] {
-  return ((data ?? []) as ProductWithImages[]).map((row) => {
-    const { product_images, ...product } = row;
-    return mapProductRow(product, product_images ?? []);
+function mapRows(data: ProductWithMedia[] | null | undefined): Product[] {
+  return ((data ?? []) as ProductWithMedia[]).map((row) => {
+    const { product_media, ...product } = row;
+    return mapProductRow(product, product_media ?? []);
   });
 }
 
@@ -181,7 +181,7 @@ export async function getProductBySlug(
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, product_images(*)")
+    .select("*, product_media(*)")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
@@ -190,7 +190,7 @@ export async function getProductBySlug(
     throw new Error(`Failed to fetch product: ${error.message}`);
   }
   if (!data) return undefined;
-  return mapRows([data as ProductWithImages])[0];
+  return mapRows([data as ProductWithMedia])[0];
 }
 
 export async function listPublishedProductSlugs(): Promise<string[]> {
@@ -245,7 +245,7 @@ async function queryListProducts(
   const supabase = createServerClient();
   let query = supabase
     .from("products")
-    .select("*, product_images(*)", { count: "exact" })
+    .select("*, product_media(*)", { count: "exact" })
     .eq("is_published", true);
 
   if (brandIds.length === 1) {
@@ -286,7 +286,7 @@ async function queryListProducts(
   const page = Math.min(requestedPage, totalPages);
 
   return {
-    items: mapRows(data as ProductWithImages[]),
+    items: mapRows(data as ProductWithMedia[]),
     total,
     page,
     pageSize,
@@ -317,7 +317,7 @@ export async function listProducts(
     q: params.q?.trim() || undefined,
   };
 
-  const cacheKey = JSON.stringify(normalized);
+  const cacheKey = JSON.stringify({ v: 2, ...normalized });
   return unstable_cache(
     () => queryListProducts(normalized),
     ["list-products", cacheKey],

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { STOCK_STATUS, type Product } from "@ecom/shared";
+import { STOCK_STATUS, primaryImage, type Product } from "@ecom/shared";
 import { discountPercent, formatVnd } from "@/lib/format";
 
 type Props = {
@@ -15,7 +15,7 @@ const PLACEHOLDER = "/placeholder.svg";
 export function ProductCard({ product, brandName, priority = false }: Props) {
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
-  const image = product.images[0];
+  const image = primaryImage(product);
   const src = image?.url || PLACEHOLDER;
   const alt = image?.alt || product.name;
   const specEntries = Object.entries(product.specs).slice(0, 2);

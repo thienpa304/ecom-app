@@ -1,4 +1,5 @@
 import type { Brand, Category, Product, SiteSettings } from "@ecom/shared";
+import { imageMedia } from "@ecom/shared";
 import { absoluteUrl } from "./site";
 
 const AVAILABILITY: Record<Product["stockStatus"], string> = {
@@ -37,7 +38,7 @@ export function productJsonLd(
     product.salePrice != null && product.salePrice < product.price
       ? product.salePrice
       : product.price;
-  const images = product.images.map((i) => i.url).filter(Boolean);
+  const images = imageMedia(product).map((i) => i.url).filter(Boolean);
 
   return {
     "@context": "https://schema.org",
