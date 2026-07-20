@@ -5,10 +5,6 @@ import {
   mapLeadRow,
   mapProductRow,
   productToRow,
-  seedBrands,
-  seedCategories,
-  seedLeads,
-  seedProducts,
   type Brand,
   type BrandRow,
   type Category,
@@ -25,36 +21,9 @@ import {
   createServerClient,
 } from "./supabase";
 
-const useMock = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
-type Store = {
-  products: Product[];
-  brands: Brand[];
-  categories: Category[];
-  leads: Lead[];
-};
-
 type ProductWithImages = ProductRow & {
   product_images?: ProductImageRow[] | null;
 };
-
-const globalForStore = globalThis as unknown as { __ecomAdminStore?: Store };
-
-function createStore(): Store {
-  return {
-    products: structuredClone(seedProducts),
-    brands: structuredClone(seedBrands),
-    categories: structuredClone(seedCategories),
-    leads: structuredClone(seedLeads),
-  };
-}
-
-function getStore(): Store {
-  if (!globalForStore.__ecomAdminStore) {
-    globalForStore.__ecomAdminStore = createStore();
-  }
-  return globalForStore.__ecomAdminStore;
-}
 
 function mapProductWithImages(row: ProductWithImages): Product {
   const { product_images, ...product } = row;
@@ -95,12 +64,6 @@ async function replaceProductImages(
 
 /** Upload a file to the public `product-images` bucket; returns public URL. */
 export async function uploadProductImage(file: File): Promise<string> {
-  if (useMock) {
-    // Mock: return a deterministic placeholder URL
-    const seed = `${Date.now()}-${file.name}`;
-    return `https://picsum.photos/seed/${encodeURIComponent(seed)}/800/800`;
-  }
-
   const supabase = createServerClient();
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -124,10 +87,6 @@ export async function uploadProductImage(file: File): Promise<string> {
 }
 
 export async function getProducts(): Promise<Product[]> {
-  if (useMock) {
-    return getStore().products;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
@@ -141,10 +100,6 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProduct(id: string): Promise<Product | undefined> {
-  if (useMock) {
-    return getStore().products.find((p) => p.id === id);
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
@@ -160,10 +115,6 @@ export async function getProduct(id: string): Promise<Product | undefined> {
 }
 
 export async function getBrands(): Promise<Brand[]> {
-  if (useMock) {
-    return getStore().brands;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("brands")
@@ -176,10 +127,6 @@ export async function getBrands(): Promise<Brand[]> {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  if (useMock) {
-    return getStore().categories;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("categories")
@@ -192,10 +139,6 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getLeads(): Promise<Lead[]> {
-  if (useMock) {
-    return getStore().leads;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("leads")
@@ -210,12 +153,6 @@ export async function getLeads(): Promise<Lead[]> {
 export async function createProduct(
   input: Omit<Product, "id">,
 ): Promise<Product> {
-  if (useMock) {
-    const product: Product = { ...input, id: `prod-${Date.now()}` };
-    getStore().products.unshift(product);
-    return product;
-  }
-
   const id = `prod-${Date.now()}`;
   const supabase = createServerClient();
   const row = productToRow({ ...input, id });
@@ -245,14 +182,6 @@ export async function updateProduct(
   id: string,
   input: Partial<Product>,
 ): Promise<Product | null> {
-  if (useMock) {
-    const store = getStore();
-    const idx = store.products.findIndex((p) => p.id === id);
-    if (idx < 0) return null;
-    store.products[idx] = { ...store.products[idx], ...input, id };
-    return store.products[idx];
-  }
-
   const existing = await getProduct(id);
   if (!existing) return null;
 
@@ -314,13 +243,6 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  if (useMock) {
-    const store = getStore();
-    const before = store.products.length;
-    store.products = store.products.filter((p) => p.id !== id);
-    return store.products.length < before;
-  }
-
   const supabase = createServerClient();
   const { error, count } = await supabase
     .from("products")
@@ -342,12 +264,6 @@ export async function toggleProductPublished(
 }
 
 export async function createBrand(input: Omit<Brand, "id">): Promise<Brand> {
-  if (useMock) {
-    const brand: Brand = { ...input, id: `brand-${Date.now()}` };
-    getStore().brands.push(brand);
-    return brand;
-  }
-
   const id = `brand-${Date.now()}`;
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -363,13 +279,6 @@ export async function createBrand(input: Omit<Brand, "id">): Promise<Brand> {
 }
 
 export async function deleteBrand(id: string): Promise<boolean> {
-  if (useMock) {
-    const store = getStore();
-    const before = store.brands.length;
-    store.brands = store.brands.filter((b) => b.id !== id);
-    return store.brands.length < before;
-  }
-
   const supabase = createServerClient();
   const { error, count } = await supabase
     .from("brands")
@@ -385,12 +294,6 @@ export async function deleteBrand(id: string): Promise<boolean> {
 export async function createCategory(
   input: Omit<Category, "id">,
 ): Promise<Category> {
-  if (useMock) {
-    const category: Category = { ...input, id: `cat-${Date.now()}` };
-    getStore().categories.push(category);
-    return category;
-  }
-
   const id = `cat-${Date.now()}`;
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -412,13 +315,6 @@ export async function createCategory(
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
-  if (useMock) {
-    const store = getStore();
-    const before = store.categories.length;
-    store.categories = store.categories.filter((c) => c.id !== id);
-    return store.categories.length < before;
-  }
-
   const supabase = createServerClient();
   const { error, count } = await supabase
     .from("categories")
@@ -432,16 +328,6 @@ export async function deleteCategory(id: string): Promise<boolean> {
 }
 
 export async function getDashboardCounts() {
-  if (useMock) {
-    const store = getStore();
-    return {
-      products: store.products.length,
-      published: store.products.filter((p) => p.isPublished).length,
-      brands: store.brands.length,
-      leads: store.leads.length,
-    };
-  }
-
   const [products, brands, leads] = await Promise.all([
     getProducts(),
     getBrands(),

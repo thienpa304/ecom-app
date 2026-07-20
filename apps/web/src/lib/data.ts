@@ -4,9 +4,6 @@ import {
   mapCategoryRow,
   mapLeadRow,
   mapProductRow,
-  seedBrands,
-  seedCategories,
-  seedProducts,
   type Brand,
   type BrandRow,
   type Category,
@@ -47,18 +44,9 @@ export type ListProductsResult = {
   totalPages: number;
 };
 
-const useMock = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
-/** In-memory leads for mock mode (module-scoped). */
-const mockLeads: Lead[] = [];
-
 type ProductWithImages = ProductRow & {
   product_images?: ProductImageRow[] | null;
 };
-
-function publishedProducts(): Product[] {
-  return seedProducts.filter((p) => p.isPublished);
-}
 
 function resolvePriceRange(params: ListProductsParams): {
   min?: number;
@@ -77,10 +65,6 @@ function resolvePriceRange(params: ListProductsParams): {
 }
 
 async function fetchPublishedProducts(): Promise<Product[]> {
-  if (useMock) {
-    return publishedProducts();
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
@@ -98,10 +82,6 @@ async function fetchPublishedProducts(): Promise<Product[]> {
 }
 
 export async function getBrands(): Promise<Brand[]> {
-  if (useMock) {
-    return seedBrands;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase.from("brands").select("*");
   if (error) {
@@ -111,10 +91,6 @@ export async function getBrands(): Promise<Brand[]> {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  if (useMock) {
-    return seedCategories;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase.from("categories").select("*");
   if (error) {
@@ -126,10 +102,6 @@ export async function getCategories(): Promise<Category[]> {
 export async function getProductBySlug(
   slug: string,
 ): Promise<Product | undefined> {
-  if (useMock) {
-    return publishedProducts().find((p) => p.slug === slug);
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("products")
@@ -206,19 +178,6 @@ export async function createLead(input: {
   phone: string;
   note?: string;
 }): Promise<Lead> {
-  if (useMock) {
-    const lead: Lead = {
-      id: `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      productId: input.productId ?? null,
-      name: input.name.trim(),
-      phone: input.phone.trim(),
-      note: (input.note ?? "").trim(),
-      createdAt: new Date().toISOString(),
-    };
-    mockLeads.push(lead);
-    return lead;
-  }
-
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("leads")
@@ -236,10 +195,6 @@ export async function createLead(input: {
   }
 
   return mapLeadRow(data as LeadRow);
-}
-
-export async function getMockLeads(): Promise<Lead[]> {
-  return [...mockLeads];
 }
 
 export async function getBrandById(id: string): Promise<Brand | undefined> {
