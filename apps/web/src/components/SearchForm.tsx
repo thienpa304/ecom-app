@@ -22,23 +22,23 @@ export function SearchForm({
   return (
     <form
       onSubmit={onSearch}
-      className="order-3 flex w-full flex-1 basis-full sm:order-none sm:basis-auto sm:px-4"
+      className="order-last w-full basis-full sm:order-none sm:mx-2 sm:w-auto sm:flex-1 sm:basis-auto"
     >
       <label htmlFor="header-search" className="sr-only">
         Tìm sản phẩm
       </label>
-      <div className="flex w-full overflow-hidden rounded-md border border-gray-300 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
+      <div className="flex w-full overflow-hidden rounded-lg border border-gray-300 bg-white focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
         <input
           id="header-search"
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-3 py-2 text-sm outline-none"
+          className="min-w-0 flex-1 px-3 py-2 text-sm outline-none"
         />
         <button
           type="submit"
-          className="bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-dark"
+          className="shrink-0 bg-accent px-3.5 text-sm font-semibold text-white hover:bg-accent-dark sm:px-4"
         >
           Tìm
         </button>

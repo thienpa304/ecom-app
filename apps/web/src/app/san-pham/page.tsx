@@ -112,14 +112,19 @@ export default async function CatalogPage({
           </div>
         </Suspense>
 
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-3 sm:space-y-4">
           <Suspense
             fallback={
               <div className="h-12 animate-pulse rounded-lg bg-gray-100" />
             }
           >
-            <MobileFilters brands={brands} categories={categories} />
-            <CatalogToolbar shown={result.items.length} total={result.total} />
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 sm:gap-3 sm:px-3 sm:py-2.5">
+              <MobileFilters brands={brands} categories={categories} />
+              <CatalogToolbar
+                shown={result.items.length}
+                total={result.total}
+              />
+            </div>
           </Suspense>
 
           {result.items.length === 0 ? (
