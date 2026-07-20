@@ -32,6 +32,14 @@ Admin login password: `ADMIN_PASSWORD` (default `admin123`).
 - **Admin:** cookie auth, CRUD products/brands/categories, leads list, publish toggle
 - **Shared:** Dekton-style seed (~15 products)
 
+## Live (Vercel Hobby)
+
+| App | URL |
+|-----|-----|
+| Storefront | https://ecom-app-beta-eight.vercel.app |
+| Admin | https://ecom-app-admin-omega.vercel.app (password `admin123`) |
+| GitHub | https://github.com/thienpa304/ecom-app |
+
 ## Deploy (free)
 
 | App | Host |
@@ -40,4 +48,4 @@ Admin login password: `ADMIN_PASSWORD` (default `admin123`).
 | DB / Auth / Storage | Supabase Free |
 | Images (optional) | Cloudflare R2 |
 
-Set `NEXT_PUBLIC_USE_MOCK=false` and Supabase env vars when ready.
+Set `NEXT_PUBLIC_USE_MOCK=false` and Supabase env vars when ready. Change `ADMIN_PASSWORD` in Vercel env for production.
