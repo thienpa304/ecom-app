@@ -69,9 +69,17 @@ async function replaceProductImages(
 
 /** Upload a file to the public `product-images` bucket; returns public URL. */
 export async function uploadProductImage(file: File): Promise<string> {
+  return uploadProductMedia(file, "img");
+}
+
+/** Upload image or video media; returns public URL. */
+export async function uploadProductMedia(
+  file: File,
+  prefix = "media",
+): Promise<string> {
   const supabase = createServerClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+  const path = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const { error } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
@@ -82,7 +90,7 @@ export async function uploadProductImage(file: File): Promise<string> {
     });
 
   if (error) {
-    throw new Error(`Failed to upload image: ${error.message}`);
+    throw new Error(`Failed to upload media: ${error.message}`);
   }
 
   const { data } = supabase.storage
@@ -213,6 +221,7 @@ export async function updateProduct(
       specs: row.specs,
       is_published: row.is_published,
       description: row.description,
+      video_url: row.video_url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

@@ -144,7 +144,11 @@ export default async function ProductDetailPage({
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <ProductGallery images={product.images} name={product.name} />
+        <ProductGallery
+          images={product.images}
+          name={product.name}
+          videoUrl={product.videoUrl}
+        />
 
         <div className="space-y-5">
           {brand && (

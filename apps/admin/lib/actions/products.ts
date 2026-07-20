@@ -8,7 +8,7 @@ import {
   deleteProduct,
   toggleProductPublished,
   updateProduct,
-  uploadProductImage,
+  uploadProductMedia,
 } from "@/lib/store";
 
 function slugify(value: string): string {
@@ -54,6 +54,7 @@ function readProductForm(formData: FormData, productId: string): Omit<Product, "
   const slugRaw = String(formData.get("slug") ?? "").trim();
   const saleRaw = String(formData.get("salePrice") ?? "").trim();
   const motorRaw = String(formData.get("motor") ?? "").trim();
+  const videoRaw = String(formData.get("videoUrl") ?? "").trim();
 
   return {
     name,
@@ -71,42 +72,71 @@ function readProductForm(formData: FormData, productId: string): Omit<Product, "
     specs: parseSpecs(String(formData.get("specs") ?? "")),
     isPublished: formData.get("isPublished") === "on",
     description: String(formData.get("description") ?? "").trim() || undefined,
+    videoUrl: videoRaw === "" ? null : videoRaw,
     images: parseImages(productId, String(formData.get("imageUrls") ?? "")),
   };
 }
 
-/** Optional file upload field `imageFile` — appends public URL to images. */
-async function appendUploadedImage(
+function collectFiles(formData: FormData, key: string): File[] {
+  return formData
+    .getAll(key)
+    .filter((f): f is File => f instanceof File && f.size > 0);
+}
+
+/** Append multiple uploaded images from `imageFiles`. */
+async function appendUploadedImages(
   formData: FormData,
   product: Omit<Product, "id">,
   productId: string,
 ): Promise<Omit<Product, "id">> {
-  const file = formData.get("imageFile");
-  if (!(file instanceof File) || file.size === 0) {
-    return product;
-  }
+  // Support both legacy single `imageFile` and new multi `imageFiles`
+  const files = [
+    ...collectFiles(formData, "imageFiles"),
+    ...collectFiles(formData, "imageFile"),
+  ];
+  if (files.length === 0) return product;
 
-  const url = await uploadProductImage(file);
-  const nextIndex = product.images.length;
+  const uploaded = await Promise.all(
+    files.map((file) => uploadProductMedia(file, "img")),
+  );
+
+  let nextIndex = product.images.length;
+  const extra = uploaded.map((url) => {
+    const img = {
+      id: `${productId}-img-${nextIndex}`,
+      productId,
+      url,
+      alt: `Ảnh ${nextIndex + 1}`,
+      sortOrder: nextIndex,
+    };
+    nextIndex += 1;
+    return img;
+  });
+
   return {
     ...product,
-    images: [
-      ...product.images,
-      {
-        id: `${productId}-img-${nextIndex}`,
-        productId,
-        url,
-        alt: `Ảnh ${nextIndex + 1}`,
-        sortOrder: nextIndex,
-      },
-    ],
+    images: [...product.images, ...extra],
   };
+}
+
+/** Optional video file upload — overrides videoUrl when provided. */
+async function appendUploadedVideo(
+  formData: FormData,
+  product: Omit<Product, "id">,
+): Promise<Omit<Product, "id">> {
+  const files = collectFiles(formData, "videoFile");
+  const file = files[0];
+  if (!file) return product;
+
+  const url = await uploadProductMedia(file, "video");
+  return { ...product, videoUrl: url };
 }
 
 export async function createProductAction(formData: FormData): Promise<void> {
   const tempId = `prod-${Date.now()}`;
   let data = readProductForm(formData, tempId);
-  data = await appendUploadedImage(formData, data, tempId);
+  data = await appendUploadedImages(formData, data, tempId);
+  data = await appendUploadedVideo(formData, data);
   const product = await createProduct(data);
   await updateProduct(product.id, {
     images: data.images.map((img, i) => ({
@@ -114,6 +144,7 @@ export async function createProductAction(formData: FormData): Promise<void> {
       id: `${product.id}-img-${i}`,
       productId: product.id,
     })),
+    videoUrl: data.videoUrl ?? null,
   });
   revalidatePath("/products");
   revalidatePath("/");
@@ -125,7 +156,8 @@ export async function updateProductAction(
   formData: FormData,
 ): Promise<void> {
   let data = readProductForm(formData, id);
-  data = await appendUploadedImage(formData, data, id);
+  data = await appendUploadedImages(formData, data, id);
+  data = await appendUploadedVideo(formData, data);
   await updateProduct(id, data);
   revalidatePath("/products");
   revalidatePath(`/products/${id}/edit`);

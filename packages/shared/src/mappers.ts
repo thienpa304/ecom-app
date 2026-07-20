@@ -49,6 +49,7 @@ export type ProductRow = {
   specs: Record<string, string> | null;
   is_published: boolean;
   description: string | null;
+  video_url?: string | null;
 };
 
 export type LeadRow = {
@@ -133,6 +134,7 @@ export function mapProductRow(
     specs: row.specs ?? {},
     isPublished: row.is_published,
     description: row.description ?? undefined,
+    videoUrl: row.video_url ?? null,
     images: mappedImages,
   };
 }
@@ -206,6 +208,7 @@ export function productToRow(
     specs: product.specs,
     is_published: product.isPublished,
     description: product.description ?? null,
+    video_url: product.videoUrl ?? null,
   };
 }
 

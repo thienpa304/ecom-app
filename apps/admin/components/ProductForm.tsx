@@ -236,20 +236,55 @@ export function ProductForm({
               product?.images.map((img) => img.url).join("\n") ?? ""
             }
             className={field}
+            placeholder="https://..."
           />
         </div>
 
         <div className="sm:col-span-2">
-          <label className={label} htmlFor="imageFile">
-            Upload ảnh (tùy chọn — bucket product-images)
+          <label className={label} htmlFor="imageFiles">
+            Upload nhiều ảnh (có thể chọn nhiều file)
           </label>
           <input
-            id="imageFile"
-            name="imageFile"
+            id="imageFiles"
+            name="imageFiles"
             type="file"
             accept="image/*"
+            multiple
             className={field}
           />
+          <p className="mt-1 text-xs text-slate-500">
+            Ảnh mới sẽ được thêm vào cuối danh sách URL ở trên.
+          </p>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={label} htmlFor="videoUrl">
+            Video (YouTube / TikTok / URL mp4)
+          </label>
+          <input
+            id="videoUrl"
+            name="videoUrl"
+            type="url"
+            defaultValue={product?.videoUrl ?? ""}
+            placeholder="https://www.youtube.com/watch?v=... hoặc link TikTok"
+            className={field}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={label} htmlFor="videoFile">
+            Upload video (tùy chọn — mp4/webm)
+          </label>
+          <input
+            id="videoFile"
+            name="videoFile"
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime,video/*"
+            className={field}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Nếu chọn file, URL video sẽ được ghi đè bằng link lưu trên storage.
+          </p>
         </div>
 
         <div className="sm:col-span-2">

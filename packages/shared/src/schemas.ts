@@ -45,6 +45,8 @@ export const productSchema = z.object({
   specs: z.record(z.string(), z.string()),
   isPublished: z.boolean(),
   description: z.string().optional(),
+  /** YouTube, TikTok, or direct mp4/webm URL */
+  videoUrl: z.string().nullable().optional(),
   images: z.array(productImageSchema),
 });
 
