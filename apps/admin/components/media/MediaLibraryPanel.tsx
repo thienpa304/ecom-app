@@ -4,6 +4,7 @@ import {
   CheckCircleFilled,
   CloudUploadOutlined,
   DeleteOutlined,
+  EyeOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
@@ -12,6 +13,7 @@ import {
   Button,
   Empty,
   Input,
+  Modal,
   Pagination,
   Segmented,
   Space,
@@ -71,6 +73,7 @@ export function MediaLibraryPanel({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
+  const [preview, setPreview] = useState<MediaAsset | null>(null);
 
   const initialKey = initialSelectedUrls.join("\0");
 
@@ -132,6 +135,14 @@ export function MediaLibraryPanel({
       }
       return [asset];
     });
+  }
+
+  function onCardClick(asset: MediaAsset) {
+    if (mode === "pick") {
+      toggle(asset);
+      return;
+    }
+    setPreview(asset);
   }
 
   const visible = (() => {
@@ -278,7 +289,7 @@ export function MediaLibraryPanel({
               return (
                 <div
                   key={asset.path}
-                  onClick={() => toggle(asset)}
+                  onClick={() => onCardClick(asset)}
                   style={{
                     position: "relative",
                     borderRadius: 8,
@@ -286,7 +297,7 @@ export function MediaLibraryPanel({
                       ? "2px solid #2563eb"
                       : "1px solid #e5e7eb",
                     overflow: "hidden",
-                    cursor: selectable ? "pointer" : "default",
+                    cursor: "pointer",
                     background: "#f8fafc",
                   }}
                 >
@@ -346,6 +357,24 @@ export function MediaLibraryPanel({
                         }}
                       />
                     ) : null}
+                    {selectable ? (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<EyeOutlined />}
+                        aria-label="Xem trước"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreview(asset);
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: 4,
+                          left: 4,
+                          background: "rgba(255,255,255,0.9)",
+                        }}
+                      />
+                    ) : null}
                   </div>
                   <div style={{ padding: "6px 8px" }}>
                     <Typography.Text
@@ -393,6 +422,60 @@ export function MediaLibraryPanel({
           </div>
         ) : null}
       </Spin>
+
+      <Modal
+        open={preview != null}
+        onCancel={() => setPreview(null)}
+        title={preview?.name}
+        footer={
+          <Space style={{ width: "100%", justifyContent: "space-between" }}>
+            <Typography.Text type="secondary" copyable={{ text: preview?.url }}>
+              {preview ? formatBytes(preview.size) : ""}
+            </Typography.Text>
+            <Button type="primary" onClick={() => setPreview(null)}>
+              Đóng
+            </Button>
+          </Space>
+        }
+        width={920}
+        centered
+        destroyOnHidden
+        styles={{
+          body: {
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: 320,
+            background: "#0f172a",
+            padding: 16,
+          },
+        }}
+      >
+        {preview?.kind === "video" ? (
+          <video
+            key={preview.url}
+            src={preview.url}
+            controls
+            autoPlay
+            style={{
+              maxWidth: "100%",
+              maxHeight: "70vh",
+              background: "#000",
+            }}
+          />
+        ) : preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={preview.url}
+            alt={preview.name}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "70vh",
+              objectFit: "contain",
+            }}
+          />
+        ) : null}
+      </Modal>
     </Space>
   );
 }
