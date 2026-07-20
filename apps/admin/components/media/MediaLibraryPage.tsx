@@ -10,8 +10,8 @@ export function MediaLibraryPage() {
         Thư viện Media
       </Typography.Title>
       <Typography.Paragraph type="secondary">
-        Quản lý ảnh / video dùng chung cho sản phẩm (upload, xem, xóa) — tương
-        tự Media Library của Strapi.
+        Quản lý ảnh / video dùng chung cho sản phẩm — upload, tìm toàn thư
+        viện, phân trang, copy URL, xóa từng file hoặc hàng loạt.
       </Typography.Paragraph>
 
       <MediaLibraryPanel mode="manage" accept="all" active />

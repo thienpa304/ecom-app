@@ -3,6 +3,7 @@
 import {
   CheckCircleFilled,
   CloudUploadOutlined,
+  CopyOutlined,
   DeleteOutlined,
   EyeOutlined,
   PlayCircleOutlined,
@@ -11,6 +12,7 @@ import {
 import {
   App,
   Button,
+  Checkbox,
   Empty,
   Input,
   Modal,
@@ -20,11 +22,13 @@ import {
   Spin,
   Typography,
   Upload,
+  theme,
 } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@ecom/shared";
 import {
   deleteMediaAction,
+  deleteMediaBulkAction,
   listMediaAction,
   uploadMediaAction,
 } from "@/lib/actions/media";
@@ -53,6 +57,15 @@ function formatBytes(n: number | null) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 export function MediaLibraryPanel({
   accept = "all",
   multiple = true,
@@ -62,6 +75,7 @@ export function MediaLibraryPanel({
   onSelectionChange,
 }: MediaLibraryPanelProps) {
   const { message, modal } = App.useApp();
+  const { token } = theme.useToken();
   const [filter, setFilter] = useState<Filter>(
     accept === "all" ? "all" : accept,
   );
@@ -71,9 +85,13 @@ export function MediaLibraryPanel({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 300);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
+  /** manage-mode multi-select by path */
+  const [checked, setChecked] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<MediaAsset | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const initialKey = initialSelectedUrls.join("\0");
 
@@ -82,26 +100,30 @@ export function MediaLibraryPanel({
     try {
       const result = await listMediaAction({
         filter: filter === "all" ? "all" : filter,
+        q: debouncedQuery.trim() || undefined,
         page,
         pageSize: MEDIA_PAGE_SIZE,
       });
       setAssets(result.items);
       setTotal(result.total);
+      if (result.total > 0 && result.items.length === 0 && page > 1) {
+        setPage(1);
+      }
     } catch {
       message.error("Không tải được thư viện media");
     } finally {
       setLoading(false);
     }
-  }, [filter, message, page]);
+  }, [debouncedQuery, filter, message, page]);
 
   useEffect(() => {
     if (!active) return;
     setFilter(accept === "all" ? "all" : accept);
     setSelected(new Set(initialSelectedUrls));
     setSelectedAssets([]);
+    setChecked(new Set());
     setQuery("");
     setPage(1);
-    // initialSelectedUrls via initialKey — avoid [] default identity churn
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initialKey captures urls
   }, [active, accept, initialKey]);
 
@@ -110,11 +132,15 @@ export function MediaLibraryPanel({
   }, [active, load]);
 
   useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, filter]);
+
+  useEffect(() => {
     if (!onSelectionChange || mode !== "pick") return;
     onSelectionChange(selectedAssets);
   }, [mode, onSelectionChange, selectedAssets]);
 
-  function toggle(asset: MediaAsset) {
+  function togglePick(asset: MediaAsset) {
     if (mode !== "pick") return;
     setSelected((prev) => {
       const next = new Set(prev);
@@ -137,22 +163,33 @@ export function MediaLibraryPanel({
     });
   }
 
+  function toggleChecked(asset: MediaAsset, nextChecked?: boolean) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      const shouldCheck =
+        nextChecked != null ? nextChecked : !next.has(asset.path);
+      if (shouldCheck) next.add(asset.path);
+      else next.delete(asset.path);
+      return next;
+    });
+  }
+
   function onCardClick(asset: MediaAsset) {
     if (mode === "pick") {
-      toggle(asset);
+      togglePick(asset);
       return;
     }
     setPreview(asset);
   }
 
-  const visible = (() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return assets;
-    return assets.filter(
-      (a) =>
-        a.name.toLowerCase().includes(q) || a.path.toLowerCase().includes(q),
-    );
-  })();
+  async function copyUrl(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      message.success("Đã copy URL");
+    } catch {
+      message.error("Không copy được URL");
+    }
+  }
 
   async function onUpload(files: File[]) {
     if (files.length === 0) return;
@@ -175,6 +212,7 @@ export function MediaLibraryPanel({
         return;
       }
       message.success(`Đã upload ${res.urls.length} file`);
+      setUploadOpen(false);
       setPage(1);
       await load();
       if (res.urls.length && mode === "pick") {
@@ -208,63 +246,85 @@ export function MediaLibraryPanel({
           next.delete(asset.url);
           return next;
         });
+        setChecked((prev) => {
+          const next = new Set(prev);
+          next.delete(asset.path);
+          return next;
+        });
         await load();
       },
     });
   }
 
+  function onBulkDelete() {
+    const paths = [...checked];
+    if (paths.length === 0) return;
+    modal.confirm({
+      title: `Xóa ${paths.length} file đã chọn?`,
+      content: "Thao tác này không hoàn tác được.",
+      okText: "Xóa hết",
+      okType: "danger",
+      cancelText: "Hủy",
+      onOk: async () => {
+        const res = await deleteMediaBulkAction(paths);
+        if (!res.ok) {
+          message.error(res.error ?? "Xóa thất bại");
+          return;
+        }
+        message.success(`Đã xóa ${res.deleted ?? paths.length} file`);
+        setChecked(new Set());
+        await load();
+      },
+    });
+  }
+
+  function selectAllOnPage() {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      for (const a of assets) next.add(a.path);
+      return next;
+    });
+  }
+
+  function clearChecked() {
+    setChecked(new Set());
+  }
+
+  const pageCheckedCount = assets.filter((a) => checked.has(a.path)).length;
+  const allPageChecked =
+    assets.length > 0 && pageCheckedCount === assets.length;
+
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-      <Upload.Dragger
-        multiple={multiple || accept !== "video"}
-        accept={
-          accept === "video"
-            ? "video/*"
-            : accept === "image"
-              ? "image/*"
-              : "image/*,video/*"
-        }
-        showUploadList={false}
-        disabled={uploading}
-        beforeUpload={(file, fileList) => {
-          if (fileList[0] === file) {
-            void onUpload(fileList as unknown as File[]);
-          }
-          return false;
-        }}
-        style={{ padding: "8px 0" }}
-      >
-        <p className="ant-upload-drag-icon">
-          <CloudUploadOutlined />
-        </p>
-        <p className="ant-upload-text">
-          {uploading ? "Đang upload..." : "Kéo thả hoặc bấm để upload"}
-        </p>
-        <p className="ant-upload-hint">
-          Ảnh / video lưu vào thư viện — tối đa {MAX_UPLOAD_MB}MB mỗi file.
-        </p>
-      </Upload.Dragger>
-
       <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
-        <Segmented
-          value={filter}
-          onChange={(v) => {
-            setPage(1);
-            setFilter(v as Filter);
-          }}
-          options={[
-            { label: "Tất cả", value: "all", disabled: accept !== "all" },
-            { label: "Ảnh", value: "image", disabled: accept === "video" },
-            { label: "Video", value: "video", disabled: accept === "image" },
-          ]}
-        />
-        <Space>
+        <Space wrap>
+          <Button
+            type="primary"
+            icon={<CloudUploadOutlined />}
+            onClick={() => setUploadOpen(true)}
+          >
+            Upload
+          </Button>
+          <Segmented
+            value={filter}
+            onChange={(v) => {
+              setPage(1);
+              setFilter(v as Filter);
+            }}
+            options={[
+              { label: "Tất cả", value: "all", disabled: accept !== "all" },
+              { label: "Ảnh", value: "image", disabled: accept === "video" },
+              { label: "Video", value: "video", disabled: accept === "image" },
+            ]}
+          />
+        </Space>
+        <Space wrap>
           <Input.Search
             allowClear
-            placeholder="Tìm trên trang này..."
+            placeholder="Tìm toàn thư viện..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ width: 200 }}
+            style={{ width: 220 }}
           />
           <Button icon={<ReloadOutlined />} onClick={() => void load()}>
             Tải lại
@@ -272,9 +332,52 @@ export function MediaLibraryPanel({
         </Space>
       </Space>
 
+      {mode === "manage" ? (
+        <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space>
+            <Checkbox
+              checked={allPageChecked}
+              indeterminate={pageCheckedCount > 0 && !allPageChecked}
+              disabled={assets.length === 0}
+              onChange={(e) => {
+                if (e.target.checked) selectAllOnPage();
+                else clearChecked();
+              }}
+            >
+              Chọn trang này
+            </Checkbox>
+            {checked.size > 0 ? (
+              <Typography.Text type="secondary">
+                Đã chọn {checked.size} file
+              </Typography.Text>
+            ) : null}
+          </Space>
+          <Space>
+            {checked.size > 0 ? (
+              <>
+                <Button onClick={clearChecked}>Bỏ chọn</Button>
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={onBulkDelete}
+                >
+                  Xóa {checked.size} file
+                </Button>
+              </>
+            ) : null}
+          </Space>
+        </Space>
+      ) : null}
+
       <Spin spinning={loading || uploading}>
-        {visible.length === 0 ? (
-          <Empty description="Chưa có file — hãy upload ở trên" />
+        {assets.length === 0 ? (
+          <Empty
+            description={
+              debouncedQuery.trim()
+                ? "Không tìm thấy file khớp"
+                : "Chưa có file — hãy upload ở trên"
+            }
+          />
         ) : (
           <div
             style={{
@@ -283,9 +386,13 @@ export function MediaLibraryPanel({
               gap: 12,
             }}
           >
-            {visible.map((asset) => {
-              const isSelected = selected.has(asset.url);
+            {assets.map((asset) => {
+              const isPickSelected = selected.has(asset.url);
+              const isChecked = checked.has(asset.path);
               const selectable = mode === "pick";
+              const highlight =
+                (selectable && isPickSelected) ||
+                (mode === "manage" && isChecked);
               return (
                 <div
                   key={asset.path}
@@ -293,12 +400,12 @@ export function MediaLibraryPanel({
                   style={{
                     position: "relative",
                     borderRadius: 8,
-                    border: isSelected
-                      ? "2px solid #2563eb"
-                      : "1px solid #e5e7eb",
+                    border: highlight
+                      ? `2px solid ${token.colorPrimary}`
+                      : `1px solid ${token.colorBorderSecondary}`,
                     overflow: "hidden",
                     cursor: "pointer",
-                    background: "#f8fafc",
+                    background: token.colorFillAlter,
                   }}
                 >
                   <div
@@ -307,7 +414,7 @@ export function MediaLibraryPanel({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: "#0f172a0a",
+                      background: token.colorFillTertiary,
                       position: "relative",
                     }}
                   >
@@ -344,16 +451,34 @@ export function MediaLibraryPanel({
                         }}
                       />
                     )}
-                    {isSelected ? (
+                    {isPickSelected ? (
                       <CheckCircleFilled
                         style={{
                           position: "absolute",
                           top: 6,
                           right: 6,
-                          color: "#2563eb",
+                          color: token.colorPrimary,
                           fontSize: 20,
                           background: "#fff",
                           borderRadius: "50%",
+                        }}
+                      />
+                    ) : null}
+                    {mode === "manage" ? (
+                      <Checkbox
+                        checked={isChecked}
+                        aria-label={`Chọn ${asset.name}`}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) =>
+                          toggleChecked(asset, e.target.checked)
+                        }
+                        style={{
+                          position: "absolute",
+                          top: 6,
+                          left: 6,
+                          background: "rgba(255,255,255,0.92)",
+                          borderRadius: 4,
+                          padding: 2,
                         }}
                       />
                     ) : null}
@@ -392,16 +517,28 @@ export function MediaLibraryPanel({
                       <Typography.Text type="secondary" style={{ fontSize: 11 }}>
                         {formatBytes(asset.size)}
                       </Typography.Text>
-                      <Button
-                        type="text"
-                        size="small"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(asset);
-                        }}
-                      />
+                      <Space size={0}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          aria-label="Copy URL"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void copyUrl(asset.url);
+                          }}
+                        />
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(asset);
+                          }}
+                        />
+                      </Space>
                     </Space>
                   </div>
                 </div>
@@ -409,19 +546,69 @@ export function MediaLibraryPanel({
             })}
           </div>
         )}
-        {total > MEDIA_PAGE_SIZE ? (
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+        {total > 0 ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginTop: 16,
+            }}
+          >
             <Pagination
               current={page}
               pageSize={MEDIA_PAGE_SIZE}
               total={total}
               onChange={(p) => setPage(p)}
               showSizeChanger={false}
-              showTotal={(t) => `${t} file`}
+              hideOnSinglePage={false}
+              showTotal={(t, range) => `${range[0]}–${range[1]} / ${t} file`}
             />
           </div>
         ) : null}
       </Spin>
+
+      <Modal
+        open={uploadOpen}
+        onCancel={() => {
+          if (!uploading) setUploadOpen(false);
+        }}
+        title="Upload media"
+        footer={null}
+        destroyOnHidden
+        centered
+        maskClosable={!uploading}
+        width={520}
+      >
+        <Upload.Dragger
+          multiple={multiple || accept !== "video"}
+          accept={
+            accept === "video"
+              ? "video/*"
+              : accept === "image"
+                ? "image/*"
+                : "image/*,video/*"
+          }
+          showUploadList={false}
+          disabled={uploading}
+          beforeUpload={(file, fileList) => {
+            if (fileList[0] === file) {
+              void onUpload(fileList as unknown as File[]);
+            }
+            return false;
+          }}
+          style={{ padding: "12px 0" }}
+        >
+          <p className="ant-upload-drag-icon">
+            <CloudUploadOutlined />
+          </p>
+          <p className="ant-upload-text">
+            {uploading ? "Đang upload..." : "Kéo thả hoặc bấm để chọn file"}
+          </p>
+          <p className="ant-upload-hint">
+            Ảnh / video — tối đa {MAX_UPLOAD_MB}MB mỗi file.
+          </p>
+        </Upload.Dragger>
+      </Modal>
 
       <Modal
         open={preview != null}
@@ -429,9 +616,20 @@ export function MediaLibraryPanel({
         title={preview?.name}
         footer={
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
-            <Typography.Text type="secondary" copyable={{ text: preview?.url }}>
-              {preview ? formatBytes(preview.size) : ""}
-            </Typography.Text>
+            <Space>
+              <Typography.Text type="secondary">
+                {preview ? formatBytes(preview.size) : ""}
+              </Typography.Text>
+              {preview ? (
+                <Button
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => void copyUrl(preview.url)}
+                >
+                  Copy URL
+                </Button>
+              ) : null}
+            </Space>
             <Button type="primary" onClick={() => setPreview(null)}>
               Đóng
             </Button>

@@ -184,6 +184,8 @@ export async function uploadProductMedia(
 
 export type ListMediaParams = {
   filter?: "image" | "video" | "all";
+  /** Search by file name / path (applied before pagination). */
+  q?: string;
   page?: number;
   pageSize?: number;
 };
@@ -204,6 +206,7 @@ export async function listMediaAssets(
       ? { filter: filterOrParams }
       : filterOrParams;
   const filter = params.filter ?? "all";
+  const q = params.q?.trim().toLowerCase() ?? "";
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 24));
 
@@ -255,6 +258,12 @@ export async function listMediaAssets(
       if (seen.has(a.path)) return false;
       seen.add(a.path);
       return true;
+    })
+    .filter((a) => {
+      if (!q) return true;
+      return (
+        a.name.toLowerCase().includes(q) || a.path.toLowerCase().includes(q)
+      );
     });
 
   const total = all.length;
@@ -268,10 +277,15 @@ export async function listMediaAssets(
 }
 
 export async function deleteMediaAsset(path: string): Promise<void> {
+  await deleteMediaAssets([path]);
+}
+
+export async function deleteMediaAssets(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
   const supabase = createServerClient();
   const { error } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
-    .remove([path]);
+    .remove(paths);
   if (error) {
     throw new Error(`Failed to delete media: ${error.message}`);
   }

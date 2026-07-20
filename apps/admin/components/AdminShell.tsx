@@ -17,6 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { logoutAction } from "@/lib/actions/auth";
 import { startAdminNavigation } from "@/components/NavigationProgress";
+import { BRAND } from "@/lib/theme";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -64,6 +65,14 @@ function resolveSelected(pathname: string) {
   );
 }
 
+function BrandMark() {
+  return (
+    <span className="admin-brand-mark" aria-hidden>
+      LP
+    </span>
+  );
+}
+
 function NavPanel({
   selected,
   onNavigate,
@@ -74,6 +83,7 @@ function NavPanel({
   showBrand?: boolean;
 }) {
   const router = useRouter();
+  const { token } = theme.useToken();
 
   useEffect(() => {
     for (const item of NAV) {
@@ -87,25 +97,42 @@ function NavPanel({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        background: "#1e293b",
+        background: BRAND.siderBg,
       }}
     >
       {showBrand ? (
-        <div style={{ padding: "16px 16px 12px" }}>
-          <Typography.Text
-            style={{
-              display: "block",
-              color: "rgba(255,255,255,0.45)",
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: 0.6,
-            }}
-          >
-            Điện Máy Lộc Phát Đạt
-          </Typography.Text>
-          <Typography.Text strong style={{ color: "#fff" }}>
-            Quản trị cửa hàng
-          </Typography.Text>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "18px 16px 14px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <BrandMark />
+          <div style={{ minWidth: 0 }}>
+            <Typography.Text
+              strong
+              style={{
+                display: "block",
+                color: "#fff",
+                fontSize: 14,
+                lineHeight: 1.3,
+              }}
+            >
+              Lộc Phát Đạt
+            </Typography.Text>
+            <Typography.Text
+              style={{
+                display: "block",
+                color: "rgba(255,255,255,0.45)",
+                fontSize: 11,
+              }}
+            >
+              Quản trị cửa hàng
+            </Typography.Text>
+          </div>
         </div>
       ) : null}
 
@@ -113,7 +140,12 @@ function NavPanel({
         theme="dark"
         mode="inline"
         selectedKeys={[selected]}
-        style={{ background: "#1e293b", borderInlineEnd: 0, flex: 1 }}
+        style={{
+          background: "transparent",
+          borderInlineEnd: 0,
+          flex: 1,
+          paddingTop: 8,
+        }}
         onClick={({ key }) => {
           const item = NAV.find((n) => n.key === key);
           if (!item) return;
@@ -134,8 +166,9 @@ function NavPanel({
             icon={<LogoutOutlined />}
             style={{
               background: "rgba(255,255,255,0.08)",
-              color: "#fff",
+              color: token.colorTextLightSolid,
               border: "none",
+              height: 40,
             }}
           >
             Đăng xuất
@@ -167,7 +200,6 @@ export function AdminShell({
   const selected = pendingHref
     ? resolveSelected(pendingHref)
     : resolveSelected(pathname);
-  // Soft-nav overlay: React transition OR menu target not yet matched
   const navigating =
     isPending || (pendingHref != null && pendingHref !== pathname);
 
@@ -176,7 +208,6 @@ export function AdminShell({
     setPendingHref(null);
   }, [pathname]);
 
-  // Safety: never leave overlay stuck if soft-nav hangs / is interrupted
   useEffect(() => {
     if (!navigating) return;
     const t = setTimeout(() => setPendingHref(null), 5000);
@@ -196,7 +227,14 @@ export function AdminShell({
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {!isMobile ? (
-        <Sider width={220} theme="dark" style={{ background: "#1e293b" }}>
+        <Sider
+          width={232}
+          theme="dark"
+          style={{
+            background: BRAND.siderBg,
+            borderInlineEnd: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
           <NavPanel selected={selected} onNavigate={handleNavigate} />
         </Sider>
       ) : (
@@ -204,18 +242,21 @@ export function AdminShell({
           placement="left"
           open={open}
           onClose={() => setOpen(false)}
-          width={260}
+          width={280}
           styles={{
-            body: { padding: 0, background: "#1e293b" },
+            body: { padding: 0, background: BRAND.siderBg },
             header: {
-              background: "#1e293b",
+              background: BRAND.siderBg,
               borderBottom: "1px solid rgba(255,255,255,0.08)",
             },
           }}
           title={
-            <Typography.Text strong style={{ color: "#fff" }}>
-              Menu
-            </Typography.Text>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <BrandMark />
+              <Typography.Text strong style={{ color: "#fff" }}>
+                Menu
+              </Typography.Text>
+            </div>
           }
           closeIcon={<MenuFoldOutlined style={{ color: "#fff" }} />}
         >
@@ -227,7 +268,7 @@ export function AdminShell({
         </Drawer>
       )}
 
-      <Layout style={{ minWidth: 0 }}>
+      <Layout style={{ minWidth: 0, background: token.colorBgLayout }}>
         <Header
           style={{
             background: token.colorBgContainer,
@@ -261,6 +302,7 @@ export function AdminShell({
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
+              fontWeight: 600,
             }}
           >
             {title}

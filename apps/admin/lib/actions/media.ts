@@ -4,7 +4,7 @@ import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@ecom/shared";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import {
-  deleteMediaAsset,
+  deleteMediaAssets,
   listMediaAssets,
   uploadProductMedia,
   type ListMediaParams,
@@ -64,16 +64,29 @@ export async function uploadMediaAction(
 export async function deleteMediaAction(
   path: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  return deleteMediaBulkAction([path]);
+}
+
+export async function deleteMediaBulkAction(
+  paths: string[],
+): Promise<{ ok: boolean; error?: string; deleted?: number }> {
   await requireAdmin();
 
-  if (!STORAGE_PATH_RE.test(path)) {
-    return { ok: false, error: "Đường dẫn file không hợp lệ." };
+  const unique = [...new Set(paths.filter(Boolean))];
+  if (unique.length === 0) {
+    return { ok: false, error: "Chưa chọn file nào." };
+  }
+
+  for (const path of unique) {
+    if (!STORAGE_PATH_RE.test(path)) {
+      return { ok: false, error: `Đường dẫn không hợp lệ: ${path}` };
+    }
   }
 
   try {
-    await deleteMediaAsset(path);
+    await deleteMediaAssets(unique);
     revalidatePath("/media");
-    return { ok: true };
+    return { ok: true, deleted: unique.length };
   } catch (e) {
     return {
       ok: false,

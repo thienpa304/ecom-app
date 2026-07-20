@@ -3,20 +3,11 @@
 import { App, ConfigProvider } from "antd";
 import viVN from "antd/locale/vi_VN";
 import type { ReactNode } from "react";
+import { adminTheme } from "@/lib/theme";
 
 export function AntdProvider({ children }: { children: ReactNode }) {
   return (
-    <ConfigProvider
-      locale={viVN}
-      theme={{
-        token: {
-          colorPrimary: "#2563eb",
-          borderRadius: 6,
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        },
-      }}
-    >
+    <ConfigProvider locale={viVN} theme={adminTheme}>
       <App>{children}</App>
     </ConfigProvider>
   );
