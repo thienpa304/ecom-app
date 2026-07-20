@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { SearchForm } from "@/components/SearchForm";
 
@@ -49,7 +50,13 @@ export function Header({
           </a>
         </nav>
 
-        <SearchForm placeholder={searchPlaceholder} />
+        <Suspense
+          fallback={
+            <div className="order-last h-10 w-full basis-full animate-pulse rounded-full bg-gray-100 sm:order-none sm:mx-2 sm:h-11 sm:flex-1 sm:basis-auto sm:rounded-lg" />
+          }
+        >
+          <SearchForm placeholder={searchPlaceholder} />
+        </Suspense>
       </div>
     </header>
   );
