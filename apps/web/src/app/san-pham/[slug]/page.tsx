@@ -8,6 +8,7 @@ import {
   getBrandById,
   getCategoryById,
   getProductBySlug,
+  getSiteSettings,
 } from "@/lib/data";
 import { discountPercent, formatVnd } from "@/lib/format";
 
@@ -36,14 +37,15 @@ export default async function ProductDetailPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [brand, category] = await Promise.all([
+  const [brand, category, settings] = await Promise.all([
     getBrandById(product.brandId),
     getCategoryById(product.categoryId),
+    getSiteSettings(),
   ]);
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
-  const phone = process.env.NEXT_PUBLIC_STORE_PHONE ?? "02839756686";
-  const zalo = process.env.NEXT_PUBLIC_ZALO_OA ?? "https://zalo.me/";
+  const phone = settings.phone;
+  const zalo = settings.zaloUrl;
   const telHref = `tel:${phone.replace(/\D/g, "")}`;
 
   return (

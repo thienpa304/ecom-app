@@ -4,6 +4,7 @@ import type {
   Lead,
   Product,
   ProductImage,
+  SiteSettings,
   StockStatus,
 } from "./types";
 
@@ -57,6 +58,22 @@ export type LeadRow = {
   phone: string;
   note: string;
   created_at: string;
+};
+
+export type SiteSettingsRow = {
+  id: number;
+  site_name: string;
+  tagline: string;
+  phone: string;
+  zalo_url: string;
+  address: string;
+  email: string;
+  hero_title: string;
+  hero_subtitle: string;
+  meta_description: string;
+  footer_blurb: string;
+  search_placeholder: string;
+  updated_at?: string;
 };
 
 function toNumber(value: number | string): number {
@@ -128,6 +145,43 @@ export function mapLeadRow(row: LeadRow): Lead {
     phone: row.phone,
     note: row.note,
     createdAt: row.created_at,
+  };
+}
+
+export function mapSiteSettingsRow(row: SiteSettingsRow): SiteSettings {
+  return {
+    id: row.id,
+    siteName: row.site_name,
+    tagline: row.tagline,
+    phone: row.phone,
+    zaloUrl: row.zalo_url,
+    address: row.address ?? "",
+    email: row.email ?? "",
+    heroTitle: row.hero_title,
+    heroSubtitle: row.hero_subtitle,
+    metaDescription: row.meta_description,
+    footerBlurb: row.footer_blurb,
+    searchPlaceholder: row.search_placeholder,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function siteSettingsToRow(
+  settings: Omit<SiteSettings, "id" | "updatedAt"> & { id?: number },
+): Omit<SiteSettingsRow, "updated_at"> {
+  return {
+    id: settings.id ?? 1,
+    site_name: settings.siteName,
+    tagline: settings.tagline,
+    phone: settings.phone,
+    zalo_url: settings.zaloUrl,
+    address: settings.address,
+    email: settings.email,
+    hero_title: settings.heroTitle,
+    hero_subtitle: settings.heroSubtitle,
+    meta_description: settings.metaDescription,
+    footer_blurb: settings.footerBlurb,
+    search_placeholder: settings.searchPlaceholder,
   };
 }
 

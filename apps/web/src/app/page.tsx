@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { getBrands, listProducts } from "@/lib/data";
+import { getBrands, getSiteSettings, listProducts } from "@/lib/data";
 
 export default async function HomePage() {
-  const [{ items }, brands] = await Promise.all([
+  const [settings, { items }, brands] = await Promise.all([
+    getSiteSettings(),
     listProducts({ sort: "sold_desc", pageSize: 12, page: 1 }),
     getBrands(),
   ]);
   const featured = items.slice(0, 8);
   const brandNames = Object.fromEntries(brands.map((b) => [b.id, b.name]));
+  const tel = settings.phone.replace(/\D/g, "");
 
   return (
     <>
@@ -16,23 +18,19 @@ export default async function HomePage() {
         <div className="container-page grid gap-8 py-12 sm:py-16 lg:grid-cols-2 lg:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-accent">
-              Ecom Demo
+              {settings.siteName}
             </p>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Catalog máy rửa xe &amp; thiết bị vệ sinh
+              {settings.heroTitle || "Catalog điện máy"}
             </h1>
             <p className="mt-3 max-w-xl text-base text-gray-600">
-              Xem thông số, giá khuyến mãi và liên hệ trực tiếp — không cần giỏ
-              hàng, không thanh toán online.
+              {settings.heroSubtitle || settings.tagline}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/san-pham" className="btn-primary">
                 Xem tất cả sản phẩm
               </Link>
-              <a
-                href={`tel:${(process.env.NEXT_PUBLIC_STORE_PHONE ?? "02839756686").replace(/\D/g, "")}`}
-                className="btn-outline"
-              >
+              <a href={`tel:${tel}`} className="btn-outline">
                 Gọi tư vấn ngay
               </a>
             </div>
@@ -59,7 +57,7 @@ export default async function HomePage() {
               Sản phẩm nổi bật
             </h2>
             <p className="mt-1 text-sm text-gray-600">
-              Các model bán chạy trong catalog demo
+              Các model bán chạy tại {settings.siteName}
             </p>
           </div>
           <Link

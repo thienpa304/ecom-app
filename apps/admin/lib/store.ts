@@ -1,10 +1,13 @@
 import {
+  DEFAULT_SITE_SETTINGS,
   imageToRow,
   mapBrandRow,
   mapCategoryRow,
   mapLeadRow,
   mapProductRow,
+  mapSiteSettingsRow,
   productToRow,
+  siteSettingsToRow,
   type Brand,
   type BrandRow,
   type Category,
@@ -15,6 +18,8 @@ import {
   type ProductImage,
   type ProductImageRow,
   type ProductRow,
+  type SiteSettings,
+  type SiteSettingsRow,
 } from "@ecom/shared";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -340,4 +345,40 @@ export async function getDashboardCounts() {
     brands: brands.length,
     leads: leads.length,
   };
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getSiteSettings:", error.message);
+    return DEFAULT_SITE_SETTINGS;
+  }
+  if (!data) return DEFAULT_SITE_SETTINGS;
+  return mapSiteSettingsRow(data as SiteSettingsRow);
+}
+
+export async function updateSiteSettings(
+  input: Omit<SiteSettings, "id" | "updatedAt">,
+): Promise<SiteSettings> {
+  const supabase = createServerClient();
+  const row = siteSettingsToRow({ ...input, id: 1 });
+  const { data, error } = await supabase
+    .from("site_settings")
+    .upsert({
+      ...row,
+      updated_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update site settings: ${error.message}`);
+  }
+  return mapSiteSettingsRow(data as SiteSettingsRow);
 }

@@ -1,22 +1,27 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { getSiteSettings } from "@/lib/data";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Ecom Demo — Catalog sản phẩm",
-    template: "%s | Ecom Demo",
-  },
-  description:
-    "Cửa hàng demo thiết bị vệ sinh công nghiệp. Xem sản phẩm, gọi điện hoặc để lại SĐT tư vấn.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSiteSettings();
+  return {
+    title: {
+      default: `${s.siteName} — Catalog sản phẩm`,
+      template: `%s | ${s.siteName}`,
+    },
+    description: s.metaDescription || s.tagline,
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getSiteSettings();
+
   return (
     <html lang="vi">
       <head>
@@ -32,9 +37,13 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
-        <Header />
+        <Header
+          siteName={settings.siteName}
+          phone={settings.phone}
+          searchPlaceholder={settings.searchPlaceholder}
+        />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <Footer settings={settings} />
       </body>
     </html>
   );

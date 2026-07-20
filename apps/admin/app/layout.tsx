@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ecom Admin",
-  description: "Quản trị danh mục sản phẩm",
+  title: "Admin — Điện Máy Của Thiên",
+  description: "Quản trị danh mục và cấu hình cửa hàng",
 };
 
 export default function RootLayout({

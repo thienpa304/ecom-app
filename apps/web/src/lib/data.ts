@@ -1,9 +1,12 @@
+import { unstable_noStore as noStore } from "next/cache";
 import {
+  DEFAULT_SITE_SETTINGS,
   PRICE_RANGES,
   mapBrandRow,
   mapCategoryRow,
   mapLeadRow,
   mapProductRow,
+  mapSiteSettingsRow,
   type Brand,
   type BrandRow,
   type Category,
@@ -13,6 +16,8 @@ import {
   type Product,
   type ProductImageRow,
   type ProductRow,
+  type SiteSettings,
+  type SiteSettingsRow,
 } from "@ecom/shared";
 import { createServerClient } from "./supabase";
 
@@ -79,6 +84,23 @@ async function fetchPublishedProducts(): Promise<Product[]> {
     const { product_images, ...product } = row;
     return mapProductRow(product, product_images ?? []);
   });
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  noStore();
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getSiteSettings:", error.message);
+    return DEFAULT_SITE_SETTINGS;
+  }
+  if (!data) return DEFAULT_SITE_SETTINGS;
+  return mapSiteSettingsRow(data as SiteSettingsRow);
 }
 
 export async function getBrands(): Promise<Brand[]> {

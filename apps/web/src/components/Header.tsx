@@ -4,11 +4,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
-const phone = process.env.NEXT_PUBLIC_STORE_PHONE ?? "02839756686";
+type HeaderProps = {
+  siteName: string;
+  phone: string;
+  searchPlaceholder?: string;
+};
 
-export function Header() {
+export function Header({
+  siteName,
+  phone,
+  searchPlaceholder = "Tìm sản phẩm...",
+}: HeaderProps) {
   const router = useRouter();
   const [q, setQ] = useState("");
+  const tel = phone.replace(/\D/g, "");
 
   function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -23,9 +32,9 @@ export function Header() {
       <div className="container-page flex flex-wrap items-center gap-3 py-3 sm:gap-4">
         <Link
           href="/"
-          className="text-lg font-extrabold tracking-tight text-gray-900 sm:text-xl"
+          className="max-w-[12rem] text-base font-extrabold leading-tight tracking-tight text-gray-900 sm:max-w-none sm:text-xl"
         >
-          Ecom <span className="text-accent">Demo</span>
+          {siteName}
         </Link>
 
         <form
@@ -41,7 +50,7 @@ export function Header() {
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Tìm máy rửa xe, model..."
+              placeholder={searchPlaceholder}
               className="w-full px-3 py-2 text-sm outline-none"
             />
             <button
@@ -61,7 +70,7 @@ export function Header() {
             Sản phẩm
           </Link>
           <a
-            href={`tel:${phone.replace(/\D/g, "")}`}
+            href={`tel:${tel}`}
             className="btn-primary whitespace-nowrap text-xs sm:text-sm"
           >
             Gọi {phone}

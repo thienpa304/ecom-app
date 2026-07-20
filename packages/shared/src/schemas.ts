@@ -56,3 +56,24 @@ export const leadSchema = z.object({
   note: z.string(),
   createdAt: z.string(),
 });
+
+export const siteSettingsSchema = z.object({
+  id: z.number().int(),
+  siteName: z.string().min(1),
+  tagline: z.string(),
+  phone: z.string().min(1),
+  zaloUrl: z.string().min(1),
+  address: z.string(),
+  email: z.string(),
+  heroTitle: z.string(),
+  heroSubtitle: z.string(),
+  metaDescription: z.string(),
+  footerBlurb: z.string(),
+  searchPlaceholder: z.string(),
+  updatedAt: z.string().optional(),
+});
+
+export const siteSettingsUpdateSchema = siteSettingsSchema.omit({
+  id: true,
+  updatedAt: true,
+});

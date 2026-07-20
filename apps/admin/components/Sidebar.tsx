@@ -10,6 +10,7 @@ const NAV = [
   { href: "/brands", label: "Thương hiệu" },
   { href: "/categories", label: "Danh mục" },
   { href: "/leads", label: "Leads" },
+  { href: "/settings", label: "Cấu hình" },
 ] as const;
 
 export function Sidebar() {
@@ -19,7 +20,7 @@ export function Sidebar() {
     <aside className="flex w-56 shrink-0 flex-col bg-admin-sidebar text-slate-100">
       <div className="border-b border-slate-700 px-4 py-4">
         <div className="text-xs uppercase tracking-wider text-slate-400">
-          Ecom Admin
+          Điện Máy Của Thiên
         </div>
         <div className="mt-0.5 text-sm font-semibold">Quản trị cửa hàng</div>
       </div>
