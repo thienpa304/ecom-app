@@ -126,6 +126,7 @@ export async function createProductAction(
     const product = await createProduct({ ...data, id });
     productId = product.id;
     revalidatePath("/products");
+    revalidatePath("/");
   } catch (e) {
     return {
       ok: false,
@@ -147,6 +148,7 @@ export async function updateProductAction(
     await updateProduct(id, data);
     revalidatePath("/products");
     revalidatePath(`/products/${id}/edit`);
+    revalidatePath("/");
   } catch (e) {
     return {
       ok: false,
@@ -161,10 +163,12 @@ export async function deleteProductAction(id: string): Promise<void> {
   await requireAdmin();
   await deleteProduct(id);
   revalidatePath("/products");
+  revalidatePath("/");
 }
 
 export async function togglePublishAction(id: string): Promise<void> {
   await requireAdmin();
   await toggleProductPublished(id);
   revalidatePath("/products");
+  revalidatePath("/");
 }

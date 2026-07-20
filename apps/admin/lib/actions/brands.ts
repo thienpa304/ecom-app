@@ -32,10 +32,12 @@ export async function createBrandAction(formData: FormData): Promise<void> {
 
   await createBrand(parsed.data);
   revalidatePath("/brands");
+  revalidatePath("/");
 }
 
 export async function deleteBrandAction(id: string): Promise<void> {
   await requireAdmin();
   await deleteBrand(id);
   revalidatePath("/brands");
+  revalidatePath("/");
 }
