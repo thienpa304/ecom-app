@@ -3,6 +3,7 @@
 import {
   AppstoreOutlined,
   DashboardOutlined,
+  FileImageOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -27,6 +28,12 @@ const NAV = [
     href: "/products",
     label: "Sản phẩm",
     icon: <ShoppingOutlined />,
+  },
+  {
+    key: "/media",
+    href: "/media",
+    label: "Media",
+    icon: <FileImageOutlined />,
   },
   {
     key: "/brands",

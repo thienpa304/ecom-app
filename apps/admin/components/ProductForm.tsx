@@ -1,6 +1,5 @@
 "use client";
 
-import { UploadOutlined } from "@ant-design/icons";
 import type { Brand, Category, Product, StockStatus } from "@ecom/shared";
 import { STOCK_STATUS } from "@ecom/shared";
 import {
@@ -8,6 +7,7 @@ import {
   Card,
   Checkbox,
   Col,
+  Divider,
   Form,
   Input,
   InputNumber,
@@ -15,10 +15,12 @@ import {
   Select,
   Space,
   Typography,
-  Upload,
-  type UploadFile,
 } from "antd";
 import { useState } from "react";
+import {
+  ProductImagesField,
+  ProductVideoField,
+} from "@/components/media/ProductMediaFields";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
@@ -48,12 +50,8 @@ type FormValues = {
   origin?: string;
   motor?: string;
   specs?: string;
-  imageUrls?: string;
-  videoUrl?: string;
   description?: string;
   isPublished?: boolean;
-  imageFiles?: UploadFile[];
-  videoFile?: UploadFile[];
 };
 
 export function ProductForm({
@@ -65,6 +63,10 @@ export function ProductForm({
 }: Props) {
   const [form] = Form.useForm<FormValues>();
   const [pending, setPending] = useState(false);
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    product?.images.map((img) => img.url) ?? [],
+  );
+  const [videoUrl, setVideoUrl] = useState(product?.videoUrl ?? "");
   const stockKeys = Object.keys(STOCK_STATUS) as StockStatus[];
 
   async function onFinish(values: FormValues) {
@@ -89,16 +91,10 @@ export function ProductForm({
       fd.set("origin", values.origin ?? "");
       fd.set("motor", values.motor ?? "");
       fd.set("specs", values.specs ?? "");
-      fd.set("imageUrls", values.imageUrls ?? "");
-      fd.set("videoUrl", values.videoUrl ?? "");
+      fd.set("imageUrls", imageUrls.join("\n"));
+      fd.set("videoUrl", videoUrl);
       fd.set("description", values.description ?? "");
       if (values.isPublished) fd.set("isPublished", "on");
-
-      for (const file of values.imageFiles ?? []) {
-        if (file.originFileObj) fd.append("imageFiles", file.originFileObj);
-      }
-      const video = values.videoFile?.[0]?.originFileObj;
-      if (video) fd.set("videoFile", video);
 
       await action(fd);
     } finally {
@@ -126,12 +122,8 @@ export function ProductForm({
           origin: product?.origin ?? "",
           motor: product?.motor ?? "",
           specs: product ? specsToText(product.specs) : "",
-          imageUrls: product?.images.map((img) => img.url).join("\n") ?? "",
-          videoUrl: product?.videoUrl ?? "",
           description: product?.description ?? "",
           isPublished: product?.isPublished ?? true,
-          imageFiles: [],
-          videoFile: [],
         }}
       >
         <Row gutter={16}>
@@ -250,54 +242,24 @@ export function ProductForm({
           </Col>
 
           <Col span={24}>
-            <Form.Item label="URL ảnh (mỗi dòng một URL)" name="imageUrls">
-              <Input.TextArea rows={4} placeholder="https://..." />
+            <Divider style={{ margin: "8px 0 16px" }}>
+              Media (kiểu thư viện file)
+            </Divider>
+            <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
+              Upload / chọn ảnh & video từ thư viện dùng chung — giống Strapi
+              Media Library.
+            </Typography.Paragraph>
+          </Col>
+
+          <Col span={24}>
+            <Form.Item label="Ảnh sản phẩm" required={false}>
+              <ProductImagesField value={imageUrls} onChange={setImageUrls} />
             </Form.Item>
           </Col>
 
           <Col span={24}>
-            <Form.Item
-              label="Upload nhiều ảnh"
-              name="imageFiles"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              extra="Ảnh mới sẽ được thêm vào cuối danh sách URL ở trên."
-            >
-              <Upload
-                beforeUpload={() => false}
-                multiple
-                accept="image/*"
-                listType="picture"
-              >
-                <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-              </Upload>
-            </Form.Item>
-          </Col>
-
-          <Col span={24}>
-            <Form.Item
-              label="Video (YouTube / TikTok / URL mp4)"
-              name="videoUrl"
-            >
-              <Input placeholder="https://www.youtube.com/watch?v=..." />
-            </Form.Item>
-          </Col>
-
-          <Col span={24}>
-            <Form.Item
-              label="Upload video (mp4/webm)"
-              name="videoFile"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              extra="Nếu chọn file, URL video sẽ được ghi đè bằng link lưu trên storage."
-            >
-              <Upload
-                beforeUpload={() => false}
-                maxCount={1}
-                accept="video/mp4,video/webm,video/quicktime,video/*"
-              >
-                <Button icon={<UploadOutlined />}>Chọn video</Button>
-              </Upload>
+            <Form.Item label="Video sản phẩm">
+              <ProductVideoField value={videoUrl} onChange={setVideoUrl} />
             </Form.Item>
           </Col>
 
@@ -318,11 +280,10 @@ export function ProductForm({
           <Button type="primary" htmlType="submit" loading={pending}>
             {submitLabel}
           </Button>
-          {product?.images?.length ? (
-            <Typography.Text type="secondary">
-              Đang có {product.images.length} ảnh
-            </Typography.Text>
-          ) : null}
+          <Typography.Text type="secondary">
+            {imageUrls.length} ảnh
+            {videoUrl ? " · có video" : ""}
+          </Typography.Text>
         </Space>
       </Form>
     </Card>

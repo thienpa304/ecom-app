@@ -67,6 +67,42 @@ async function replaceProductImages(
   }
 }
 
+export type MediaKind = "image" | "video" | "other";
+
+export type MediaAsset = {
+  path: string;
+  url: string;
+  name: string;
+  size: number | null;
+  kind: MediaKind;
+  updatedAt: string | null;
+};
+
+const IMAGE_EXT = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "svg",
+  "bmp",
+]);
+const VIDEO_EXT = new Set(["mp4", "webm", "mov", "ogg", "m4v"]);
+
+function mediaKindFromName(name: string): MediaKind {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (IMAGE_EXT.has(ext)) return "image";
+  if (VIDEO_EXT.has(ext)) return "video";
+  return "other";
+}
+
+function publicUrlFor(path: string): string {
+  const supabase = createServerClient();
+  return supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path)
+    .data.publicUrl;
+}
+
 /** Upload a file to the public `product-images` bucket; returns public URL. */
 export async function uploadProductImage(file: File): Promise<string> {
   return uploadProductMedia(file, "img");
@@ -78,8 +114,15 @@ export async function uploadProductMedia(
   prefix = "media",
 ): Promise<string> {
   const supabase = createServerClient();
+  const kind = mediaKindFromName(file.name);
+  const folder =
+    prefix === "img" || prefix === "video" || prefix === "media"
+      ? prefix
+      : kind === "video"
+        ? "video"
+        : "img";
   const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-  const path = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const { error } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
@@ -93,10 +136,69 @@ export async function uploadProductMedia(
     throw new Error(`Failed to upload media: ${error.message}`);
   }
 
-  const { data } = supabase.storage
+  return publicUrlFor(path);
+}
+
+/** List assets in product-images bucket (Strapi-like media library). */
+export async function listMediaAssets(
+  filter?: "image" | "video" | "all",
+): Promise<MediaAsset[]> {
+  const supabase = createServerClient();
+  const folders = ["img", "video", "media", ""];
+  const assets: MediaAsset[] = [];
+
+  for (const folder of folders) {
+    const { data, error } = await supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .list(folder || undefined, {
+        limit: 200,
+        sortBy: { column: "created_at", order: "desc" },
+      });
+
+    if (error) {
+      console.error(`listMediaAssets(${folder}):`, error.message);
+      continue;
+    }
+
+    for (const item of data ?? []) {
+      // Folders have null id in Supabase Storage listing
+      if (!item.name || item.id == null) continue;
+
+      const path = folder ? `${folder}/${item.name}` : item.name;
+      const kind = mediaKindFromName(item.name);
+      if (filter === "image" && kind !== "image") continue;
+      if (filter === "video" && kind !== "video") continue;
+
+      assets.push({
+        path,
+        url: publicUrlFor(path),
+        name: item.name,
+        size: item.metadata?.size ?? null,
+        kind,
+        updatedAt: item.updated_at ?? item.created_at ?? null,
+      });
+    }
+  }
+
+  // de-dupe by path, newest first
+  const seen = new Set<string>();
+  return assets
+    .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""))
+    .filter((a) => {
+      if (seen.has(a.path)) return false;
+      seen.add(a.path);
+      return true;
+    });
+}
+
+export async function deleteMediaAsset(path: string): Promise<void> {
+  const supabase = createServerClient();
+  const { error } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
-    .getPublicUrl(path);
-  return data.publicUrl;
+    .remove([path]);
+  if (error) {
+    throw new Error(`Failed to delete media: ${error.message}`);
+  }
 }
 
 export async function getProducts(): Promise<Product[]> {
