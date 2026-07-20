@@ -1,0 +1,15 @@
+{
+  "name": "ecom-app",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter \"./apps/*\" run dev",
+    "dev:web": "pnpm --filter @ecom/web dev",
+    "dev:admin": "pnpm --filter @ecom/admin dev",
+    "build": "pnpm -r --filter \"./apps/*\" run build",
+    "lint": "pnpm -r --filter \"./apps/*\" run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
