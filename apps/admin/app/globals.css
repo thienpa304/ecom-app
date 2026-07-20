@@ -3,8 +3,19 @@ body {
   margin: 0;
   min-height: 100%;
   background: #f4f5f7;
+  -webkit-text-size-adjust: 100%;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Prevent horizontal page scroll on small screens */
+body {
+  overflow-x: hidden;
+}
+
+/* Ant table cells wrap better on mobile */
+.ant-table-wrapper {
+  max-width: 100%;
 }

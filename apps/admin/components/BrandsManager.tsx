@@ -2,7 +2,7 @@
 
 import { DeleteOutlined } from "@ant-design/icons";
 import type { Brand } from "@ecom/shared";
-import { App, Button, Card, Col, Form, Input, Row, Table } from "antd";
+import { App, Button, Card, Col, Form, Grid, Input, Row, Table } from "antd";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { createBrandAction, deleteBrandAction } from "@/lib/actions/brands";
@@ -12,6 +12,7 @@ export function BrandsManager({ brands }: { brands: Brand[] }) {
   const router = useRouter();
   const { modal, message } = App.useApp();
   const [pending, startTransition] = useTransition();
+  const isMobile = !Grid.useBreakpoint().md;
 
   async function onCreate(values: { name: string; slug?: string }) {
     const fd = new FormData();
@@ -79,7 +80,9 @@ export function BrandsManager({ brands }: { brands: Brand[] }) {
           <Table
             rowKey="id"
             dataSource={brands}
+            size={isMobile ? "small" : "middle"}
             pagination={false}
+            scroll={{ x: 360 }}
             columns={[
               { title: "Tên", dataIndex: "name" },
               { title: "Slug", dataIndex: "slug" },

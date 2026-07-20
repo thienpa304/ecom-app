@@ -6,8 +6,12 @@ import { STOCK_STATUS } from "@ecom/shared";
 import {
   App,
   Button,
+  Card,
+  Col,
   Form,
+  Grid,
   Input,
+  Row,
   Select,
   Space,
   Table,
@@ -43,6 +47,8 @@ export function ProductsManager({
   const router = useRouter();
   const { modal, message } = App.useApp();
   const [pending, startTransition] = useTransition();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const brandMap = useMemo(
     () => Object.fromEntries(brands.map((b) => [b.id, b.name])),
@@ -104,63 +110,98 @@ export function ProductsManager({
 
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-      <Form
-        layout="inline"
-        onFinish={applyFilters}
-        initialValues={{
-          q: filters.q ?? "",
-          brand: filters.brand ?? undefined,
-          published: filters.published ?? undefined,
-        }}
-        style={{
-          rowGap: 12,
-          padding: 16,
-          background: "#fff",
-          borderRadius: 8,
-        }}
-      >
-        <Form.Item name="q" label="Tìm kiếm">
-          <Input allowClear placeholder="Tên, model…" style={{ width: 200 }} />
-        </Form.Item>
-        <Form.Item name="brand" label="Thương hiệu">
-          <Select
-            allowClear
-            placeholder="Tất cả"
-            style={{ width: 160 }}
-            options={brands.map((b) => ({ value: b.id, label: b.name }))}
-          />
-        </Form.Item>
-        <Form.Item name="published" label="Xuất bản">
-          <Select
-            allowClear
-            placeholder="Tất cả"
-            style={{ width: 140 }}
-            options={[
-              { value: "1", label: "Đã xuất bản" },
-              { value: "0", label: "Nháp" },
-            ]}
-          />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit">
-            Lọc
-          </Button>
-        </Form.Item>
-        <Form.Item style={{ marginInlineStart: "auto" }}>
-          <Link href="/products/new">
-            <Button type="primary" icon={<PlusOutlined />}>
-              Thêm sản phẩm
-            </Button>
-          </Link>
-        </Form.Item>
-      </Form>
+      <Card size="small">
+        <Form
+          layout={isMobile ? "vertical" : "inline"}
+          onFinish={applyFilters}
+          initialValues={{
+            q: filters.q ?? "",
+            brand: filters.brand ?? undefined,
+            published: filters.published ?? undefined,
+          }}
+        >
+          <Row gutter={[12, 0]} style={{ width: "100%" }}>
+            <Col xs={24} md={8} lg={6}>
+              <Form.Item name="q" label="Tìm kiếm" style={{ marginBottom: 12 }}>
+                <Input allowClear placeholder="Tên, model…" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={5}>
+              <Form.Item
+                name="brand"
+                label="Thương hiệu"
+                style={{ marginBottom: 12 }}
+              >
+                <Select
+                  allowClear
+                  placeholder="Tất cả"
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={5} lg={4}>
+              <Form.Item
+                name="published"
+                label="Xuất bản"
+                style={{ marginBottom: 12 }}
+              >
+                <Select
+                  allowClear
+                  placeholder="Tất cả"
+                  options={[
+                    { value: "1", label: "Đã xuất bản" },
+                    { value: "0", label: "Nháp" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={5} lg={9}>
+              <Form.Item
+                label={isMobile ? " " : undefined}
+                style={{ marginBottom: 12 }}
+              >
+                <Space
+                  wrap
+                  style={{
+                    width: "100%",
+                    justifyContent: isMobile ? "stretch" : "flex-end",
+                  }}
+                >
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    block={isMobile}
+                    style={isMobile ? { flex: 1 } : undefined}
+                  >
+                    Lọc
+                  </Button>
+                  <Link href="/products/new" style={{ display: "block" }}>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      block={isMobile}
+                    >
+                      {isMobile ? "Thêm" : "Thêm sản phẩm"}
+                    </Button>
+                  </Link>
+                </Space>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
 
       <Table
         rowKey="id"
         loading={pending}
         dataSource={products}
-        scroll={{ x: 900 }}
-        pagination={{ pageSize: 20, showSizeChanger: true }}
+        size={isMobile ? "small" : "middle"}
+        scroll={{ x: isMobile ? 720 : 900 }}
+        pagination={{
+          pageSize: isMobile ? 10 : 20,
+          showSizeChanger: !isMobile,
+          simple: isMobile,
+        }}
         locale={{ emptyText: "Không có sản phẩm." }}
         columns={[
           {
@@ -179,18 +220,20 @@ export function ProductsManager({
           {
             title: "Thương hiệu",
             dataIndex: "brandId",
-            width: 120,
+            width: 110,
+            responsive: ["md"],
             render: (id: string) => brandMap[id] ?? "—",
           },
           {
             title: "Danh mục",
             dataIndex: "categoryId",
-            width: 140,
+            width: 120,
+            responsive: ["lg"],
             render: (id: string) => catMap[id] ?? "—",
           },
           {
             title: "Giá",
-            width: 140,
+            width: 120,
             render: (_: unknown, p: Product) =>
               p.salePrice != null ? (
                 <>
@@ -212,13 +255,14 @@ export function ProductsManager({
           },
           {
             title: "Kho",
-            width: 120,
+            width: 100,
             dataIndex: "stockStatus",
+            responsive: ["sm"],
             render: (s: Product["stockStatus"]) => STOCK_STATUS[s].labelVi,
           },
           {
             title: "XB",
-            width: 100,
+            width: 80,
             dataIndex: "isPublished",
             render: (published: boolean, p: Product) => (
               <Tag
@@ -232,13 +276,18 @@ export function ProductsManager({
           },
           {
             title: "Thao tác",
-            width: 140,
+            width: isMobile ? 96 : 140,
             fixed: "right",
             render: (_: unknown, p: Product) => (
-              <Space>
+              <Space size={0}>
                 <Link href={`/products/${p.id}/edit`}>
-                  <Button type="link" size="small" icon={<EditOutlined />}>
-                    Sửa
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<EditOutlined />}
+                    aria-label="Sửa"
+                  >
+                    {isMobile ? null : "Sửa"}
                   </Button>
                 </Link>
                 <Button
@@ -246,9 +295,10 @@ export function ProductsManager({
                   danger
                   size="small"
                   icon={<DeleteOutlined />}
+                  aria-label="Xóa"
                   onClick={() => onDelete(p.id, p.name)}
                 >
-                  Xóa
+                  {isMobile ? null : "Xóa"}
                 </Button>
               </Space>
             ),

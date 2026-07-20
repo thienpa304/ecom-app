@@ -8,6 +8,7 @@ import {
   Card,
   Col,
   Form,
+  Grid,
   Input,
   InputNumber,
   Row,
@@ -26,6 +27,7 @@ export function CategoriesManager({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const { modal, message } = App.useApp();
   const [pending, startTransition] = useTransition();
+  const isMobile = !Grid.useBreakpoint().md;
 
   const nameMap = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c.name])),
@@ -123,7 +125,9 @@ export function CategoriesManager({ categories }: { categories: Category[] }) {
           <Table
             rowKey="id"
             dataSource={categories}
+            size={isMobile ? "small" : "middle"}
             pagination={false}
+            scroll={{ x: 520 }}
             columns={[
               { title: "Tên", dataIndex: "name" },
               { title: "Slug", dataIndex: "slug" },
