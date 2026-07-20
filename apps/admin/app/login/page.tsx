@@ -1,5 +1,7 @@
 "use client";
 
+import { LockOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Input, Typography } from "antd";
 import { useActionState } from "react";
 import { loginAction, type AuthState } from "@/lib/actions/auth";
 
@@ -9,45 +11,59 @@ export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, initial);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Đăng nhập Admin</h1>
-        <p className="mt-1 text-sm text-slate-500">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        background: "#f4f5f7",
+      }}
+    >
+      <Card style={{ width: "100%", maxWidth: 380 }}>
+        <Typography.Title level={3} style={{ marginTop: 0 }}>
+          Đăng nhập Admin
+        </Typography.Title>
+        <Typography.Paragraph type="secondary">
           Nhập mật khẩu quản trị để tiếp tục.
-        </p>
+        </Typography.Paragraph>
 
-        <form action={formAction} className="mt-6 space-y-4">
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-slate-700"
-            >
+        <form action={formAction}>
+          <div style={{ marginBottom: 16 }}>
+            <Typography.Text strong style={{ display: "block", marginBottom: 6 }}>
               Mật khẩu
-            </label>
-            <input
-              id="password"
+            </Typography.Text>
+            <Input.Password
               name="password"
-              type="password"
-              required
-              autoFocus
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-admin-accent focus:ring-1 focus:ring-admin-accent"
+              prefix={<LockOutlined />}
               placeholder="••••••••"
+              autoFocus
+              size="large"
+              required
             />
           </div>
 
           {state.error ? (
-            <p className="text-sm text-red-600">{state.error}</p>
+            <Alert
+              type="error"
+              message={state.error}
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
           ) : null}
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="w-full rounded bg-admin-accent px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            size="large"
+            loading={pending}
           >
-            {pending ? "Đang đăng nhập…" : "Đăng nhập"}
-          </button>
+            Đăng nhập
+          </Button>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

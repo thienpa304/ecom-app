@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
+import { BackButton } from "@/components/BackButton";
 import { ProductForm } from "@/components/ProductForm";
 import { updateProductAction } from "@/lib/actions/products";
 import { getBrands, getCategories, getProduct } from "@/lib/store";
@@ -23,14 +23,7 @@ export default async function EditProductPage({
   const action = updateProductAction.bind(null, id);
 
   return (
-    <AdminShell
-      title="Sửa sản phẩm"
-      actions={
-        <Link href="/products" className="text-sm text-slate-600 hover:underline">
-          ← Quay lại
-        </Link>
-      }
-    >
+    <AdminShell title="Sửa sản phẩm" actions={<BackButton />}>
       <ProductForm
         action={action}
         brands={brands}

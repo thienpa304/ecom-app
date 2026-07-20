@@ -9,7 +9,15 @@ export default async function SettingsPage() {
 
   return (
     <AdminShell title="Cấu hình cửa hàng">
-      <p className="mb-4 max-w-2xl text-sm text-slate-600">
+      <p
+        style={{
+          marginTop: 0,
+          marginBottom: 16,
+          maxWidth: 720,
+          color: "rgba(0,0,0,0.45)",
+          fontSize: 14,
+        }}
+      >
         Tên web, hotline, Zalo và nội dung trang chủ — chỉnh tại đây, web sẽ đọc
         trực tiếp từ database (không cần deploy lại).
       </p>

@@ -1,5 +1,24 @@
+"use client";
+
+import { UploadOutlined } from "@ant-design/icons";
 import type { Brand, Category, Product, StockStatus } from "@ecom/shared";
 import { STOCK_STATUS } from "@ecom/shared";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+  Space,
+  Typography,
+  Upload,
+  type UploadFile,
+} from "antd";
+import { useState } from "react";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
@@ -15,9 +34,27 @@ function specsToText(specs: Record<string, string>): string {
     .join("\n");
 }
 
-const field =
-  "w-full rounded border border-slate-300 px-3 py-1.5 text-sm focus:border-admin-accent focus:ring-1 focus:ring-admin-accent";
-const label = "mb-1 block text-xs font-medium text-slate-600";
+type FormValues = {
+  name: string;
+  slug?: string;
+  model: string;
+  brandId: string;
+  categoryId: string;
+  price: number;
+  salePrice?: number | null;
+  stockStatus: StockStatus;
+  soldCount?: number;
+  warranty?: string;
+  origin?: string;
+  motor?: string;
+  specs?: string;
+  imageUrls?: string;
+  videoUrl?: string;
+  description?: string;
+  isPublished?: boolean;
+  imageFiles?: UploadFile[];
+  videoFile?: UploadFile[];
+};
 
 export function ProductForm({
   action,
@@ -26,301 +63,268 @@ export function ProductForm({
   product,
   submitLabel,
 }: Props) {
+  const [form] = Form.useForm<FormValues>();
+  const [pending, setPending] = useState(false);
   const stockKeys = Object.keys(STOCK_STATUS) as StockStatus[];
 
+  async function onFinish(values: FormValues) {
+    setPending(true);
+    try {
+      const fd = new FormData();
+      fd.set("name", values.name ?? "");
+      fd.set("slug", values.slug ?? "");
+      fd.set("model", values.model ?? "");
+      fd.set("brandId", values.brandId ?? "");
+      fd.set("categoryId", values.categoryId ?? "");
+      fd.set("price", String(values.price ?? 0));
+      fd.set(
+        "salePrice",
+        values.salePrice == null || values.salePrice === undefined
+          ? ""
+          : String(values.salePrice),
+      );
+      fd.set("stockStatus", values.stockStatus ?? "in_stock");
+      fd.set("soldCount", String(values.soldCount ?? 0));
+      fd.set("warranty", values.warranty ?? "");
+      fd.set("origin", values.origin ?? "");
+      fd.set("motor", values.motor ?? "");
+      fd.set("specs", values.specs ?? "");
+      fd.set("imageUrls", values.imageUrls ?? "");
+      fd.set("videoUrl", values.videoUrl ?? "");
+      fd.set("description", values.description ?? "");
+      if (values.isPublished) fd.set("isPublished", "on");
+
+      for (const file of values.imageFiles ?? []) {
+        if (file.originFileObj) fd.append("imageFiles", file.originFileObj);
+      }
+      const video = values.videoFile?.[0]?.originFileObj;
+      if (video) fd.set("videoFile", video);
+
+      await action(fd);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <form
-      action={action}
-      encType="multipart/form-data"
-      className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5"
-    >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="name">
-            Tên sản phẩm
-          </label>
-          <input
-            id="name"
-            name="name"
-            required
-            defaultValue={product?.name ?? ""}
-            className={field}
-          />
-        </div>
+    <Card style={{ maxWidth: 900 }}>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        initialValues={{
+          name: product?.name ?? "",
+          slug: product?.slug ?? "",
+          model: product?.model ?? "",
+          brandId: product?.brandId ?? brands[0]?.id,
+          categoryId: product?.categoryId ?? categories[0]?.id,
+          price: product?.price ?? 0,
+          salePrice: product?.salePrice ?? undefined,
+          stockStatus: product?.stockStatus ?? "in_stock",
+          soldCount: product?.soldCount ?? 0,
+          warranty: product?.warranty ?? "",
+          origin: product?.origin ?? "",
+          motor: product?.motor ?? "",
+          specs: product ? specsToText(product.specs) : "",
+          imageUrls: product?.images.map((img) => img.url).join("\n") ?? "",
+          videoUrl: product?.videoUrl ?? "",
+          description: product?.description ?? "",
+          isPublished: product?.isPublished ?? true,
+          imageFiles: [],
+          videoFile: [],
+        }}
+      >
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item
+              label="Tên sản phẩm"
+              name="name"
+              rules={[{ required: true, message: "Nhập tên sản phẩm" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="slug">
-            Slug
-          </label>
-          <input
-            id="slug"
-            name="slug"
-            defaultValue={product?.slug ?? ""}
-            placeholder="tự tạo nếu để trống"
-            className={field}
-          />
-        </div>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Slug" name="slug">
+              <Input placeholder="tự tạo nếu để trống" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label="Model"
+              name="model"
+              rules={[{ required: true, message: "Nhập model" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="model">
-            Model
-          </label>
-          <input
-            id="model"
-            name="model"
-            required
-            defaultValue={product?.model ?? ""}
-            className={field}
-          />
-        </div>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label="Thương hiệu"
+              name="brandId"
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={brands.map((b) => ({ value: b.id, label: b.name }))}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label="Danh mục"
+              name="categoryId"
+              rules={[{ required: true }]}
+            >
+              <Select
+                options={categories.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+              />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="brandId">
-            Thương hiệu
-          </label>
-          <select
-            id="brandId"
-            name="brandId"
-            required
-            defaultValue={product?.brandId ?? brands[0]?.id}
-            className={field}
-          >
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label="Giá"
+              name="price"
+              rules={[{ required: true, message: "Nhập giá" }]}
+            >
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Giá khuyến mãi" name="salePrice">
+              <InputNumber
+                min={0}
+                style={{ width: "100%" }}
+                placeholder="để trống nếu không có"
+              />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="categoryId">
-            Danh mục
-          </label>
-          <select
-            id="categoryId"
-            name="categoryId"
-            required
-            defaultValue={product?.categoryId ?? categories[0]?.id}
-            className={field}
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Tình trạng kho" name="stockStatus">
+              <Select
+                options={stockKeys.map((key) => ({
+                  value: key,
+                  label: STOCK_STATUS[key].labelVi,
+                }))}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Đã bán" name="soldCount">
+              <InputNumber min={0} style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="price">
-            Giá
-          </label>
-          <input
-            id="price"
-            name="price"
-            type="number"
-            min={0}
-            required
-            defaultValue={product?.price ?? 0}
-            className={field}
-          />
-        </div>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Bảo hành" name="warranty">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Xuất xứ" name="origin">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item label="Motor" name="motor">
+              <Input />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="salePrice">
-            Giá khuyến mãi
-          </label>
-          <input
-            id="salePrice"
-            name="salePrice"
-            type="number"
-            min={0}
-            defaultValue={product?.salePrice ?? ""}
-            placeholder="để trống nếu không có"
-            className={field}
-          />
-        </div>
+          <Col span={24}>
+            <Form.Item
+              label="Thông số (mỗi dòng: khóa: giá trị)"
+              name="specs"
+            >
+              <Input.TextArea
+                rows={5}
+                placeholder={"Công suất: 1400W\nÁp lực: 100 bar"}
+              />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="stockStatus">
-            Tình trạng kho
-          </label>
-          <select
-            id="stockStatus"
-            name="stockStatus"
-            defaultValue={product?.stockStatus ?? "in_stock"}
-            className={field}
-          >
-            {stockKeys.map((key) => (
-              <option key={key} value={key}>
-                {STOCK_STATUS[key].labelVi}
-              </option>
-            ))}
-          </select>
-        </div>
+          <Col span={24}>
+            <Form.Item label="URL ảnh (mỗi dòng một URL)" name="imageUrls">
+              <Input.TextArea rows={4} placeholder="https://..." />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="soldCount">
-            Đã bán
-          </label>
-          <input
-            id="soldCount"
-            name="soldCount"
-            type="number"
-            min={0}
-            defaultValue={product?.soldCount ?? 0}
-            className={field}
-          />
-        </div>
+          <Col span={24}>
+            <Form.Item
+              label="Upload nhiều ảnh"
+              name="imageFiles"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+              extra="Ảnh mới sẽ được thêm vào cuối danh sách URL ở trên."
+            >
+              <Upload
+                beforeUpload={() => false}
+                multiple
+                accept="image/*"
+                listType="picture"
+              >
+                <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+              </Upload>
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="warranty">
-            Bảo hành
-          </label>
-          <input
-            id="warranty"
-            name="warranty"
-            defaultValue={product?.warranty ?? ""}
-            className={field}
-          />
-        </div>
+          <Col span={24}>
+            <Form.Item
+              label="Video (YouTube / TikTok / URL mp4)"
+              name="videoUrl"
+            >
+              <Input placeholder="https://www.youtube.com/watch?v=..." />
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="origin">
-            Xuất xứ
-          </label>
-          <input
-            id="origin"
-            name="origin"
-            defaultValue={product?.origin ?? ""}
-            className={field}
-          />
-        </div>
+          <Col span={24}>
+            <Form.Item
+              label="Upload video (mp4/webm)"
+              name="videoFile"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+              extra="Nếu chọn file, URL video sẽ được ghi đè bằng link lưu trên storage."
+            >
+              <Upload
+                beforeUpload={() => false}
+                maxCount={1}
+                accept="video/mp4,video/webm,video/quicktime,video/*"
+              >
+                <Button icon={<UploadOutlined />}>Chọn video</Button>
+              </Upload>
+            </Form.Item>
+          </Col>
 
-        <div>
-          <label className={label} htmlFor="motor">
-            Motor
-          </label>
-          <input
-            id="motor"
-            name="motor"
-            defaultValue={product?.motor ?? ""}
-            className={field}
-          />
-        </div>
+          <Col span={24}>
+            <Form.Item label="Mô tả" name="description">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+          </Col>
 
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="specs">
-            Thông số (mỗi dòng: khóa: giá trị)
-          </label>
-          <textarea
-            id="specs"
-            name="specs"
-            rows={5}
-            defaultValue={product ? specsToText(product.specs) : ""}
-            className={field}
-            placeholder={"Công suất: 1400W\nÁp lực: 100 bar"}
-          />
-        </div>
+          <Col span={24}>
+            <Form.Item name="isPublished" valuePropName="checked">
+              <Checkbox>Xuất bản</Checkbox>
+            </Form.Item>
+          </Col>
+        </Row>
 
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="imageUrls">
-            URL ảnh (mỗi dòng một URL)
-          </label>
-          <textarea
-            id="imageUrls"
-            name="imageUrls"
-            rows={4}
-            defaultValue={
-              product?.images.map((img) => img.url).join("\n") ?? ""
-            }
-            className={field}
-            placeholder="https://..."
-          />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="imageFiles">
-            Upload nhiều ảnh (có thể chọn nhiều file)
-          </label>
-          <input
-            id="imageFiles"
-            name="imageFiles"
-            type="file"
-            accept="image/*"
-            multiple
-            className={field}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            Ảnh mới sẽ được thêm vào cuối danh sách URL ở trên.
-          </p>
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="videoUrl">
-            Video (YouTube / TikTok / URL mp4)
-          </label>
-          <input
-            id="videoUrl"
-            name="videoUrl"
-            type="url"
-            defaultValue={product?.videoUrl ?? ""}
-            placeholder="https://www.youtube.com/watch?v=... hoặc link TikTok"
-            className={field}
-          />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="videoFile">
-            Upload video (tùy chọn — mp4/webm)
-          </label>
-          <input
-            id="videoFile"
-            name="videoFile"
-            type="file"
-            accept="video/mp4,video/webm,video/quicktime,video/*"
-            className={field}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            Nếu chọn file, URL video sẽ được ghi đè bằng link lưu trên storage.
-          </p>
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className={label} htmlFor="description">
-            Mô tả
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={3}
-            defaultValue={product?.description ?? ""}
-            className={field}
-          />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              name="isPublished"
-              defaultChecked={product?.isPublished ?? true}
-              className="rounded border-slate-300"
-            />
-            Xuất bản
-          </label>
-        </div>
-      </div>
-
-      <div className="flex gap-2 pt-2">
-        <button
-          type="submit"
-          className="rounded bg-admin-accent px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          {submitLabel}
-        </button>
-      </div>
-    </form>
+        <Space>
+          <Button type="primary" htmlType="submit" loading={pending}>
+            {submitLabel}
+          </Button>
+          {product?.images?.length ? (
+            <Typography.Text type="secondary">
+              Đang có {product.images.length} ảnh
+            </Typography.Text>
+          ) : null}
+        </Space>
+      </Form>
+    </Card>
   );
 }
