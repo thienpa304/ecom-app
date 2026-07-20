@@ -124,7 +124,7 @@ export default async function ProductDetailPage({
   ];
 
   return (
-    <div className="container-page min-w-0 overflow-x-hidden py-6 sm:py-8">
+    <div className="container-page min-w-0 py-6 sm:py-8">
       <JsonLd data={productJsonLd(product, { brand, category })} />
       <JsonLd data={breadcrumbJsonLd(crumbs)} />
 
@@ -231,7 +231,7 @@ export default async function ProductDetailPage({
       </div>
 
       {product.description ? (
-        <section className="mt-8 min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white sm:mt-10">
+        <section className="mt-8 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-10">
           <h2 className="border-b border-gray-100 px-3 py-3 text-base font-bold text-gray-900 sm:px-4">
             Mô tả sản phẩm
           </h2>
@@ -241,7 +241,7 @@ export default async function ProductDetailPage({
         </section>
       ) : null}
 
-      <section className="mt-6 min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white sm:mt-8">
+      <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
         <h2
           id="specs-heading"
           className="border-b border-gray-100 px-3 py-3 text-base font-bold text-gray-900 sm:px-4"
@@ -255,7 +255,7 @@ export default async function ProductDetailPage({
           >
             <tbody>
               <tr className="border-b border-gray-50 odd:bg-gray-50/60">
-                <th className="w-[38%] px-3 py-2.5 text-left font-medium text-gray-600 sm:w-1/3 sm:px-4">
+                <th className="w-[38%] break-words px-3 py-2.5 text-left align-top font-medium text-gray-600 sm:w-1/3 sm:px-4">
                   Model
                 </th>
                 <td className="break-words px-3 py-2.5 text-gray-900 sm:px-4">
@@ -264,7 +264,7 @@ export default async function ProductDetailPage({
               </tr>
               {product.motor && (
                 <tr className="border-b border-gray-50 odd:bg-gray-50/60">
-                  <th className="px-3 py-2.5 text-left font-medium text-gray-600 sm:px-4">
+                  <th className="break-words px-3 py-2.5 text-left align-top font-medium text-gray-600 sm:px-4">
                     Động cơ
                   </th>
                   <td className="break-words px-3 py-2.5 text-gray-900 sm:px-4">
@@ -277,7 +277,7 @@ export default async function ProductDetailPage({
                   key={key}
                   className="border-b border-gray-50 odd:bg-gray-50/60"
                 >
-                  <th className="px-3 py-2.5 text-left font-medium text-gray-600 sm:px-4">
+                  <th className="break-words px-3 py-2.5 text-left align-top font-medium text-gray-600 sm:px-4">
                     {key}
                   </th>
                   <td className="break-words px-3 py-2.5 text-gray-900 sm:px-4">

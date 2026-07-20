@@ -78,7 +78,7 @@ export default async function RootLayout({
           phone={settings.phone}
           searchPlaceholder={settings.searchPlaceholder}
         />
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1 pb-28 sm:pb-8">{children}</main>
         <Footer settings={settings} />
         <ContactFab phone={settings.phone} zaloUrl={settings.zaloUrl} />
         <Analytics />

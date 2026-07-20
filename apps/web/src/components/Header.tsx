@@ -31,7 +31,7 @@ export function Header({
         >
           <Link
             href="/san-pham"
-            className="hidden text-sm font-medium text-gray-700 hover:text-accent sm:inline"
+            className="inline-flex min-h-10 items-center text-sm font-medium text-gray-700 hover:text-accent"
           >
             Sản phẩm
           </Link>

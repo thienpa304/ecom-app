@@ -2,7 +2,7 @@
 
 import { PRICE_RANGES, type Brand, type Category } from "@ecom/shared";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useTransition } from "react";
+import { useCallback, useId, useTransition } from "react";
 
 type Props = {
   brands: Brand[];
@@ -14,6 +14,9 @@ export function ProductFilters({ brands, categories, className }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const uid = useId();
+  const priceName = `price-${uid}`;
+  const categoryName = `category-${uid}`;
 
   const selectedBrands = new Set(
     (searchParams.get("brand") ?? "")
@@ -69,14 +72,14 @@ export function ProductFilters({ brands, categories, className }: Props) {
     <aside
       className={`space-y-6 rounded-lg border border-gray-200 bg-white p-4 ${className ?? ""} ${pending ? "opacity-70" : ""}`}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold uppercase tracking-wide text-gray-900">
           Bộ lọc
         </h2>
         <button
           type="button"
           onClick={clearAll}
-          className="text-xs font-medium text-accent hover:underline"
+          className="inline-flex min-h-10 items-center rounded-md px-2 text-sm font-medium text-accent hover:bg-orange-50 hover:underline"
         >
           Xóa lọc
         </button>
@@ -84,15 +87,15 @@ export function ProductFilters({ brands, categories, className }: Props) {
 
       <section>
         <h3 className="mb-2 text-sm font-semibold text-gray-800">Thương hiệu</h3>
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {brands.map((brand) => (
             <li key={brand.id}>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+              <label className="flex min-h-10 cursor-pointer items-center gap-2.5 py-1 text-sm text-gray-700">
                 <input
                   type="checkbox"
                   checked={selectedBrands.has(brand.slug)}
                   onChange={() => toggleBrand(brand.slug)}
-                  className="rounded border-gray-300 text-accent focus:ring-accent"
+                  className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent"
                 />
                 {brand.name}
               </label>
@@ -103,16 +106,16 @@ export function ProductFilters({ brands, categories, className }: Props) {
 
       <section>
         <h3 className="mb-2 text-sm font-semibold text-gray-800">Khoảng giá</h3>
-        <ul className="space-y-2">
+        <ul className="space-y-1">
           {PRICE_RANGES.map((range) => (
             <li key={range.value}>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+              <label className="flex min-h-10 cursor-pointer items-center gap-2.5 py-1 text-sm text-gray-700">
                 <input
                   type="radio"
-                  name="price"
+                  name={priceName}
                   checked={selectedPrice === range.value}
                   onChange={() => setPrice(range.value)}
-                  className="border-gray-300 text-accent focus:ring-accent"
+                  className="h-4 w-4 border-gray-300 text-accent focus:ring-accent"
                 />
                 {range.labelVi}
               </label>
@@ -124,16 +127,16 @@ export function ProductFilters({ brands, categories, className }: Props) {
       {categories.length > 0 && (
         <section>
           <h3 className="mb-2 text-sm font-semibold text-gray-800">Danh mục</h3>
-          <ul className="space-y-2">
+          <ul className="space-y-1">
             {categories.map((cat) => (
               <li key={cat.id}>
-                <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                <label className="flex min-h-10 cursor-pointer items-center gap-2.5 py-1 text-sm text-gray-700">
                   <input
                     type="radio"
-                    name="category"
+                    name={categoryName}
                     checked={selectedCategory === cat.slug}
                     onChange={() => setCategory(cat.slug)}
-                    className="border-gray-300 text-accent focus:ring-accent"
+                    className="h-4 w-4 border-gray-300 text-accent focus:ring-accent"
                   />
                   {cat.name}
                 </label>

@@ -80,13 +80,15 @@ export function ProductCard({ product, brandName, priority = false }: Props) {
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-2 text-[11px] text-gray-500">
-              <span>Đã bán {product.soldCount.toLocaleString("vi-VN")}</span>
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px] text-gray-500">
+              <span className="min-w-0 shrink">
+                Đã bán {product.soldCount.toLocaleString("vi-VN")}
+              </span>
               <span
                 className={
                   product.stockStatus === "in_stock"
-                    ? "badge-stock"
-                    : "badge-out"
+                    ? "badge-stock shrink-0"
+                    : "badge-out shrink-0"
                 }
               >
                 {stock.labelVi}

@@ -2,7 +2,7 @@
 
 import { type Brand, type Category } from "@ecom/shared";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ProductFilters } from "./ProductFilters";
 
 type Props = {
@@ -14,6 +14,9 @@ export function MobileFilters({ brands, categories }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const searchParams = useSearchParams();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   const activeCount = [
     searchParams.get("brand"),
@@ -25,16 +28,39 @@ export function MobileFilters({ brands, categories }: Props) {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
     return () => {
       document.body.style.overflow = prev;
+      triggerRef.current?.focus();
     };
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
@@ -42,6 +68,7 @@ export function MobileFilters({ brands, categories }: Props) {
   return (
     <div className="lg:hidden">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 shadow-sm active:bg-gray-50"
@@ -66,6 +93,7 @@ export function MobileFilters({ brands, categories }: Props) {
             onClick={() => setOpen(false)}
           />
           <div
+            ref={panelRef}
             id={panelId}
             role="dialog"
             aria-modal="true"
@@ -74,7 +102,7 @@ export function MobileFilters({ brands, categories }: Props) {
           >
             <div className="flex flex-col items-center border-b border-gray-100 px-4 pb-3 pt-2">
               <div className="mb-2 h-1 w-10 rounded-full bg-gray-300" />
-              <div className="flex w-full items-center justify-between">
+              <div className="flex w-full items-center justify-between gap-2">
                 <p className="text-base font-semibold text-gray-900">
                   Bộ lọc
                   {activeCount > 0 ? (
@@ -84,9 +112,10 @@ export function MobileFilters({ brands, categories }: Props) {
                   ) : null}
                 </p>
                 <button
+                  ref={closeRef}
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-md px-2 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md px-3 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                 >
                   Đóng
                 </button>

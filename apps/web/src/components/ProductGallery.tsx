@@ -187,9 +187,7 @@ function VideoPlayer({
         playsInline
         preload="metadata"
         className="absolute inset-0 h-full w-full bg-black object-contain"
-      >
-        <track kind="captions" />
-      </video>
+      />
     );
   }
 

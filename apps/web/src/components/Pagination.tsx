@@ -26,22 +26,29 @@ export function Pagination({ page, totalPages, queryString = "" }: Props) {
     withEllipsis.push(pages[i]!);
   }
 
+  const btnBase =
+    "inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border px-3 text-sm";
+
   return (
     <nav
-      className="mt-6 flex items-center justify-center gap-1"
+      className="mt-6 flex flex-wrap items-center justify-center gap-1.5"
       aria-label="Phân trang"
     >
-      <Link
-        href={hrefFor(Math.max(1, page - 1))}
-        aria-disabled={page <= 1}
-        className={`rounded-md border px-3 py-1.5 text-sm ${
-          page <= 1
-            ? "pointer-events-none border-gray-100 text-gray-300"
-            : "border-gray-300 bg-white text-gray-700 hover:border-accent hover:text-accent"
-        }`}
-      >
-        Trước
-      </Link>
+      {page <= 1 ? (
+        <span
+          className={`${btnBase} pointer-events-none border-gray-100 text-gray-300`}
+          aria-disabled="true"
+        >
+          Trước
+        </span>
+      ) : (
+        <Link
+          href={hrefFor(page - 1)}
+          className={`${btnBase} border-gray-300 bg-white text-gray-700 hover:border-accent hover:text-accent`}
+        >
+          Trước
+        </Link>
+      )}
       {withEllipsis.map((p, idx) =>
         p === "…" ? (
           <span key={`e-${idx}`} className="px-2 text-gray-400">
@@ -51,7 +58,8 @@ export function Pagination({ page, totalPages, queryString = "" }: Props) {
           <Link
             key={p}
             href={hrefFor(p)}
-            className={`rounded-md border px-3 py-1.5 text-sm ${
+            aria-current={p === page ? "page" : undefined}
+            className={`${btnBase} ${
               p === page
                 ? "border-accent bg-accent text-white"
                 : "border-gray-300 bg-white text-gray-700 hover:border-accent hover:text-accent"
@@ -61,17 +69,21 @@ export function Pagination({ page, totalPages, queryString = "" }: Props) {
           </Link>
         ),
       )}
-      <Link
-        href={hrefFor(Math.min(totalPages, page + 1))}
-        aria-disabled={page >= totalPages}
-        className={`rounded-md border px-3 py-1.5 text-sm ${
-          page >= totalPages
-            ? "pointer-events-none border-gray-100 text-gray-300"
-            : "border-gray-300 bg-white text-gray-700 hover:border-accent hover:text-accent"
-        }`}
-      >
-        Sau
-      </Link>
+      {page >= totalPages ? (
+        <span
+          className={`${btnBase} pointer-events-none border-gray-100 text-gray-300`}
+          aria-disabled="true"
+        >
+          Sau
+        </span>
+      ) : (
+        <Link
+          href={hrefFor(page + 1)}
+          className={`${btnBase} border-gray-300 bg-white text-gray-700 hover:border-accent hover:text-accent`}
+        >
+          Sau
+        </Link>
+      )}
     </nav>
   );
 }

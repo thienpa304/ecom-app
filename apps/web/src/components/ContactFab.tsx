@@ -9,7 +9,7 @@ export function ContactFab({ phone, zaloUrl }: Props) {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6"
       aria-label="Liên hệ nhanh"
     >
       {zaloUrl ? (

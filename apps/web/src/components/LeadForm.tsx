@@ -37,13 +37,13 @@ export function LeadForm({ productId, productName }: Props) {
 
   if (done) {
     return (
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+      <div className="break-words rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
         Cảm ơn bạn! Chúng tôi sẽ liên hệ sớm
         {productName ? ` về ${productName}` : ""}.
         <button
           type="button"
           onClick={() => setDone(false)}
-          className="mt-2 block text-xs font-medium text-accent hover:underline"
+          className="mt-2 block min-h-10 text-sm font-medium text-accent hover:underline"
         >
           Gửi yêu cầu khác
         </button>
@@ -52,7 +52,7 @@ export function LeadForm({ productId, productName }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3" id="lien-he">
+    <form onSubmit={onSubmit} className="space-y-3">
       <p className="text-sm font-semibold text-gray-900">Để lại số điện thoại</p>
       <div>
         <label htmlFor="lead-name" className="mb-1 block text-xs text-gray-600">
@@ -62,7 +62,7 @@ export function LeadForm({ productId, productName }: Props) {
           id="lead-name"
           name="name"
           required
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          className="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           placeholder="Nguyễn Văn A"
         />
       </div>
@@ -76,7 +76,7 @@ export function LeadForm({ productId, productName }: Props) {
           type="tel"
           required
           pattern="[0-9+\s()-]{8,15}"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          className="min-h-11 w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           placeholder="09xxxxxxxx"
         />
       </div>
@@ -88,7 +88,7 @@ export function LeadForm({ productId, productName }: Props) {
           id="lead-note"
           name="note"
           rows={3}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+          className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           placeholder="Tôi muốn tư vấn model này..."
         />
       </div>

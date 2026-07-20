@@ -78,7 +78,7 @@ export default async function HomePage() {
           </div>
           <Link
             href="/san-pham"
-            className="text-sm font-semibold text-accent hover:underline"
+            className="inline-flex min-h-10 shrink-0 items-center rounded-md px-2 text-sm font-semibold text-accent hover:bg-orange-50 hover:underline"
           >
             Xem catalog →
           </Link>

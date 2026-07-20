@@ -73,7 +73,7 @@ export function SearchForm({
           <button
             type="button"
             onClick={clear}
-            className="mr-1 rounded-full p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+            className="mr-0.5 inline-flex min-h-10 min-w-10 items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-700"
             aria-label="Xóa tìm kiếm"
           >
             <ClearIcon className="h-4 w-4" />

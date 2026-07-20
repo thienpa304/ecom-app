@@ -40,12 +40,14 @@ export function Footer({ settings }: { settings: SiteSettings }) {
                 {settings.phone}
               </a>
             </li>
-            {settings.address ? <li>{settings.address}</li> : null}
+            {settings.address ? (
+              <li className="break-words">{settings.address}</li>
+            ) : null}
             {settings.email ? (
               <li>
                 <a
                   href={`mailto:${settings.email}`}
-                  className="font-medium text-accent hover:underline"
+                  className="break-all font-medium text-accent hover:underline"
                 >
                   {settings.email}
                 </a>
