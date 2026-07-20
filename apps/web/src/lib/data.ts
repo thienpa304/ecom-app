@@ -72,6 +72,41 @@ function resolvePriceRange(params: ListProductsParams): {
   return { min: params.minPrice, max: params.maxPrice };
 }
 
+function clampPageSize(size?: number): number {
+  if (size === 24) return 24;
+  return 12;
+}
+
+function normalizeSlugs(value?: string | string[]): string[] {
+  if (!value) return [];
+  const arr = Array.isArray(value) ? value : value.split(",");
+  return arr.map((s) => s.trim()).filter(Boolean);
+}
+
+function mapRows(data: ProductWithImages[] | null | undefined): Product[] {
+  return ((data ?? []) as ProductWithImages[]).map((row) => {
+    const { product_images, ...product } = row;
+    return mapProductRow(product, product_images ?? []);
+  });
+}
+
+function sortColumn(sort?: SortValue): {
+  column: string;
+  ascending: boolean;
+} {
+  switch (sort) {
+    case "price_asc":
+      return { column: "effective_price", ascending: true };
+    case "price_desc":
+      return { column: "effective_price", ascending: false };
+    case "sold_desc":
+      return { column: "sold_count", ascending: false };
+    case "newest":
+    default:
+      return { column: "created_at", ascending: false };
+  }
+}
+
 const loadSiteSettings = unstable_cache(
   async (): Promise<SiteSettings> => {
     const supabase = createServerClient();
@@ -118,24 +153,20 @@ const loadCategories = unstable_cache(
   { revalidate: REVALIDATE_SECONDS, tags: ["categories"] },
 );
 
-const loadPublishedProducts = unstable_cache(
-  async (): Promise<Product[]> => {
+const loadPublishedSlugs = unstable_cache(
+  async (): Promise<string[]> => {
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from("products")
-      .select("*, product_images(*)")
+      .select("slug")
       .eq("is_published", true);
 
     if (error) {
-      throw new Error(`Failed to fetch products: ${error.message}`);
+      throw new Error(`Failed to fetch product slugs: ${error.message}`);
     }
-
-    return ((data ?? []) as ProductWithImages[]).map((row) => {
-      const { product_images, ...product } = row;
-      return mapProductRow(product, product_images ?? []);
-    });
+    return (data ?? []).map((row) => row.slug as string);
   },
-  ["published-products"],
+  ["published-product-slugs"],
   { revalidate: REVALIDATE_SECONDS, tags: ["products"] },
 );
 
@@ -143,70 +174,155 @@ const loadPublishedProducts = unstable_cache(
 export const getSiteSettings = cache(() => loadSiteSettings());
 export const getBrands = cache(() => loadBrands());
 export const getCategories = cache(() => loadCategories());
-const getPublishedProducts = cache(() => loadPublishedProducts());
 
 export async function getProductBySlug(
   slug: string,
 ): Promise<Product | undefined> {
-  const products = await getPublishedProducts();
-  return products.find((p) => p.slug === slug);
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, product_images(*)")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch product: ${error.message}`);
+  }
+  if (!data) return undefined;
+  return mapRows([data as ProductWithImages])[0];
 }
 
 export async function listPublishedProductSlugs(): Promise<string[]> {
-  const products = await getPublishedProducts();
-  return products.map((p) => p.slug);
+  return loadPublishedSlugs();
 }
 
-export async function listProducts(
-  params: ListProductsParams = {},
+async function queryListProducts(
+  params: ListProductsParams,
 ): Promise<ListProductsResult> {
-  const [brands, categories, products] = await Promise.all([
+  const pageSize = clampPageSize(params.pageSize);
+  const requestedPage = Math.max(1, params.page ?? 1);
+  const { min, max } = resolvePriceRange(params);
+  const q = params.q?.trim();
+  const brandSlugs = normalizeSlugs(params.brandSlug);
+  const { column, ascending } = sortColumn(params.sort);
+
+  const [brands, categories] = await Promise.all([
     getBrands(),
     getCategories(),
-    getPublishedProducts(),
   ]);
 
-  const brandSlugs = normalizeSlugs(params.brandSlug);
   const brandIds = brandSlugs.length
-    ? new Set(
-        brands.filter((b) => brandSlugs.includes(b.slug)).map((b) => b.id),
-      )
-    : null;
+    ? brands.filter((b) => brandSlugs.includes(b.slug)).map((b) => b.id)
+    : [];
 
   let categoryId: string | null = null;
   if (params.categorySlug) {
     categoryId =
       categories.find((c) => c.slug === params.categorySlug)?.id ?? null;
+    // Unknown category slug → empty result
+    if (!categoryId) {
+      return {
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize,
+        totalPages: 1,
+      };
+    }
   }
 
-  const { min, max } = resolvePriceRange(params);
-  const q = params.q?.trim().toLowerCase();
+  if (brandSlugs.length && brandIds.length === 0) {
+    return {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize,
+      totalPages: 1,
+    };
+  }
 
-  let filtered = products.filter((p) => {
-    if (brandIds && !brandIds.has(p.brandId)) return false;
-    if (categoryId && p.categoryId !== categoryId) return false;
+  const supabase = createServerClient();
+  let query = supabase
+    .from("products")
+    .select("*, product_images(*)", { count: "exact" })
+    .eq("is_published", true);
 
-    const price = effectiveSaleOrPrice(p);
-    if (min != null && price < min) return false;
-    if (max != null && price > max) return false;
+  if (brandIds.length === 1) {
+    query = query.eq("brand_id", brandIds[0]!);
+  } else if (brandIds.length > 1) {
+    query = query.in("brand_id", brandIds);
+  }
 
-    if (q) {
-      const hay = `${p.name} ${p.model} ${p.description ?? ""}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    return true;
-  });
+  if (categoryId) {
+    query = query.eq("category_id", categoryId);
+  }
 
-  filtered = sortProducts(filtered, params.sort);
+  if (min != null) {
+    query = query.gte("effective_price", min);
+  }
+  if (max != null) {
+    query = query.lte("effective_price", max);
+  }
 
-  const pageSize = clampPageSize(params.pageSize);
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const page = Math.min(Math.max(1, params.page ?? 1), totalPages);
-  const start = (page - 1) * pageSize;
-  const items = filtered.slice(start, start + pageSize);
+  if (q) {
+    const searchOr = buildSearchOr(q);
+    if (searchOr) query = query.or(searchOr);
+  }
 
-  return { items, total, page, pageSize, totalPages };
+  const from = (requestedPage - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await query
+    .order(column, { ascending, nullsFirst: false })
+    .range(from, to);
+
+  if (error) {
+    throw new Error(`Failed to list products: ${error.message}`);
+  }
+
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const page = Math.min(requestedPage, totalPages);
+
+  return {
+    items: mapRows(data as ProductWithImages[]),
+    total,
+    page,
+    pageSize,
+    totalPages,
+  };
+}
+
+/** PostgREST `or` values with special chars must be double-quoted. */
+function buildSearchOr(q: string): string {
+  const safe = q.replace(/[%_",]/g, " ").replace(/\s+/g, " ").trim();
+  if (!safe) return "";
+  const p = `%${safe}%`;
+  return `name.ilike."${p}",model.ilike."${p}",description.ilike."${p}"`;
+}
+
+export async function listProducts(
+  params: ListProductsParams = {},
+): Promise<ListProductsResult> {
+  const normalized: ListProductsParams = {
+    brandSlug: normalizeSlugs(params.brandSlug).join(",") || undefined,
+    categorySlug: params.categorySlug || undefined,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    price: params.price || undefined,
+    sort: params.sort || "newest",
+    page: Math.max(1, params.page ?? 1),
+    pageSize: clampPageSize(params.pageSize),
+    q: params.q?.trim() || undefined,
+  };
+
+  const cacheKey = JSON.stringify(normalized);
+  return unstable_cache(
+    () => queryListProducts(normalized),
+    ["list-products", cacheKey],
+    { revalidate: REVALIDATE_SECONDS, tags: ["products"] },
+  )();
 }
 
 export async function createLead(input: {
@@ -244,38 +360,4 @@ export async function getCategoryById(
 ): Promise<Category | undefined> {
   const categories = await getCategories();
   return categories.find((c) => c.id === id);
-}
-
-function normalizeSlugs(value?: string | string[]): string[] {
-  if (!value) return [];
-  const arr = Array.isArray(value) ? value : value.split(",");
-  return arr.map((s) => s.trim()).filter(Boolean);
-}
-
-function effectiveSaleOrPrice(p: Product): number {
-  return p.salePrice != null && p.salePrice < p.price ? p.salePrice : p.price;
-}
-
-function sortProducts(items: Product[], sort?: SortValue): Product[] {
-  const copy = [...items];
-  switch (sort) {
-    case "price_asc":
-      return copy.sort(
-        (a, b) => effectiveSaleOrPrice(a) - effectiveSaleOrPrice(b),
-      );
-    case "price_desc":
-      return copy.sort(
-        (a, b) => effectiveSaleOrPrice(b) - effectiveSaleOrPrice(a),
-      );
-    case "sold_desc":
-      return copy.sort((a, b) => b.soldCount - a.soldCount);
-    case "newest":
-    default:
-      return copy;
-  }
-}
-
-function clampPageSize(size?: number): number {
-  if (size === 24) return 24;
-  return 12;
 }
