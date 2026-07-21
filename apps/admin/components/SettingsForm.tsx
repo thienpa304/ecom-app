@@ -124,9 +124,9 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
                   name="heroCardTitle"
                   defaultValue={
                     settings.heroCardTitle ||
-                    "Trải nghiệm catalog kiểu showroom"
+                    "Xem hàng như tại cửa hàng"
                   }
-                  placeholder="Trải nghiệm catalog kiểu showroom"
+                  placeholder="Xem hàng như tại cửa hàng"
                 />
               </Form.Item>
               <Form.Item label="Dòng phụ trên poster">

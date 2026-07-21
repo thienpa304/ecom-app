@@ -24,7 +24,7 @@ export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
-  const titleDefault = `${s.siteName} — Catalog sản phẩm`;
+  const titleDefault = `${s.siteName} — Sản phẩm`;
   const description = s.metaDescription || s.tagline;
 
   return {

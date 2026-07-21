@@ -7,12 +7,12 @@ import { absoluteUrl } from "@/lib/site";
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   return {
-    title: { absolute: `${s.siteName} — Catalog sản phẩm` },
+    title: { absolute: `${s.siteName} — Sản phẩm` },
     description: s.metaDescription || s.tagline,
     alternates: { canonical: "/" },
     openGraph: {
       url: absoluteUrl("/"),
-      title: `${s.siteName} — Catalog sản phẩm`,
+      title: `${s.siteName} — Sản phẩm`,
       description: s.metaDescription || s.tagline,
     },
   };
@@ -37,7 +37,7 @@ export default async function HomePage() {
               {settings.siteName}
             </p>
             <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              {settings.heroTitle || "Catalog điện máy"}
+              {settings.heroTitle || "Điện máy & thiết bị gia dụng"}
             </h1>
             <p className="mt-3 max-w-xl text-base text-gray-600">
               {settings.heroSubtitle || settings.tagline}
@@ -75,7 +75,7 @@ export default async function HomePage() {
                 </p>
                 <p className="mt-1 text-2xl font-bold text-white">
                   {settings.heroCardTitle ||
-                    "Trải nghiệm catalog kiểu showroom"}
+                    "Xem hàng như tại cửa hàng"}
                 </p>
               </div>
             </div>
@@ -97,7 +97,7 @@ export default async function HomePage() {
             href="/san-pham"
             className="inline-flex min-h-10 shrink-0 items-center rounded-md px-2 text-sm font-semibold text-accent hover:bg-orange-50 hover:underline"
           >
-            Xem catalog →
+            Xem tất cả →
           </Link>
         </div>
 
