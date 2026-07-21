@@ -87,6 +87,8 @@ function NavPanel({
 
   useEffect(() => {
     for (const item of NAV) {
+      // Skip dashboard — counts must stay fresh (prefetch can pin stale RSC)
+      if (item.href === "/") continue;
       router.prefetch(item.href);
     }
   }, [router]);
@@ -216,11 +218,15 @@ export function AdminShell({
 
   function handleNavigate(href: string) {
     setOpen(false);
-    if (href === pathname) return;
+    if (href === pathname) {
+      if (href === "/") router.refresh();
+      return;
+    }
     setPendingHref(href);
     startAdminNavigation();
     startTransition(() => {
       router.push(href);
+      if (href === "/") router.refresh();
     });
   }
 
