@@ -216,15 +216,11 @@ export function AdminShell({
   }, [pathname]);
 
   useEffect(() => {
-    if (isMobile) {
-      document.documentElement.classList.remove("admin-fixed-shell");
-      return;
-    }
     document.documentElement.classList.add("admin-fixed-shell");
     return () => {
       document.documentElement.classList.remove("admin-fixed-shell");
     };
-  }, [isMobile]);
+  }, []);
 
   useEffect(() => {
     if (!navigating) return;
@@ -248,11 +244,10 @@ export function AdminShell({
 
   return (
     <Layout
-      className={isMobile ? undefined : "admin-shell-desktop"}
+      className="admin-shell"
       style={{
-        height: isMobile ? "auto" : "100dvh",
-        minHeight: "100dvh",
-        overflow: isMobile ? "visible" : "hidden",
+        height: "100dvh",
+        overflow: "hidden",
       }}
     >
       {!isMobile ? (
@@ -309,8 +304,8 @@ export function AdminShell({
           minWidth: 0,
           background: token.colorBgLayout,
           marginInlineStart: isMobile ? 0 : 232,
-          height: isMobile ? "auto" : "100dvh",
-          overflow: isMobile ? "visible" : "hidden",
+          height: "100dvh",
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
         }}
@@ -326,8 +321,7 @@ export function AdminShell({
             height: 56,
             lineHeight: "56px",
             flexShrink: 0,
-            position: isMobile ? "sticky" : "relative",
-            top: 0,
+            position: "relative",
             zIndex: 20,
           }}
         >
@@ -366,9 +360,10 @@ export function AdminShell({
           style={{
             padding: isMobile ? 12 : 24,
             overflowX: "hidden",
-            overflowY: isMobile ? "visible" : "auto",
-            flex: isMobile ? undefined : 1,
-            minHeight: isMobile ? undefined : 0,
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            flex: 1,
+            minHeight: 0,
             position: "relative",
             opacity: navigating ? 0.55 : 1,
             transition: "opacity 0.15s ease",

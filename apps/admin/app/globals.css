@@ -2,7 +2,6 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  height: 100%;
   background: var(--admin-layout-bg, #f5f6f8);
   -webkit-text-size-adjust: 100%;
 }
@@ -16,11 +15,12 @@ body {
   overflow-x: hidden;
 }
 
-/* Desktop shell: lock page scroll; only content pane scrolls */
+/* Shell locks document scroll; Content pane scrolls (desktop + mobile) */
 html.admin-fixed-shell,
 html.admin-fixed-shell body {
   overflow: hidden;
   height: 100%;
+  overscroll-behavior: none;
 }
 
 /* Ant table cells wrap better on mobile */
