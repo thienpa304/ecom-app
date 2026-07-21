@@ -26,6 +26,9 @@ export async function updateSiteSettingsAction(
     email: String(formData.get("email") ?? "").trim(),
     heroTitle: String(formData.get("heroTitle") ?? "").trim(),
     heroSubtitle: String(formData.get("heroSubtitle") ?? "").trim(),
+    heroImageUrl: String(formData.get("heroImageUrl") ?? "").trim(),
+    heroCardTitle: String(formData.get("heroCardTitle") ?? "").trim(),
+    heroCardCaption: String(formData.get("heroCardCaption") ?? "").trim(),
     metaDescription: String(formData.get("metaDescription") ?? "").trim(),
     footerBlurb: String(formData.get("footerBlurb") ?? "").trim(),
     searchPlaceholder:
@@ -40,6 +43,7 @@ export async function updateSiteSettingsAction(
   try {
     await updateSiteSettings(parsed.data);
     revalidatePath("/settings");
+    revalidatePath("/");
     return {
       ok: true,
       message: "Đã lưu cấu hình. Web sẽ cập nhật trong giây lát.",

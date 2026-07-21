@@ -52,13 +52,30 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="relative hidden overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm lg:block">
-            <div className="aspect-[5/3] bg-[radial-gradient(circle_at_30%_20%,#fed7aa,transparent_50%),radial-gradient(circle_at_80%_70%,#ffedd5,transparent_45%)] p-8">
-              <div className="flex h-full flex-col justify-end">
-                <p className="text-sm font-medium text-gray-500">
-                  Lọc theo thương hiệu · Giá · Tồn kho
+            <div className="relative aspect-[5/3]">
+              {settings.heroImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={settings.heroImageUrl}
+                  alt={
+                    settings.heroCardTitle ||
+                    settings.heroTitle ||
+                    settings.siteName
+                  }
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#fed7aa,transparent_50%),radial-gradient(circle_at_80%_70%,#ffedd5,transparent_45%)]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                <p className="text-sm font-medium text-white/85">
+                  {settings.heroCardCaption ||
+                    "Lọc theo thương hiệu · Giá · Tồn kho"}
                 </p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">
-                  Trải nghiệm catalog kiểu showroom
+                <p className="mt-1 text-2xl font-bold text-white">
+                  {settings.heroCardTitle ||
+                    "Trải nghiệm catalog kiểu showroom"}
                 </p>
               </div>
             </div>

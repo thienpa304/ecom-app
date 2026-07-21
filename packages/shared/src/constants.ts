@@ -12,6 +12,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   heroTitle: "Catalog điện máy & thiết bị gia dụng",
   heroSubtitle:
     "Xem thông số, giá khuyến mãi và liên hệ trực tiếp — không cần giỏ hàng, không thanh toán online.",
+  heroImageUrl: "",
+  heroCardTitle: "Trải nghiệm catalog kiểu showroom",
+  heroCardCaption: "Lọc theo thương hiệu · Giá · Tồn kho",
   metaDescription:
     "Điện Máy Lộc Phát Đạt (dienmaylocphatdat.vn) — catalog máy xịt rửa, điện máy; gọi điện hoặc để lại SĐT tư vấn.",
   footerBlurb:

@@ -1,12 +1,21 @@
 "use client";
 
 import type { SiteSettings } from "@ecom/shared";
-import { Alert, Button, Card, Form, Input, Space } from "antd";
-import { useActionState } from "react";
+import { Alert, Button, Card, Form, Input, Space, Typography } from "antd";
+import dynamic from "next/dynamic";
+import { useActionState, useState } from "react";
 import {
   updateSiteSettingsAction,
   type SettingsActionState,
 } from "@/lib/actions/settings";
+
+const MediaLibraryModal = dynamic(
+  () =>
+    import("@/components/media/MediaLibraryModal").then(
+      (m) => m.MediaLibraryModal,
+    ),
+  { ssr: false },
+);
 
 const initial: SettingsActionState = { ok: false, message: "" };
 
@@ -15,10 +24,13 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
     updateSiteSettingsAction,
     initial,
   );
+  const [heroImageUrl, setHeroImageUrl] = useState(settings.heroImageUrl ?? "");
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
-    <Card style={{ maxWidth: 720 }}>
+    <Card style={{ width: "100%" }}>
       <form action={action}>
+        <input type="hidden" name="heroImageUrl" value={heroImageUrl} />
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <section>
             <Form layout="vertical" component={false}>
@@ -57,6 +69,77 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
                   defaultValue={settings.heroSubtitle}
                 />
               </Form.Item>
+
+              <Form.Item label="Ảnh poster (bên phải trang chủ)">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Space wrap>
+                    <Button
+                      type="default"
+                      htmlType="button"
+                      onClick={() => setPickerOpen(true)}
+                    >
+                      Chọn từ thư viện
+                    </Button>
+                    {heroImageUrl ? (
+                      <Button
+                        danger
+                        type="link"
+                        htmlType="button"
+                        onClick={() => setHeroImageUrl("")}
+                      >
+                        Xóa ảnh
+                      </Button>
+                    ) : null}
+                  </Space>
+                  <Input
+                    value={heroImageUrl}
+                    onChange={(e) => setHeroImageUrl(e.target.value)}
+                    placeholder="Hoặc dán URL ảnh…"
+                    allowClear
+                  />
+                  {heroImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={heroImageUrl}
+                      alt="Hero poster preview"
+                      style={{
+                        width: "100%",
+                        maxWidth: 420,
+                        maxHeight: 220,
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        border: "1px solid #f0f0f0",
+                      }}
+                    />
+                  ) : (
+                    <Typography.Text type="secondary">
+                      Chưa có ảnh — web sẽ hiện nền gradient mặc định.
+                    </Typography.Text>
+                  )}
+                </Space>
+              </Form.Item>
+
+              <Form.Item label="Tiêu đề trên poster">
+                <Input
+                  name="heroCardTitle"
+                  defaultValue={
+                    settings.heroCardTitle ||
+                    "Trải nghiệm catalog kiểu showroom"
+                  }
+                  placeholder="Trải nghiệm catalog kiểu showroom"
+                />
+              </Form.Item>
+              <Form.Item label="Dòng phụ trên poster">
+                <Input
+                  name="heroCardCaption"
+                  defaultValue={
+                    settings.heroCardCaption ||
+                    "Lọc theo thương hiệu · Giá · Tồn kho"
+                  }
+                  placeholder="Lọc theo thương hiệu · Giá · Tồn kho"
+                />
+              </Form.Item>
+
               <Form.Item label="Meta description">
                 <Input.TextArea
                   name="metaDescription"
@@ -95,6 +178,19 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           </Button>
         </Space>
       </form>
+
+      <MediaLibraryModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        accept="image"
+        multiple={false}
+        title="Chọn ảnh poster trang chủ"
+        initialSelectedUrls={heroImageUrl ? [heroImageUrl] : []}
+        onSelect={(assets) => {
+          const url = assets[0]?.url;
+          if (url) setHeroImageUrl(url);
+        }}
+      />
     </Card>
   );
 }

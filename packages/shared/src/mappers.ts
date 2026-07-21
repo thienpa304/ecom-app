@@ -157,6 +157,12 @@ export type SiteSettingsRow = {
 
   hero_subtitle: string;
 
+  hero_image_url?: string | null;
+
+  hero_card_title?: string | null;
+
+  hero_card_caption?: string | null;
+
   meta_description: string;
 
   footer_blurb: string;
@@ -354,6 +360,12 @@ export function mapSiteSettingsRow(row: SiteSettingsRow): SiteSettings {
 
     heroSubtitle: row.hero_subtitle,
 
+    heroImageUrl: row.hero_image_url ?? '',
+
+    heroCardTitle: row.hero_card_title ?? '',
+
+    heroCardCaption: row.hero_card_caption ?? '',
+
     metaDescription: row.meta_description,
 
     footerBlurb: row.footer_blurb,
@@ -393,6 +405,12 @@ export function siteSettingsToRow(
     hero_title: settings.heroTitle,
 
     hero_subtitle: settings.heroSubtitle,
+
+    hero_image_url: settings.heroImageUrl ?? '',
+
+    hero_card_title: settings.heroCardTitle ?? '',
+
+    hero_card_caption: settings.heroCardCaption ?? '',
 
     meta_description: settings.metaDescription,
 
