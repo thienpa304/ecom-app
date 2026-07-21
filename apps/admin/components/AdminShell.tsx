@@ -99,7 +99,9 @@ function NavPanel({
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        minHeight: 0,
         background: BRAND.siderBg,
+        overflow: "hidden",
       }}
     >
       {showBrand ? (
@@ -110,6 +112,7 @@ function NavPanel({
             gap: 12,
             padding: "18px 16px 14px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
+            flexShrink: 0,
           }}
         >
           <BrandMark />
@@ -146,6 +149,8 @@ function NavPanel({
           background: "transparent",
           borderInlineEnd: 0,
           flex: 1,
+          minHeight: 0,
+          overflow: "auto",
           paddingTop: 8,
         }}
         onClick={({ key }) => {
@@ -160,7 +165,7 @@ function NavPanel({
         }))}
       />
 
-      <div style={{ padding: 12 }}>
+      <div style={{ padding: 12, flexShrink: 0 }}>
         <form action={logoutAction}>
           <Button
             htmlType="submit"
@@ -211,6 +216,17 @@ export function AdminShell({
   }, [pathname]);
 
   useEffect(() => {
+    if (isMobile) {
+      document.documentElement.classList.remove("admin-fixed-shell");
+      return;
+    }
+    document.documentElement.classList.add("admin-fixed-shell");
+    return () => {
+      document.documentElement.classList.remove("admin-fixed-shell");
+    };
+  }, [isMobile]);
+
+  useEffect(() => {
     if (!navigating) return;
     const t = setTimeout(() => setPendingHref(null), 5000);
     return () => clearTimeout(t);
@@ -231,7 +247,14 @@ export function AdminShell({
   }
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout
+      className={isMobile ? undefined : "admin-shell-desktop"}
+      style={{
+        height: isMobile ? "auto" : "100dvh",
+        minHeight: "100dvh",
+        overflow: isMobile ? "visible" : "hidden",
+      }}
+    >
       {!isMobile ? (
         <Sider
           width={232}
@@ -239,6 +262,13 @@ export function AdminShell({
           style={{
             background: BRAND.siderBg,
             borderInlineEnd: "1px solid rgba(255,255,255,0.06)",
+            height: "100dvh",
+            position: "fixed",
+            insetInlineStart: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 30,
+            overflow: "hidden",
           }}
         >
           <NavPanel selected={selected} onNavigate={handleNavigate} />
@@ -250,7 +280,7 @@ export function AdminShell({
           onClose={() => setOpen(false)}
           width={280}
           styles={{
-            body: { padding: 0, background: BRAND.siderBg },
+            body: { padding: 0, background: BRAND.siderBg, height: "100%" },
             header: {
               background: BRAND.siderBg,
               borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -274,7 +304,17 @@ export function AdminShell({
         </Drawer>
       )}
 
-      <Layout style={{ minWidth: 0, background: token.colorBgLayout }}>
+      <Layout
+        style={{
+          minWidth: 0,
+          background: token.colorBgLayout,
+          marginInlineStart: isMobile ? 0 : 232,
+          height: isMobile ? "auto" : "100dvh",
+          overflow: isMobile ? "visible" : "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Header
           style={{
             background: token.colorBgContainer,
@@ -285,7 +325,8 @@ export function AdminShell({
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
             height: 56,
             lineHeight: "56px",
-            position: "sticky",
+            flexShrink: 0,
+            position: isMobile ? "sticky" : "relative",
             top: 0,
             zIndex: 20,
           }}
@@ -325,6 +366,9 @@ export function AdminShell({
           style={{
             padding: isMobile ? 12 : 24,
             overflowX: "hidden",
+            overflowY: isMobile ? "visible" : "auto",
+            flex: isMobile ? undefined : 1,
+            minHeight: isMobile ? undefined : 0,
             position: "relative",
             opacity: navigating ? 0.55 : 1,
             transition: "opacity 0.15s ease",

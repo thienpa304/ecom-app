@@ -152,7 +152,7 @@ export function ProductForm({
   }
 
   return (
-    <Card style={{ maxWidth: 900 }}>
+    <Card style={{ width: "100%" }}>
       <Form
         form={form}
         layout="vertical"
