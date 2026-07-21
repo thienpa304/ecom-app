@@ -49,10 +49,12 @@ export function ProductGallery({ media, name }: Props) {
   }, [media, name]);
 
   const [active, setActive] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const touchX = useRef<number | null>(null);
   const current = slides[active] ?? slides[0]!;
   const multi = slides.length > 1;
-  const isVideo = current.item.kind === "video";
+  const isVideo = current.item.kind === "video" || current.item.kind === "embed";
+  const canPreview = current.item.kind === "image";
 
   const go = useCallback(
     (dir: -1 | 1) => {
@@ -63,14 +65,27 @@ export function ProductGallery({ media, name }: Props) {
   );
 
   useEffect(() => {
-    if (!multi) return;
+    if (!multi && !previewOpen) return;
     function onKey(e: KeyboardEvent) {
+      if (previewOpen && e.key === "Escape") {
+        setPreviewOpen(false);
+        return;
+      }
       if (e.key === "ArrowLeft") go(-1);
       if (e.key === "ArrowRight") go(1);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, multi]);
+  }, [go, multi, previewOpen]);
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [previewOpen]);
 
   function onTouchStart(e: TouchEvent) {
     if (isVideo) return;
@@ -98,7 +113,16 @@ export function ProductGallery({ media, name }: Props) {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <MediaSlide item={current.item} name={name} priority />
+        <MediaSlide
+          item={current.item}
+          name={name}
+          priority
+          onPreview={
+            canPreview
+              ? () => setPreviewOpen(true)
+              : undefined
+          }
+        />
 
         {multi ? (
           <>
@@ -123,6 +147,18 @@ export function ProductGallery({ media, name }: Props) {
             </span>
           </>
         ) : null}
+
+        {canPreview ? (
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-black/75"
+            aria-label="Xem ảnh lớn"
+          >
+            <ZoomIcon className="h-3.5 w-3.5" />
+            Phóng to
+          </button>
+        ) : null}
       </div>
 
       {multi ? (
@@ -135,6 +171,10 @@ export function ProductGallery({ media, name }: Props) {
               key={slide.key}
               type="button"
               onClick={() => setActive(idx)}
+              onDoubleClick={() => {
+                setActive(idx);
+                if (slide.item.kind === "image") setPreviewOpen(true);
+              }}
               aria-label={
                 slide.item.kind === "image"
                   ? `Ảnh ${idx + 1}`
@@ -151,6 +191,16 @@ export function ProductGallery({ media, name }: Props) {
             </button>
           ))}
         </div>
+      ) : null}
+
+      {previewOpen && canPreview ? (
+        <ImageLightbox
+          slides={slides}
+          active={active}
+          name={name}
+          onClose={() => setPreviewOpen(false)}
+          onChange={setActive}
+        />
       ) : null}
     </div>
   );
@@ -171,27 +221,52 @@ function ChevronIcon({ className }: { className?: string }) {
   );
 }
 
+function ZoomIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path strokeLinecap="round" d="M21 21l-4.3-4.3M11 8v6M8 11h6" />
+    </svg>
+  );
+}
+
 function MediaSlide({
   item,
   name,
   priority = false,
+  onPreview,
 }: {
   item: ProductMedia;
   name: string;
   priority?: boolean;
+  onPreview?: () => void;
 }) {
   if (item.kind === "image") {
     return (
-      <Image
-        key={item.id}
-        src={item.url || PLACEHOLDER}
-        alt={item.alt || name}
-        fill
-        sizes="(max-width: 1024px) 100vw, 50vw"
-        className="object-contain bg-white p-2 sm:p-4"
-        priority={priority}
-        draggable={false}
-      />
+      <button
+        type="button"
+        onClick={onPreview}
+        className="absolute inset-0 cursor-zoom-in bg-white"
+        aria-label="Xem ảnh lớn"
+      >
+        <Image
+          key={item.id}
+          src={item.url || PLACEHOLDER}
+          alt={item.alt || name}
+          fill
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-contain p-2 sm:p-4"
+          priority={priority}
+          draggable={false}
+        />
+      </button>
     );
   }
 
@@ -231,8 +306,27 @@ function MediaThumb({
         alt={item.alt || `${name} — ảnh ${index + 1}`}
         fill
         sizes="64px"
-        className="object-contain p-1"
+        className="object-cover"
       />
+    );
+  }
+
+  if (item.kind === "video" && item.posterUrl) {
+    return (
+      <>
+        <Image
+          src={item.posterUrl}
+          alt={`Video ${name}`}
+          fill
+          sizes="64px"
+          className="object-cover"
+        />
+        <span className="absolute inset-0 flex items-center justify-center bg-black/35">
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" aria-hidden>
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </span>
+      </>
     );
   }
 
@@ -245,6 +339,149 @@ function MediaThumb({
         Video
       </span>
     </span>
+  );
+}
+
+function ImageLightbox({
+  slides,
+  active,
+  name,
+  onClose,
+  onChange,
+}: {
+  slides: Slide[];
+  active: number;
+  name: string;
+  onClose: () => void;
+  onChange: (index: number) => void;
+}) {
+  const images = slides.filter((s) => s.item.kind === "image");
+  const current = slides[active];
+  const imageIndex = images.findIndex((s) => s.key === current?.key);
+  const touchX = useRef<number | null>(null);
+
+  const goImage = useCallback(
+    (dir: -1 | 1) => {
+      if (images.length === 0) return;
+      const next = (imageIndex + dir + images.length) % images.length;
+      const target = images[next];
+      if (!target) return;
+      const idx = slides.findIndex((s) => s.key === target.key);
+      if (idx >= 0) onChange(idx);
+    },
+    [imageIndex, images, onChange, slides],
+  );
+
+  if (!current || current.item.kind !== "image") return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex flex-col bg-black/90"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Xem ảnh lớn"
+      onClick={onClose}
+    >
+      <div className="flex items-center justify-between px-3 py-3 text-white sm:px-5">
+        <span className="text-sm font-medium">
+          {imageIndex + 1}/{images.length}
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl hover:bg-white/20"
+          aria-label="Đóng"
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        className="relative min-h-0 flex-1"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => {
+          touchX.current = e.touches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(e) => {
+          if (touchX.current == null) return;
+          const endX = e.changedTouches[0]?.clientX;
+          if (endX == null) {
+            touchX.current = null;
+            return;
+          }
+          const dx = endX - touchX.current;
+          touchX.current = null;
+          if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+          if (dx < 0) goImage(1);
+          else goImage(-1);
+        }}
+      >
+        <Image
+          key={current.item.id}
+          src={current.item.url || PLACEHOLDER}
+          alt={current.item.alt || name}
+          fill
+          sizes="100vw"
+          className="object-contain"
+          priority
+          draggable={false}
+        />
+
+        {images.length > 1 ? (
+          <>
+            <button
+              type="button"
+              onClick={() => goImage(-1)}
+              className="absolute left-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-md sm:left-4"
+              aria-label="Ảnh trước"
+            >
+              <ChevronIcon className="h-5 w-5 rotate-180" />
+            </button>
+            <button
+              type="button"
+              onClick={() => goImage(1)}
+              className="absolute right-2 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-md sm:right-4"
+              aria-label="Ảnh sau"
+            >
+              <ChevronIcon className="h-5 w-5" />
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      {images.length > 1 ? (
+        <div
+          className="flex gap-2 overflow-x-auto px-3 py-3 sm:justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {images.map((slide) => {
+            const idx = slides.findIndex((s) => s.key === slide.key);
+            const selected = slide.key === current.key;
+            return (
+              <button
+                key={slide.key}
+                type="button"
+                onClick={() => onChange(idx)}
+                className={`relative h-14 w-14 shrink-0 overflow-hidden rounded border ${
+                  selected
+                    ? "border-white ring-1 ring-white"
+                    : "border-white/30 opacity-70 hover:opacity-100"
+                }`}
+                aria-label={slide.item.alt || name}
+              >
+                <Image
+                  src={slide.item.url || PLACEHOLDER}
+                  alt=""
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                />
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
