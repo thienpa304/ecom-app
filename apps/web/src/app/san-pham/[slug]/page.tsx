@@ -230,18 +230,7 @@ export default async function ProductDetailPage({
         </div>
       </div>
 
-      {product.description ? (
-        <section className="mt-8 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-10">
-          <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900">
-            Mô tả sản phẩm
-          </h2>
-          <div className="min-w-0 px-4 py-4">
-            <ProductDescription html={product.description} />
-          </div>
-        </section>
-      ) : null}
-
-      <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
+      <section className="mt-8 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-10">
         <h2
           id="specs-heading"
           className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900"
@@ -289,6 +278,17 @@ export default async function ProductDetailPage({
           </table>
         </div>
       </section>
+
+      {product.description ? (
+        <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
+          <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900">
+            Mô tả sản phẩm
+          </h2>
+          <div className="min-w-0 px-4 py-4">
+            <ProductDescription html={product.description} />
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
