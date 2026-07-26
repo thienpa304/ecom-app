@@ -8,11 +8,6 @@ function requireEnv(name: string): string {
   return value;
 }
 
-/**
- * Server Supabase client for admin CRUD.
- * Prefers SERVICE_ROLE_KEY (bypasses RLS — needed for storage uploads & writes).
- * Falls back to anon key if service role is not set.
- */
 export function createServerClient(): SupabaseClient {
   const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

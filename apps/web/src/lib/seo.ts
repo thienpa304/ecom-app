@@ -8,6 +8,12 @@ const AVAILABILITY: Record<Product["stockStatus"], string> = {
   discontinued: "https://schema.org/Discontinued",
 };
 
+export function siteShareImage(settings: SiteSettings): string {
+  return (
+    settings.logoSquareUrl || settings.logoUrl || settings.heroImageUrl || ""
+  );
+}
+
 export function organizationJsonLd(settings: SiteSettings) {
   return {
     "@context": "https://schema.org",
@@ -16,6 +22,9 @@ export function organizationJsonLd(settings: SiteSettings) {
     url: absoluteUrl("/"),
     description: settings.metaDescription || settings.tagline,
     telephone: settings.phone,
+    ...(settings.logoSquareUrl || settings.logoUrl
+      ? { logo: settings.logoSquareUrl || settings.logoUrl }
+      : {}),
     ...(settings.email ? { email: settings.email } : {}),
     ...(settings.address
       ? {

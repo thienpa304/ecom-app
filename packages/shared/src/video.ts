@@ -42,7 +42,6 @@ function isDirectMedia(url: string): boolean {
   return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
 }
 
-/** Parse a product video URL into a playable source. */
 export function parseVideoUrl(url: string | null | undefined): VideoSource | null {
   const trimmed = url?.trim();
   if (!trimmed) return null;
@@ -71,8 +70,6 @@ export function parseVideoUrl(url: string | null | undefined): VideoSource | nul
     return { kind: "file", url: trimmed, originalUrl: trimmed };
   }
 
-  // Uploaded files from Supabase often have no extension in path heuristics —
-  // treat http(s) non-embed URLs as playable file when they look like storage.
   if (/^https?:\/\//i.test(trimmed) && /\/storage\/v1\/object\/public\//i.test(trimmed)) {
     return { kind: "file", url: trimmed, originalUrl: trimmed };
   }

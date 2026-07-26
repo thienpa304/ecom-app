@@ -18,6 +18,11 @@ const config: Config = {
           DEFAULT: "#dc2626",
           soft: "#fef2f2",
         },
+        brand: {
+          DEFAULT: "#1e3a6e",
+          light: "#2f5597",
+          soft: "#eef2fa",
+        },
       },
       fontFamily: {
         sans: [

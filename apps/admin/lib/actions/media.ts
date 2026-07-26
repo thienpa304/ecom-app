@@ -5,11 +5,13 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import {
   deleteMediaAssets,
+  findMediaUsage,
   listMediaAssets,
   uploadProductMedia,
   type ListMediaParams,
   type ListMediaResult,
   type MediaAsset,
+  type MediaUsage,
 } from "@/lib/store";
 
 const STORAGE_PATH_RE = /^(img|video|media)\/.+/;
@@ -61,32 +63,91 @@ export async function uploadMediaAction(
   }
 }
 
+function validatePaths(paths: string[]): { unique: string[]; error?: string } {
+  const unique = [...new Set(paths.filter(Boolean))];
+  if (unique.length === 0) {
+    return { unique, error: "Chưa chọn file nào." };
+  }
+  for (const path of unique) {
+    if (!STORAGE_PATH_RE.test(path)) {
+      return { unique, error: `Đường dẫn không hợp lệ: ${path}` };
+    }
+  }
+  return { unique };
+}
+
+export async function checkMediaUsageAction(
+  paths: string[],
+): Promise<{ usage: MediaUsage[]; error?: string }> {
+  await requireAdmin();
+
+  const { unique, error } = validatePaths(paths);
+  if (error) return { usage: [], error };
+
+  try {
+    return { usage: await findMediaUsage(unique) };
+  } catch (e) {
+    return {
+      usage: [],
+      error: e instanceof Error ? e.message : "Không kiểm tra được liên kết",
+    };
+  }
+}
+
+export type DeleteMediaResponse = {
+  ok: boolean;
+  error?: string;
+  deleted?: number;
+  inUse?: MediaUsage[];
+  referencesRemoved?: number;
+};
+
 export async function deleteMediaAction(
   path: string,
-): Promise<{ ok: boolean; error?: string }> {
-  return deleteMediaBulkAction([path]);
+  opts: { force?: boolean } = {},
+): Promise<DeleteMediaResponse> {
+  return deleteMediaBulkAction([path], opts);
 }
 
 export async function deleteMediaBulkAction(
   paths: string[],
-): Promise<{ ok: boolean; error?: string; deleted?: number }> {
+  opts: { force?: boolean } = {},
+): Promise<DeleteMediaResponse> {
   await requireAdmin();
 
-  const unique = [...new Set(paths.filter(Boolean))];
-  if (unique.length === 0) {
-    return { ok: false, error: "Chưa chọn file nào." };
-  }
-
-  for (const path of unique) {
-    if (!STORAGE_PATH_RE.test(path)) {
-      return { ok: false, error: `Đường dẫn không hợp lệ: ${path}` };
-    }
-  }
+  const { unique, error } = validatePaths(paths);
+  if (error) return { ok: false, error };
 
   try {
-    await deleteMediaAssets(unique);
+    const usage = await findMediaUsage(unique);
+    if (usage.length > 0 && !opts.force) {
+      const count = usage.reduce((n, u) => n + u.refs.length, 0);
+      return {
+        ok: false,
+        inUse: usage,
+        error: `${usage.length} file đang được dùng ở ${count} vị trí trong sản phẩm.`,
+      };
+    }
+
+    const res = await deleteMediaAssets(unique, {
+      purgeReferences: usage.length > 0,
+    });
+
     revalidatePath("/media");
-    return { ok: true, deleted: unique.length };
+    if (res.referencesRemoved > 0) {
+      revalidatePath("/products");
+      for (const productId of new Set(
+        usage.flatMap((u) => u.refs.map((r) => r.productId)),
+      )) {
+        revalidatePath(`/products/${productId}`);
+      }
+    }
+
+    return {
+      ok: true,
+      deleted: res.deleted,
+      referencesRemoved: res.referencesRemoved,
+    };
   } catch (e) {
     return {
       ok: false,
@@ -95,5 +156,4 @@ export async function deleteMediaBulkAction(
   }
 }
 
-/** @deprecated Prefer ListMediaResult.items — kept for type re-exports */
-export type { MediaAsset };
+export type { MediaAsset, MediaUsage };

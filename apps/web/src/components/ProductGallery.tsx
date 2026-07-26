@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import type { ProductMedia } from "@ecom/shared";
 import { galleryMedia, parseVideoUrl } from "@ecom/shared";
+import { IMAGE_PLACEHOLDER, SafeImage } from "@/components/SafeImage";
 import {
   useCallback,
   useEffect,
@@ -17,7 +17,6 @@ type Props = {
   name: string;
 };
 
-const PLACEHOLDER = "/placeholder.svg";
 const SWIPE_THRESHOLD = 48;
 
 type Slide = {
@@ -36,7 +35,7 @@ export function ProductGallery({ media, name }: Props) {
             id: "placeholder",
             productId: "",
             kind: "image",
-            url: PLACEHOLDER,
+            url: IMAGE_PLACEHOLDER,
             alt: name,
             sortOrder: 0,
             storagePath: null,
@@ -256,9 +255,9 @@ function MediaSlide({
         className="absolute inset-0 cursor-zoom-in bg-white"
         aria-label="Xem ảnh lớn"
       >
-        <Image
+        <SafeImage
           key={item.id}
-          src={item.url || PLACEHOLDER}
+          src={item.url}
           alt={item.alt || name}
           fill
           sizes="(max-width: 1024px) 100vw, 50vw"
@@ -301,8 +300,8 @@ function MediaThumb({
 }) {
   if (item.kind === "image") {
     return (
-      <Image
-        src={item.url || PLACEHOLDER}
+      <SafeImage
+        src={item.url}
         alt={item.alt || `${name} — ảnh ${index + 1}`}
         fill
         sizes="64px"
@@ -314,7 +313,7 @@ function MediaThumb({
   if (item.kind === "video" && item.posterUrl) {
     return (
       <>
-        <Image
+        <SafeImage
           src={item.posterUrl}
           alt={`Video ${name}`}
           fill
@@ -416,9 +415,9 @@ function ImageLightbox({
           else goImage(-1);
         }}
       >
-        <Image
+        <SafeImage
           key={current.item.id}
-          src={current.item.url || PLACEHOLDER}
+          src={current.item.url}
           alt={current.item.alt || name}
           fill
           sizes="100vw"
@@ -469,8 +468,8 @@ function ImageLightbox({
                 }`}
                 aria-label={slide.item.alt || name}
               >
-                <Image
-                  src={slide.item.url || PLACEHOLDER}
+                <SafeImage
+                  src={slide.item.url}
                   alt=""
                   fill
                   sizes="56px"

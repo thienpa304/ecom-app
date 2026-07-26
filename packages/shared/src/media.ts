@@ -17,7 +17,6 @@ export function inferMediaKindFromUrl(url: string): ProductMedia["kind"] {
   return "image";
 }
 
-/** Extract storage object path from Supabase public URL. */
 export function storagePathFromPublicUrl(url: string): string | null {
   const match = url.match(
     /\/storage\/v1\/object\/public\/product-images\/(.+)$/i,
@@ -36,7 +35,6 @@ export function sortProductMedia(
   return [...(media ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-/** Primary catalog/card image — first image by sort order. */
 export function primaryImage(
   product: Pick<Product, "media">,
 ): ProductMedia | undefined {
@@ -44,7 +42,6 @@ export function primaryImage(
   return sorted.find((m) => m.kind === "image") ?? sorted[0];
 }
 
-/** All media for gallery, sorted. */
 export function galleryMedia(product: Pick<Product, "media">): ProductMedia[] {
   return sortProductMedia(product.media);
 }

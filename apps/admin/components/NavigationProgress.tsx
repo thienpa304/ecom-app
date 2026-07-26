@@ -3,7 +3,6 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-/** Top bar on internal link / menu navigation so soft nav doesn't feel idle. */
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -54,7 +53,6 @@ export function NavigationProgress() {
         if (next === current) return;
         start();
       } catch {
-        /* ignore */
       }
     }
 

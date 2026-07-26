@@ -33,7 +33,6 @@ export const productMediaSchema = z.object({
   posterUrl: z.string().nullable().optional(),
 });
 
-/** @deprecated alias — use productMediaSchema */
 export const productImageSchema = productMediaSchema;
 
 export const productSchema = z.object({
@@ -68,6 +67,27 @@ export const leadSchema = z.object({
   createdAt: z.string(),
 });
 
+export const heroBulletIconSchema = z.enum([
+  "globe",
+  "star",
+  "check",
+  "gear",
+  "shield",
+  "truck",
+]);
+
+export const heroSlideSchema = z.object({
+  url: z.string().min(1),
+  alt: z.string().default(""),
+  href: z.string().default(""),
+});
+
+export const heroBulletSchema = z.object({
+  icon: heroBulletIconSchema.catch("check"),
+  bold: z.string().default(""),
+  text: z.string().default(""),
+});
+
 export const siteSettingsSchema = z.object({
   id: z.number().int(),
   siteName: z.string().min(1),
@@ -76,14 +96,25 @@ export const siteSettingsSchema = z.object({
   zaloUrl: z.string().min(1),
   address: z.string(),
   email: z.string(),
+  logoUrl: z.string(),
+  logoSquareUrl: z.string(),
+  headerCtaLabel: z.string(),
   heroTitle: z.string(),
+  heroHighlight: z.string(),
   heroSubtitle: z.string(),
   heroImageUrl: z.string(),
   heroCardTitle: z.string(),
   heroCardCaption: z.string(),
+  heroSlides: z.array(heroSlideSchema),
+  heroBullets: z.array(heroBulletSchema),
   metaDescription: z.string(),
   footerBlurb: z.string(),
   searchPlaceholder: z.string(),
+  facebookUrl: z.string(),
+  youtubeUrl: z.string(),
+  tiktokUrl: z.string(),
+  fanpageEmbedUrl: z.string(),
+  mapEmbedUrl: z.string(),
   updatedAt: z.string().optional(),
 });
 

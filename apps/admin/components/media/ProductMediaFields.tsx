@@ -20,7 +20,6 @@ const MediaLibraryModal = dynamic(
   { ssr: false },
 );
 
-/** Draft media item before save (no productId required). */
 export type MediaDraftItem = {
   id?: string;
   kind: ProductMedia["kind"];

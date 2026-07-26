@@ -1,24 +1,18 @@
-import Image from "next/image";
 import Link from "next/link";
 import { STOCK_STATUS, primaryImage, type Product } from "@ecom/shared";
+import { SafeImage } from "@/components/SafeImage";
 import { discountPercent, formatVnd } from "@/lib/format";
 
 type Props = {
   product: Product;
-  brandName?: string;
-  /** Prioritize LCP image (first cards above the fold). */
   priority?: boolean;
 };
 
-const PLACEHOLDER = "/placeholder.svg";
-
-export function ProductCard({ product, brandName, priority = false }: Props) {
+export function ProductCard({ product, priority = false }: Props) {
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
   const image = primaryImage(product);
-  const src = image?.url || PLACEHOLDER;
   const alt = image?.alt || product.name;
-  const specEntries = Object.entries(product.specs).slice(0, 2);
   const href = `/san-pham/${product.slug}`;
 
   return (
@@ -28,14 +22,14 @@ export function ProductCard({ product, brandName, priority = false }: Props) {
         prefetch
         className="flex h-full flex-col outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
       >
-        <div className="relative block overflow-hidden bg-gray-100">
-          <div className="relative aspect-[4/3] w-full">
-            <Image
-              src={src}
+        <div className="relative block overflow-hidden bg-white">
+          <div className="relative aspect-square w-full">
+            <SafeImage
+              src={image?.url}
               alt={alt}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition duration-500 group-hover:scale-105"
+              className="object-contain transition duration-500 group-hover:scale-105"
               priority={priority}
             />
           </div>
@@ -47,19 +41,12 @@ export function ProductCard({ product, brandName, priority = false }: Props) {
         </div>
 
         <div className="flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-3.5">
-          {brandName ? (
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">
-              {brandName}
-            </p>
-          ) : null}
-
           <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-gray-900 transition group-hover:text-accent sm:min-h-[2.75rem] sm:text-[15px]">
             {product.name}
           </h3>
 
           <p className="truncate text-[11px] text-gray-400">
             Model: {product.model}
-            {specEntries[0] ? ` · ${specEntries[0][1]}` : ""}
           </p>
 
           <div className="mt-auto space-y-2.5 pt-1">
@@ -96,7 +83,7 @@ export function ProductCard({ product, brandName, priority = false }: Props) {
             </div>
 
             <span className="inline-flex w-full items-center justify-center rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition group-hover:bg-accent-dark">
-              Liên hệ
+              Xem thêm
             </span>
           </div>
         </div>

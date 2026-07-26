@@ -3,7 +3,6 @@ import Link from "next/link";
 type Props = {
   page: number;
   totalPages: number;
-  /** Current query string without leading `?` (e.g. brand=x&sort=y). */
   queryString?: string;
 };
 

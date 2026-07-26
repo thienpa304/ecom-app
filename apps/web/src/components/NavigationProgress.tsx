@@ -3,7 +3,6 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-/** Instant top bar when clicking internal links (App Router soft nav can feel idle otherwise). */
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -43,11 +42,8 @@ export function NavigationProgress() {
         if (next === current) return;
         setActive(true);
         if (timer.current) clearTimeout(timer.current);
-        // Safety: hide if navigation stalls
         timer.current = setTimeout(() => setActive(false), 8000);
-      } catch {
-        /* ignore */
-      }
+      } catch {}
     }
 
     document.addEventListener("click", onClick, true);

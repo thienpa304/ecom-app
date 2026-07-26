@@ -24,7 +24,7 @@ export function ContactFab({ phone, zaloUrl }: Props) {
             Chat Zalo
           </span>
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0068FF] text-white shadow-lg ring-4 ring-[#0068FF]/25 transition hover:scale-105 hover:bg-[#0054cc]">
-            <ZaloIcon className="h-7 w-7" />
+            <ZaloWordmark className="h-6 w-10" />
           </span>
         </a>
       ) : null}
@@ -64,15 +64,25 @@ function PhoneIcon({ className }: { className?: string }) {
   );
 }
 
-function ZaloIcon({ className }: { className?: string }) {
+function ZaloWordmark({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      viewBox="0 0 48 48"
+      viewBox="0 0 64 26"
       fill="currentColor"
       aria-hidden
     >
-      <path d="M24.5 6C14.3 6 6 13.4 6 22.5c0 5.2 2.7 9.9 7 12.9l-1.1 6.1 6.5-2.1c1.9.5 3.9.8 6.1.8 10.2 0 18.5-7.4 18.5-16.5S34.7 6 24.5 6zm8.3 21.4c-.3.8-1.7 1.5-2.8 1.7-.7.1-1.7.2-5-.9-4.1-1.4-6.8-5-7-5.2-.2-.3-1.7-2.3-1.7-4.3s1.1-3.1 1.5-3.5c.4-.4.8-.5 1.1-.5h.8c.3 0 .6 0 .9.7.3.8 1.1 2.8 1.2 3 .1.2.2.5 0 .8-.1.3-.2.5-.4.7-.2.2-.4.5-.6.6-.2.2-.4.3-.2.7.3.5 1.2 2 2.5 3.2 1.7 1.6 3.2 2.1 3.6 2.3.4.2.7.2 1-.1.2-.3 1.1-1.3 1.4-1.7.3-.5.6-.4 1-.2.4.2 2.6 1.2 3 .7.4-.2.8-.9.9-1.2.1-.3.1-.6-.1-.8z" />
+      <text
+        x="32"
+        y="20"
+        textAnchor="middle"
+        fontFamily="Arial, Helvetica, sans-serif"
+        fontSize="22"
+        fontWeight="800"
+        letterSpacing="-0.5"
+      >
+        Zalo
+      </text>
     </svg>
   );
 }

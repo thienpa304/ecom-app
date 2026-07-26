@@ -1,8 +1,14 @@
+import { heroBulletSchema, heroSlideSchema } from "./schemas";
+
 import type {
 
   Brand,
 
   Category,
+
+  HeroBullet,
+
+  HeroSlide,
 
   Lead,
 
@@ -15,10 +21,6 @@ import type {
   StockStatus,
 
 } from "./types";
-
-
-
-/** Snake_case row shapes matching supabase SQL schema. */
 
 
 
@@ -71,8 +73,6 @@ export type ProductMediaRow = {
 };
 
 
-
-/** @deprecated Use ProductMediaRow */
 
 export type ProductImageRow = ProductMediaRow;
 
@@ -153,7 +153,15 @@ export type SiteSettingsRow = {
 
   email: string;
 
+  logo_url?: string | null;
+
+  logo_square_url?: string | null;
+
+  header_cta_label?: string | null;
+
   hero_title: string;
+
+  hero_highlight?: string | null;
 
   hero_subtitle: string;
 
@@ -163,11 +171,25 @@ export type SiteSettingsRow = {
 
   hero_card_caption?: string | null;
 
+  hero_slides?: unknown;
+
+  hero_bullets?: unknown;
+
   meta_description: string;
 
   footer_blurb: string;
 
   search_placeholder: string;
+
+  facebook_url?: string | null;
+
+  youtube_url?: string | null;
+
+  tiktok_url?: string | null;
+
+  fanpage_embed_url?: string | null;
+
+  map_embed_url?: string | null;
 
   updated_at?: string;
 
@@ -178,6 +200,64 @@ export type SiteSettingsRow = {
 function toNumber(value: number | string): number {
 
   return typeof value === "string" ? Number(value) : value;
+
+}
+
+
+
+function toArray(value: unknown): unknown[] {
+
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "string" && value.trim()) {
+
+    try {
+
+      const parsed: unknown = JSON.parse(value);
+
+      return Array.isArray(parsed) ? parsed : [];
+
+    } catch {
+
+      return [];
+
+    }
+
+  }
+
+  return [];
+
+}
+
+
+
+export function parseHeroSlides(value: unknown): HeroSlide[] {
+
+  return toArray(value).flatMap((item) => {
+
+    const parsed = heroSlideSchema.safeParse(item);
+
+    return parsed.success && parsed.data.url ? [parsed.data] : [];
+
+  });
+
+}
+
+
+
+export function parseHeroBullets(value: unknown): HeroBullet[] {
+
+  return toArray(value).flatMap((item) => {
+
+    const parsed = heroBulletSchema.safeParse(item);
+
+    return parsed.success && (parsed.data.bold || parsed.data.text)
+
+      ? [parsed.data]
+
+      : [];
+
+  });
 
 }
 
@@ -244,8 +324,6 @@ export function mapMediaRow(row: ProductMediaRow): ProductMedia {
 }
 
 
-
-/** @deprecated Use mapMediaRow */
 
 export function mapImageRow(row: ProductMediaRow): ProductMedia {
 
@@ -356,7 +434,15 @@ export function mapSiteSettingsRow(row: SiteSettingsRow): SiteSettings {
 
     email: row.email ?? "",
 
+    logoUrl: row.logo_url ?? '',
+
+    logoSquareUrl: row.logo_square_url ?? '',
+
+    headerCtaLabel: row.header_cta_label ?? '',
+
     heroTitle: row.hero_title,
+
+    heroHighlight: row.hero_highlight ?? '',
 
     heroSubtitle: row.hero_subtitle,
 
@@ -366,11 +452,25 @@ export function mapSiteSettingsRow(row: SiteSettingsRow): SiteSettings {
 
     heroCardCaption: row.hero_card_caption ?? '',
 
+    heroSlides: parseHeroSlides(row.hero_slides),
+
+    heroBullets: parseHeroBullets(row.hero_bullets),
+
     metaDescription: row.meta_description,
 
     footerBlurb: row.footer_blurb,
 
     searchPlaceholder: row.search_placeholder,
+
+    facebookUrl: row.facebook_url ?? '',
+
+    youtubeUrl: row.youtube_url ?? '',
+
+    tiktokUrl: row.tiktok_url ?? '',
+
+    fanpageEmbedUrl: row.fanpage_embed_url ?? '',
+
+    mapEmbedUrl: row.map_embed_url ?? '',
 
     updatedAt: row.updated_at,
 
@@ -402,7 +502,15 @@ export function siteSettingsToRow(
 
     email: settings.email,
 
+    logo_url: settings.logoUrl ?? '',
+
+    logo_square_url: settings.logoSquareUrl ?? '',
+
+    header_cta_label: settings.headerCtaLabel ?? '',
+
     hero_title: settings.heroTitle,
+
+    hero_highlight: settings.heroHighlight ?? '',
 
     hero_subtitle: settings.heroSubtitle,
 
@@ -412,19 +520,31 @@ export function siteSettingsToRow(
 
     hero_card_caption: settings.heroCardCaption ?? '',
 
+    hero_slides: settings.heroSlides ?? [],
+
+    hero_bullets: settings.heroBullets ?? [],
+
     meta_description: settings.metaDescription,
 
     footer_blurb: settings.footerBlurb,
 
     search_placeholder: settings.searchPlaceholder,
 
+    facebook_url: settings.facebookUrl ?? '',
+
+    youtube_url: settings.youtubeUrl ?? '',
+
+    tiktok_url: settings.tiktokUrl ?? '',
+
+    fanpage_embed_url: settings.fanpageEmbedUrl ?? '',
+
+    map_embed_url: settings.mapEmbedUrl ?? '',
+
   };
 
 }
 
 
-
-/** Convert camelCase Product (without id) to DB insert/update payload. */
 
 export function productToRow(
 
@@ -500,8 +620,6 @@ export function mediaToRow(media: ProductMedia): ProductMediaRow {
 }
 
 
-
-/** @deprecated Use mediaToRow */
 
 export function imageToRow(image: ProductMedia): ProductMediaRow {
 

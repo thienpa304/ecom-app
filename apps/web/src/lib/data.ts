@@ -34,7 +34,6 @@ export type ListProductsParams = {
   categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
-  /** PRICE_RANGES value, e.g. under_1m */
   price?: string;
   sort?: SortValue;
   page?: number;
@@ -170,10 +169,99 @@ const loadPublishedSlugs = unstable_cache(
   { revalidate: REVALIDATE_SECONDS, tags: ["products"] },
 );
 
-/** Deduped within a single request. */
 export const getSiteSettings = cache(() => loadSiteSettings());
 export const getBrands = cache(() => loadBrands());
 export const getCategories = cache(() => loadCategories());
+
+export type HomeCategorySection = {
+  category: Category;
+  items: Product[];
+};
+
+const loadHomeCategorySections = unstable_cache(
+  async (limit: number): Promise<HomeCategorySection[]> => {
+    const categories = await getCategories();
+    const supabase = createServerClient();
+
+    const sections = await Promise.all(
+      categories.map(async (category) => {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*, product_media(*)")
+          .eq("is_published", true)
+          .eq("category_id", category.id)
+          .order("sold_count", { ascending: false, nullsFirst: false })
+          .limit(limit);
+
+        if (error) {
+          throw new Error(
+            `Failed to load category section ${category.slug}: ${error.message}`,
+          );
+        }
+        return { category, items: mapRows(data as ProductWithMedia[]) };
+      }),
+    );
+
+    return sections
+      .filter((s) => s.items.length > 0)
+      .sort(
+        (a, b) =>
+          a.category.sortOrder - b.category.sortOrder ||
+          a.category.name.localeCompare(b.category.name, "vi"),
+      );
+  },
+  ["home-category-sections"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["products", "categories"] },
+);
+
+export function listHomeCategorySections(
+  limit = 4,
+): Promise<HomeCategorySection[]> {
+  return loadHomeCategorySections(limit);
+}
+
+const loadVideoProducts = unstable_cache(
+  async (limit: number): Promise<Product[]> => {
+    const supabase = createServerClient();
+
+    const { data: mediaRows, error: mediaError } = await supabase
+      .from("product_media")
+      .select("product_id")
+      .in("kind", ["video", "embed"]);
+
+    if (mediaError) {
+      console.error("listVideoProducts:", mediaError.message);
+      return [];
+    }
+
+    const ids = [
+      ...new Set(
+        (mediaRows ?? []).map((row) => (row as { product_id: string }).product_id),
+      ),
+    ];
+    if (ids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, product_media(*)")
+      .eq("is_published", true)
+      .in("id", ids)
+      .order("sold_count", { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("listVideoProducts:", error.message);
+      return [];
+    }
+    return mapRows(data as ProductWithMedia[]);
+  },
+  ["home-video-products"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["products"] },
+);
+
+export function listVideoProducts(limit = 4): Promise<Product[]> {
+  return loadVideoProducts(limit);
+}
 
 export async function getProductBySlug(
   slug: string,
@@ -220,7 +308,6 @@ async function queryListProducts(
   if (params.categorySlug) {
     categoryId =
       categories.find((c) => c.slug === params.categorySlug)?.id ?? null;
-    // Unknown category slug → empty result
     if (!categoryId) {
       return {
         items: [],
@@ -294,7 +381,6 @@ async function queryListProducts(
   };
 }
 
-/** PostgREST `or` values with special chars must be double-quoted. */
 function buildSearchOr(q: string): string {
   const safe = q.replace(/[%_",]/g, " ").replace(/\s+/g, " ").trim();
   if (!safe) return "";

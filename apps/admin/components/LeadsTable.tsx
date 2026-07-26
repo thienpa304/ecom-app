@@ -10,7 +10,7 @@ export function LeadsTable({ rows }: { rows: Row[] }) {
   const isMobile = !Grid.useBreakpoint().md;
 
   return (
-    <Card size={isMobile ? "small" : "default"} styles={{ body: { padding: isMobile ? 8 : 24 } }}>
+    <Card size={isMobile ? "small" : "medium"} styles={{ body: { padding: isMobile ? 8 : 24 } }}>
       <Table
         rowKey="id"
         dataSource={rows}

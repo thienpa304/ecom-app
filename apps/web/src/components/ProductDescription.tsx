@@ -8,7 +8,6 @@ type Props = {
   html?: string;
 };
 
-/** Renders product description as sanitized HTML, or plain text fallback. */
 export function ProductDescription({ html }: Props) {
   if (!html?.trim()) return null;
 

@@ -10,6 +10,7 @@ import {
   mediaToRow,
   productToRow,
   siteSettingsToRow,
+  storagePathFromPublicUrl,
   type Brand,
   type BrandRow,
   type Category,
@@ -144,12 +145,10 @@ function publicUrlFor(path: string): string {
     .data.publicUrl;
 }
 
-/** Upload a file to the public `product-images` bucket; returns public URL. */
 export async function uploadProductImage(file: File): Promise<string> {
   return uploadProductMedia(file, "img");
 }
 
-/** Upload image or video media; returns public URL. */
 export async function uploadProductMedia(
   file: File,
   prefix = "media",
@@ -184,7 +183,6 @@ export async function uploadProductMedia(
 
 export type ListMediaParams = {
   filter?: "image" | "video" | "all";
-  /** Search by file name / path (applied before pagination). */
   q?: string;
   page?: number;
   pageSize?: number;
@@ -197,7 +195,6 @@ export type ListMediaResult = {
   pageSize: number;
 };
 
-/** List assets in product-images bucket — parallel folder fetch + pagination. */
 export async function listMediaAssets(
   filterOrParams: "image" | "video" | "all" | ListMediaParams = "all",
 ): Promise<ListMediaResult> {
@@ -276,12 +273,135 @@ export async function listMediaAssets(
   };
 }
 
-export async function deleteMediaAsset(path: string): Promise<void> {
-  await deleteMediaAssets([path]);
+export type MediaUsageRef = {
+  mediaId: string;
+  productId: string;
+  productName: string;
+};
+
+export type MediaUsage = {
+  path: string;
+  refs: MediaUsageRef[];
+};
+
+const MEDIA_REF_COLUMNS = "id, url, storage_path, product_id";
+
+type MediaRefRow = {
+  id: string;
+  url: string;
+  storage_path: string | null;
+  product_id: string;
+};
+
+export async function findMediaUsage(paths: string[]): Promise<MediaUsage[]> {
+  const wanted = [...new Set(paths.filter(Boolean))];
+  if (wanted.length === 0) return [];
+
+  const supabase = createServerClient();
+
+  const [matched, legacy] = await Promise.all([
+    supabase.from("product_media").select(MEDIA_REF_COLUMNS).in(
+      "storage_path",
+      wanted,
+    ),
+    supabase
+      .from("product_media")
+      .select(MEDIA_REF_COLUMNS)
+      .is("storage_path", null),
+  ]);
+
+  for (const res of [matched, legacy]) {
+    if (res.error) {
+      throw new Error(`Failed to check media usage: ${res.error.message}`);
+    }
+  }
+
+  const wantedSet = new Set(wanted);
+  const byPath = new Map<string, MediaRefRow[]>();
+  const collect = (row: MediaRefRow, path: string | null) => {
+    if (!path || !wantedSet.has(path)) return;
+    const list = byPath.get(path);
+    if (list) list.push(row);
+    else byPath.set(path, [row]);
+  };
+
+  for (const row of (matched.data ?? []) as MediaRefRow[]) {
+    collect(row, row.storage_path);
+  }
+  for (const row of (legacy.data ?? []) as MediaRefRow[]) {
+    collect(row, storagePathFromPublicUrl(row.url));
+  }
+
+  if (byPath.size === 0) return [];
+
+  const productIds = [
+    ...new Set([...byPath.values()].flat().map((row) => row.product_id)),
+  ];
+  const { data: products, error: prodError } = await supabase
+    .from("products")
+    .select("id, name")
+    .in("id", productIds);
+  if (prodError) {
+    throw new Error(`Failed to check media usage: ${prodError.message}`);
+  }
+
+  const nameById = new Map(
+    ((products ?? []) as { id: string; name: string }[]).map((p) => [
+      p.id,
+      p.name,
+    ]),
+  );
+
+  return wanted
+    .filter((path) => byPath.has(path))
+    .map((path) => ({
+      path,
+      refs: (byPath.get(path) ?? []).map((row) => ({
+        mediaId: row.id,
+        productId: row.product_id,
+        productName: nameById.get(row.product_id) ?? row.product_id,
+      })),
+    }));
 }
 
-export async function deleteMediaAssets(paths: string[]): Promise<void> {
-  if (paths.length === 0) return;
+export async function purgeMediaReferences(paths: string[]): Promise<number> {
+  const usage = await findMediaUsage(paths);
+  const mediaIds = usage.flatMap((u) => u.refs.map((r) => r.mediaId));
+  if (mediaIds.length === 0) return 0;
+
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from("product_media")
+    .delete()
+    .in("id", mediaIds);
+  if (error) {
+    throw new Error(`Failed to clear media references: ${error.message}`);
+  }
+  return mediaIds.length;
+}
+
+export type DeleteMediaResult = {
+  deleted: number;
+  referencesRemoved: number;
+};
+
+export async function deleteMediaAsset(
+  path: string,
+  opts: { purgeReferences?: boolean } = {},
+): Promise<DeleteMediaResult> {
+  return deleteMediaAssets([path], opts);
+}
+
+export async function deleteMediaAssets(
+  paths: string[],
+  opts: { purgeReferences?: boolean } = {},
+): Promise<DeleteMediaResult> {
+  if (paths.length === 0) return { deleted: 0, referencesRemoved: 0 };
+
+  const referencesRemoved = opts.purgeReferences
+    ? await purgeMediaReferences(paths)
+    : 0;
+
   const supabase = createServerClient();
   const { error } = await supabase.storage
     .from(PRODUCT_IMAGES_BUCKET)
@@ -289,6 +409,8 @@ export async function deleteMediaAssets(paths: string[]): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete media: ${error.message}`);
   }
+
+  return { deleted: paths.length, referencesRemoved };
 }
 
 
@@ -351,7 +473,6 @@ function mapProductListRow(row: {
   };
 }
 
-/** Paginated product list for admin — slim columns, no media join. */
 export async function listProducts(
   params: ListProductsParams = {},
 ): Promise<ListProductsResult> {
@@ -465,7 +586,6 @@ export async function getLeads(): Promise<Lead[]> {
   return ((data ?? []) as LeadRow[]).map(mapLeadRow);
 }
 
-/** Leads with product name via FK join — no full catalog load. */
 export async function getLeadsWithProductNames(): Promise<LeadWithProductName[]> {
   const supabase = createServerClient();
   const { data, error } = await supabase

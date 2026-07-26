@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "10mb",
     },
-    // Soft-nav must not reuse stale RSC for dynamic admin pages (dashboard counts)
     staleTimes: {
       dynamic: 0,
       static: 30,

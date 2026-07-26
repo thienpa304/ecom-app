@@ -10,12 +10,10 @@ body {
   box-sizing: border-box;
 }
 
-/* Prevent horizontal page scroll on small screens */
 body {
   overflow-x: hidden;
 }
 
-/* Shell locks document scroll; Content pane scrolls (desktop + mobile) */
 html.admin-fixed-shell,
 html.admin-fixed-shell body {
   overflow: hidden;
@@ -23,7 +21,6 @@ html.admin-fixed-shell body {
   overscroll-behavior: none;
 }
 
-/* Ant table cells wrap better on mobile */
 .ant-table-wrapper {
   max-width: 100%;
 }

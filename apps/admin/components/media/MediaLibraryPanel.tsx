@@ -24,15 +24,15 @@ import {
   Upload,
   theme,
 } from "antd";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@ecom/shared";
 import {
-  deleteMediaAction,
+  checkMediaUsageAction,
   deleteMediaBulkAction,
   listMediaAction,
   uploadMediaAction,
 } from "@/lib/actions/media";
-import type { MediaAsset } from "@/lib/store";
+import type { MediaAsset, MediaUsage } from "@/lib/store";
 
 const MEDIA_PAGE_SIZE = 24;
 const EMPTY_URLS: string[] = [];
@@ -43,9 +43,7 @@ export type MediaLibraryPanelProps = {
   accept?: "image" | "video" | "all";
   multiple?: boolean;
   initialSelectedUrls?: string[];
-  /** pick = chọn gắn SP; manage = quản lý thư viện */
   mode?: "pick" | "manage";
-  /** Bật/tắt fetch (modal đóng thì false) */
   active?: boolean;
   onSelectionChange?: (selected: MediaAsset[]) => void;
 };
@@ -55,6 +53,29 @@ function formatBytes(n: number | null) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function UsageWarning({ usage }: { usage: MediaUsage[] }) {
+  return (
+    <div>
+      <Typography.Paragraph style={{ marginBottom: 8 }}>
+        Xóa sẽ đồng thời <b>bỏ ảnh/video này khỏi các sản phẩm bên dưới</b>. Nếu
+        không, trang web sẽ hiện ảnh lỗi.
+      </Typography.Paragraph>
+      <ul style={{ margin: 0, paddingLeft: 18, maxHeight: 220, overflow: "auto" }}>
+        {usage.map((item) => (
+          <li key={item.path} style={{ marginBottom: 4 }}>
+            <Typography.Text code style={{ fontSize: 12 }}>
+              {item.path}
+            </Typography.Text>
+            <div style={{ fontSize: 12 }}>
+              {[...new Set(item.refs.map((r) => r.productName))].join(", ")}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
@@ -88,10 +109,10 @@ export function MediaLibraryPanel({
   const debouncedQuery = useDebouncedValue(query, 300);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedAssets, setSelectedAssets] = useState<MediaAsset[]>([]);
-  /** manage-mode multi-select by path */
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<MediaAsset | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [checkingUsage, setCheckingUsage] = useState(false);
 
   const initialKey = initialSelectedUrls.join("\0");
 
@@ -227,55 +248,80 @@ export function MediaLibraryPanel({
     }
   }
 
-  function onDelete(asset: MediaAsset) {
+  async function requestDelete(
+    paths: string[],
+    fallbackContent: ReactNode,
+    afterDelete: () => void,
+  ) {
+    if (paths.length === 0) return;
+
+    setCheckingUsage(true);
+    let usage: MediaUsage[];
+    try {
+      const res = await checkMediaUsageAction(paths);
+      if (res.error) {
+        message.error(res.error);
+        return;
+      }
+      usage = res.usage;
+    } finally {
+      setCheckingUsage(false);
+    }
+
+    const inUse = usage.length > 0;
     modal.confirm({
-      title: "Xóa file này?",
-      content: asset.name,
-      okText: "Xóa",
+      title: inUse
+        ? `${usage.length}/${paths.length} file đang được sản phẩm sử dụng — vẫn xóa?`
+        : paths.length === 1
+          ? "Xóa file này?"
+          : `Xóa ${paths.length} file đã chọn?`,
+      width: inUse ? 520 : undefined,
+      content: inUse ? <UsageWarning usage={usage} /> : fallbackContent,
+      okText: inUse ? "Vẫn xóa & bỏ khỏi sản phẩm" : "Xóa",
       okType: "danger",
       cancelText: "Hủy",
       onOk: async () => {
-        const res = await deleteMediaAction(asset.path);
+        const res = await deleteMediaBulkAction(paths, { force: inUse });
         if (!res.ok) {
-          message.error(res.error ?? "Xóa thất bại");
+          message.error(
+            res.inUse?.length
+              ? "File vừa được gắn vào sản phẩm khác — hãy thử lại."
+              : (res.error ?? "Xóa thất bại"),
+          );
           return;
         }
-        message.success("Đã xóa");
-        setSelected((prev) => {
-          const next = new Set(prev);
-          next.delete(asset.url);
-          return next;
-        });
-        setChecked((prev) => {
-          const next = new Set(prev);
-          next.delete(asset.path);
-          return next;
-        });
+        message.success(
+          res.referencesRemoved
+            ? `Đã xóa ${res.deleted} file và bỏ khỏi ${res.referencesRemoved} vị trí trong sản phẩm`
+            : `Đã xóa ${res.deleted ?? paths.length} file`,
+        );
+        afterDelete();
         await load();
       },
     });
   }
 
-  function onBulkDelete() {
-    const paths = [...checked];
-    if (paths.length === 0) return;
-    modal.confirm({
-      title: `Xóa ${paths.length} file đã chọn?`,
-      content: "Thao tác này không hoàn tác được.",
-      okText: "Xóa hết",
-      okType: "danger",
-      cancelText: "Hủy",
-      onOk: async () => {
-        const res = await deleteMediaBulkAction(paths);
-        if (!res.ok) {
-          message.error(res.error ?? "Xóa thất bại");
-          return;
-        }
-        message.success(`Đã xóa ${res.deleted ?? paths.length} file`);
-        setChecked(new Set());
-        await load();
-      },
+  function onDelete(asset: MediaAsset) {
+    void requestDelete([asset.path], asset.name, () => {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(asset.url);
+        return next;
+      });
+      setChecked((prev) => {
+        const next = new Set(prev);
+        next.delete(asset.path);
+        return next;
+      });
     });
+  }
+
+  function onBulkDelete() {
+    void requestDelete(
+      [...checked],
+      "Thao tác này không hoàn tác được.",
+      () => setChecked(new Set()),
+    );
   }
 
   function selectAllOnPage() {
@@ -359,6 +405,7 @@ export function MediaLibraryPanel({
                 <Button
                   danger
                   icon={<DeleteOutlined />}
+                  loading={checkingUsage}
                   onClick={onBulkDelete}
                 >
                   Xóa {checked.size} file
@@ -533,6 +580,8 @@ export function MediaLibraryPanel({
                           size="small"
                           danger
                           icon={<DeleteOutlined />}
+                          aria-label={`Xóa ${asset.name}`}
+                          disabled={checkingUsage}
                           onClick={(e) => {
                             e.stopPropagation();
                             onDelete(asset);

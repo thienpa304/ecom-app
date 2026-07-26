@@ -8,7 +8,6 @@ function requireEnv(name: string): string {
   return value;
 }
 
-/** Server-side Supabase client for storefront (anon key + RLS). */
 export function createServerClient(): SupabaseClient {
   return createClient(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),

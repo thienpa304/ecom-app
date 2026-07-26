@@ -87,7 +87,6 @@ function NavPanel({
 
   useEffect(() => {
     for (const item of NAV) {
-      // Skip dashboard — counts must stay fresh (prefetch can pin stale RSC)
       if (item.href === "/") continue;
       router.prefetch(item.href);
     }
@@ -273,7 +272,7 @@ export function AdminShell({
           placement="left"
           open={open}
           onClose={() => setOpen(false)}
-          width={280}
+          size={280}
           styles={{
             body: { padding: 0, background: BRAND.siderBg, height: "100%" },
             header: {
@@ -382,7 +381,7 @@ export function AdminShell({
                 zIndex: 5,
               }}
             >
-              <Spin tip="Đang tải..." />
+              <Spin description="Đang tải..." />
             </div>
           ) : null}
           {children}

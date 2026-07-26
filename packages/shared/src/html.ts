@@ -1,4 +1,3 @@
-/** Strip HTML tags for plain-text SEO / previews. */
 export function stripHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
@@ -14,15 +13,18 @@ export function stripHtml(html: string): string {
     .trim();
 }
 
-/** True when string looks like HTML markup. */
+export function extractEmbedSrc(value: string): string {
+  const raw = value.trim();
+  if (!raw) return "";
+  const src = /<iframe\b[^>]*\bsrc\s*=\s*(['"])(.*?)\1/i.exec(raw)?.[2] ?? raw;
+  const url = src.replace(/&amp;/gi, "&").trim();
+  return /^https:\/\//i.test(url) ? url : "";
+}
+
 export function looksLikeHtml(value: string): boolean {
   return /<\/?[a-z][\s\S]*>/i.test(value);
 }
 
-/**
- * Minimal HTML sanitizer for product descriptions (admin TipTap output).
- * Allows common formatting tags only; strips scripts/events.
- */
 export function sanitizeProductHtml(html: string): string {
   if (!html) return "";
   let out = html
@@ -32,13 +34,11 @@ export function sanitizeProductHtml(html: string): string {
     .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
     .replace(/javascript:/gi, "");
 
-  // Drop disallowed tags but keep their text
   out = out.replace(
     /<\/?(?!\/?(p|br|strong|b|em|i|u|ul|ol|li|h2|h3|a|span)\b)[a-z][^>]*>/gi,
     "",
   );
 
-  // Sanitize anchors: only href
   out = out.replace(/<a\b([^>]*)>/gi, (_m, attrs: string) => {
     const href = /href\s*=\s*(['"])(.*?)\1/i.exec(attrs)?.[2] ?? "";
     if (!href || /^javascript:/i.test(href)) return "<a>";

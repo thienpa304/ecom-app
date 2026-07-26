@@ -1,6 +1,14 @@
 "use server";
 
-import { siteSettingsUpdateSchema } from "@ecom/shared";
+import {
+  DEFAULT_HEADER_CTA_LABEL,
+  HERO_BULLET_MAX,
+  HERO_SLIDE_MAX,
+  extractEmbedSrc,
+  parseHeroBullets,
+  parseHeroSlides,
+  siteSettingsUpdateSchema,
+} from "@ecom/shared";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import { updateSiteSettings } from "@/lib/store";
@@ -11,6 +19,10 @@ export type SettingsActionState = {
   message: string;
 };
 
+function text(formData: FormData, key: string): string {
+  return String(formData.get(key) ?? "").trim();
+}
+
 export async function updateSiteSettingsAction(
   _prev: SettingsActionState,
   formData: FormData,
@@ -18,22 +30,39 @@ export async function updateSiteSettingsAction(
   await requireAdmin();
 
   const parsed = siteSettingsUpdateSchema.safeParse({
-    siteName: String(formData.get("siteName") ?? "").trim(),
-    tagline: String(formData.get("tagline") ?? "").trim(),
-    phone: String(formData.get("phone") ?? "").trim(),
-    zaloUrl: String(formData.get("zaloUrl") ?? "").trim() || "https://zalo.me/",
-    address: String(formData.get("address") ?? "").trim(),
-    email: String(formData.get("email") ?? "").trim(),
-    heroTitle: String(formData.get("heroTitle") ?? "").trim(),
-    heroSubtitle: String(formData.get("heroSubtitle") ?? "").trim(),
-    heroImageUrl: String(formData.get("heroImageUrl") ?? "").trim(),
-    heroCardTitle: String(formData.get("heroCardTitle") ?? "").trim(),
-    heroCardCaption: String(formData.get("heroCardCaption") ?? "").trim(),
-    metaDescription: String(formData.get("metaDescription") ?? "").trim(),
-    footerBlurb: String(formData.get("footerBlurb") ?? "").trim(),
+    siteName: text(formData, "siteName"),
+    tagline: text(formData, "tagline"),
+    phone: text(formData, "phone"),
+    zaloUrl: text(formData, "zaloUrl") || "https://zalo.me/",
+    address: text(formData, "address"),
+    email: text(formData, "email"),
+    logoUrl: text(formData, "logoUrl"),
+    logoSquareUrl: text(formData, "logoSquareUrl"),
+    headerCtaLabel:
+      text(formData, "headerCtaLabel") || DEFAULT_HEADER_CTA_LABEL,
+    heroTitle: text(formData, "heroTitle"),
+    heroHighlight: text(formData, "heroHighlight"),
+    heroSubtitle: text(formData, "heroSubtitle"),
+    heroImageUrl: text(formData, "heroImageUrl"),
+    heroCardTitle: text(formData, "heroCardTitle"),
+    heroCardCaption: text(formData, "heroCardCaption"),
+    heroSlides: parseHeroSlides(text(formData, "heroSlides")).slice(
+      0,
+      HERO_SLIDE_MAX,
+    ),
+    heroBullets: parseHeroBullets(text(formData, "heroBullets")).slice(
+      0,
+      HERO_BULLET_MAX,
+    ),
+    metaDescription: text(formData, "metaDescription"),
+    footerBlurb: text(formData, "footerBlurb"),
     searchPlaceholder:
-      String(formData.get("searchPlaceholder") ?? "").trim() ||
-      "Tìm sản phẩm...",
+      text(formData, "searchPlaceholder") || "Tìm sản phẩm...",
+    facebookUrl: text(formData, "facebookUrl"),
+    youtubeUrl: text(formData, "youtubeUrl"),
+    tiktokUrl: text(formData, "tiktokUrl"),
+    fanpageEmbedUrl: extractEmbedSrc(text(formData, "fanpageEmbedUrl")),
+    mapEmbedUrl: extractEmbedSrc(text(formData, "mapEmbedUrl")),
   });
 
   if (!parsed.success) {

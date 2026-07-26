@@ -1,6 +1,5 @@
 import type { ThemeConfig } from "antd";
 
-/** Brand tokens shared with storefront (`--accent: #e85d04`). */
 export const BRAND = {
   primary: "#e85d04",
   primaryHover: "#d45103",

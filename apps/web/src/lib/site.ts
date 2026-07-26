@@ -1,4 +1,3 @@
-/** Public site origin for canonical / OG / sitemap. */
 export function getSiteUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
   if (fromEnv) return fromEnv;

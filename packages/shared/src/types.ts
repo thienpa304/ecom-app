@@ -2,6 +2,9 @@ import type { z } from "zod";
 import type {
   brandSchema,
   categorySchema,
+  heroBulletIconSchema,
+  heroBulletSchema,
+  heroSlideSchema,
   leadSchema,
   productMediaSchema,
   productSchema,
@@ -13,8 +16,10 @@ export type StockStatus = z.infer<typeof stockStatusSchema>;
 export type Category = z.infer<typeof categorySchema>;
 export type Brand = z.infer<typeof brandSchema>;
 export type ProductMedia = z.infer<typeof productMediaSchema>;
-/** @deprecated Use ProductMedia */
 export type ProductImage = ProductMedia;
 export type Product = z.infer<typeof productSchema>;
 export type Lead = z.infer<typeof leadSchema>;
+export type HeroBulletIcon = z.infer<typeof heroBulletIconSchema>;
+export type HeroSlide = z.infer<typeof heroSlideSchema>;
+export type HeroBullet = z.infer<typeof heroBulletSchema>;
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;

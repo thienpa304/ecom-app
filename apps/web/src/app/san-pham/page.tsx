@@ -6,6 +6,7 @@ import { Pagination } from "@/components/Pagination";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductFilters } from "@/components/ProductFilters";
 import { getBrands, getCategories, getSiteSettings, listProducts } from "@/lib/data";
+import { siteShareImage } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -52,6 +53,7 @@ export async function generateMetadata({
       url: absoluteUrl(path),
       title: `${title} | ${s.siteName}`,
       description,
+      ...(siteShareImage(s) ? { images: [{ url: siteShareImage(s) }] } : {}),
     },
     ...(q || brand || category
       ? { robots: { index: true, follow: true } }
@@ -96,8 +98,6 @@ export default async function CatalogPage({
     }),
   ]);
 
-  const brandNames = Object.fromEntries(brands.map((b) => [b.id, b.name]));
-
   return (
     <div className="container-page py-4 sm:py-6">
       <h1 className="sr-only">Sản phẩm</h1>
@@ -137,12 +137,11 @@ export default async function CatalogPage({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3">
               {result.items.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}
-                  brandName={brandNames[product.brandId]}
                   priority={index < 3}
                 />
               ))}
