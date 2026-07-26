@@ -9,17 +9,6 @@ export default async function SettingsPage() {
 
   return (
     <AdminShell title="Cấu hình cửa hàng">
-      <p
-        style={{
-          marginTop: 0,
-          marginBottom: 16,
-          color: "rgba(0,0,0,0.45)",
-          fontSize: 14,
-        }}
-      >
-        Tên web, hotline, Zalo và nội dung trang chủ — chỉnh tại đây, web sẽ đọc
-        trực tiếp từ database (không cần deploy lại).
-      </p>
       <SettingsForm settings={settings} />
     </AdminShell>
   );

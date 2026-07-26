@@ -1,19 +1,11 @@
 "use client";
 
-import { Card, Typography } from "antd";
+import { Card } from "antd";
 import { MediaLibraryPanel } from "./MediaLibraryPanel";
 
 export function MediaLibraryPage() {
   return (
     <Card>
-      <Typography.Title level={4} style={{ marginTop: 0 }}>
-        Thư viện Media
-      </Typography.Title>
-      <Typography.Paragraph type="secondary">
-        Quản lý ảnh / video dùng chung cho sản phẩm — upload, tìm toàn thư
-        viện, phân trang, copy URL, xóa từng file hoặc hàng loạt.
-      </Typography.Paragraph>
-
       <MediaLibraryPanel mode="manage" accept="all" active />
     </Card>
   );
