@@ -172,7 +172,7 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
               <p className="text-sm font-semibold text-gray-900">
                 Kết nối với chúng tôi
               </p>
-              <div className="mt-3 grid w-fit grid-cols-2 gap-3">
+              <div className="mt-3 flex w-fit flex-nowrap items-center gap-3">
                 {socials.map(({ key, label, href, bg, Icon }) => (
                   <a
                     key={key}
