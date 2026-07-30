@@ -8,6 +8,9 @@ const supabaseHost =
 const nextConfig: NextConfig = {
   transpilePackages: ["@ecom/shared"],
   poweredByHeader: false,
+  async redirects() {
+    return [{ source: "/favicon.ico", destination: "/icon", permanent: false }];
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200],

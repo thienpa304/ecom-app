@@ -94,7 +94,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <div className="bg-sale/5 p-3 sm:p-4">
-              <ProductRow products={topSellers} priorityCount={2} />
+              <ProductRow products={topSellers} />
             </div>
           </div>
         </section>
