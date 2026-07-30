@@ -1,49 +1,59 @@
 import type { MetadataRoute } from "next";
-import {
-  listPublishedBrandSlugs,
-  listPublishedCategorySlugs,
-  listPublishedProductSlugs,
-} from "@/lib/data";
+import { listSitemapEntries, type SitemapEntry } from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
 
+function toDate(value?: string): Date | undefined {
+  return value ? new Date(value) : undefined;
+}
+
+function toSitemapItems(
+  entries: SitemapEntry[],
+  buildPath: (slug: string) => string,
+  changeFrequency: "daily" | "weekly",
+  priority: number,
+): MetadataRoute.Sitemap {
+  return entries.map((entry) => ({
+    url: absoluteUrl(buildPath(entry.slug)),
+    lastModified: toDate(entry.lastModified),
+    changeFrequency,
+    priority,
+  }));
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [slugs, categorySlugs, brandSlugs] = await Promise.all([
-    listPublishedProductSlugs(),
-    listPublishedCategorySlugs(),
-    listPublishedBrandSlugs(),
-  ]);
-  const now = new Date();
+  const entries = await listSitemapEntries();
+  const latest = toDate(entries.latest);
 
   return [
     {
       url: absoluteUrl("/"),
-      lastModified: now,
+      lastModified: latest,
       changeFrequency: "daily",
       priority: 1,
     },
     {
       url: absoluteUrl("/san-pham"),
-      lastModified: now,
+      lastModified: latest,
       changeFrequency: "daily",
       priority: 0.9,
     },
-    ...categorySlugs.map((slug) => ({
-      url: absoluteUrl(`/danh-muc/${slug}`),
-      lastModified: now,
-      changeFrequency: "daily" as const,
-      priority: 0.85,
-    })),
-    ...brandSlugs.map((slug) => ({
-      url: absoluteUrl(`/thuong-hieu/${slug}`),
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
-    ...slugs.map((slug) => ({
-      url: absoluteUrl(`/san-pham/${slug}`),
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
+    ...toSitemapItems(
+      entries.categories,
+      (slug) => `/danh-muc/${slug}`,
+      "daily",
+      0.85,
+    ),
+    ...toSitemapItems(
+      entries.brands,
+      (slug) => `/thuong-hieu/${slug}`,
+      "weekly",
+      0.8,
+    ),
+    ...toSitemapItems(
+      entries.products,
+      (slug) => `/san-pham/${slug}`,
+      "weekly",
+      0.8,
+    ),
   ];
 }

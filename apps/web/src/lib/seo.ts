@@ -1,4 +1,11 @@
-import type { Brand, Category, Product, SiteSettings } from "@ecom/shared";
+import type {
+  Brand,
+  Category,
+  FaqEntry,
+  OpeningHoursEntry,
+  Product,
+  SiteSettings,
+} from "@ecom/shared";
 import { imageMedia, stripHtml } from "@ecom/shared";
 import { absoluteUrl } from "./site";
 
@@ -8,6 +15,98 @@ const AVAILABILITY: Record<Product["stockStatus"], string> = {
   discontinued: "https://schema.org/Discontinued",
 };
 
+const DAY_OF_WEEK_URL: Record<string, string> = {
+  Mo: "https://schema.org/Monday",
+  Tu: "https://schema.org/Tuesday",
+  We: "https://schema.org/Wednesday",
+  Th: "https://schema.org/Thursday",
+  Fr: "https://schema.org/Friday",
+  Sa: "https://schema.org/Saturday",
+  Su: "https://schema.org/Sunday",
+};
+
+type PostalAddressJsonLd = {
+  "@type": "PostalAddress";
+  addressCountry: "VN";
+  streetAddress?: string;
+  addressLocality?: string;
+  addressRegion?: string;
+  postalCode?: string;
+};
+
+type GeoJsonLd = {
+  "@type": "GeoCoordinates";
+  latitude: number;
+  longitude: number;
+};
+
+type OpeningHoursJsonLd = {
+  "@type": "OpeningHoursSpecification";
+  dayOfWeek: string[];
+  opens: string;
+  closes: string;
+};
+
+function clean(value: string | undefined): string {
+  return value?.trim() ?? "";
+}
+
+function postalAddressJsonLd(
+  settings: SiteSettings,
+): PostalAddressJsonLd | null {
+  const streetAddress = clean(settings.address);
+  const addressLocality = clean(settings.addressLocality);
+  const addressRegion = clean(settings.addressRegion);
+  const postalCode = clean(settings.postalCode);
+
+  if (!streetAddress && !addressLocality && !addressRegion && !postalCode) {
+    return null;
+  }
+
+  return {
+    "@type": "PostalAddress",
+    ...(streetAddress ? { streetAddress } : {}),
+    ...(addressLocality ? { addressLocality } : {}),
+    ...(addressRegion ? { addressRegion } : {}),
+    ...(postalCode ? { postalCode } : {}),
+    addressCountry: "VN",
+  };
+}
+
+function geoJsonLd(settings: SiteSettings): GeoJsonLd | null {
+  const rawLatitude = clean(settings.latitude);
+  const rawLongitude = clean(settings.longitude);
+  if (!rawLatitude || !rawLongitude) return null;
+
+  const latitude = Number(rawLatitude);
+  const longitude = Number(rawLongitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  return { "@type": "GeoCoordinates", latitude, longitude };
+}
+
+function openingHoursJsonLd(
+  entries: OpeningHoursEntry[],
+): OpeningHoursJsonLd[] {
+  return entries.flatMap((entry) => {
+    const dayOfWeek = (entry.days ?? [])
+      .map((day) => DAY_OF_WEEK_URL[clean(day)])
+      .filter((url): url is string => Boolean(url));
+    const opens = clean(entry.opens);
+    const closes = clean(entry.closes);
+    if (!dayOfWeek.length || !opens || !closes) return [];
+
+    return [
+      {
+        "@type": "OpeningHoursSpecification" as const,
+        dayOfWeek,
+        opens,
+        closes,
+      },
+    ];
+  });
+}
+
 export function siteShareImage(settings: SiteSettings): string {
   return (
     settings.logoSquareUrl || settings.logoUrl || settings.heroImageUrl || ""
@@ -15,9 +114,16 @@ export function siteShareImage(settings: SiteSettings): string {
 }
 
 export function organizationJsonLd(settings: SiteSettings) {
+  const address = postalAddressJsonLd(settings);
+  const geo = geoJsonLd(settings);
+  const openingHoursSpecification = openingHoursJsonLd(
+    settings.openingHours ?? [],
+  );
+  const priceRange = clean(settings.priceRange);
+
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "Store",
     name: settings.siteName,
     url: absoluteUrl("/"),
     description: settings.metaDescription || settings.tagline,
@@ -26,28 +132,47 @@ export function organizationJsonLd(settings: SiteSettings) {
       ? { logo: settings.logoSquareUrl || settings.logoUrl }
       : {}),
     ...(settings.email ? { email: settings.email } : {}),
-    ...(settings.address
-      ? {
-          address: {
-            "@type": "PostalAddress",
-            streetAddress: settings.address,
-            addressCountry: "VN",
-          },
-        }
-      : {}),
+    ...(address ? { address } : {}),
+    ...(geo ? { geo } : {}),
+    ...(openingHoursSpecification.length ? { openingHoursSpecification } : {}),
+    ...(priceRange ? { priceRange } : {}),
     sameAs: settings.zaloUrl ? [settings.zaloUrl] : [],
+  };
+}
+
+export function faqJsonLd(
+  faqs: FaqEntry[],
+): Record<string, unknown> | null {
+  const items = faqs.filter(
+    (faq) => clean(faq.question) && clean(faq.answer),
+  );
+  if (!items.length) return null;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((faq) => ({
+      "@type": "Question",
+      name: clean(faq.question),
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: clean(faq.answer),
+      },
+    })),
   };
 }
 
 export function productJsonLd(
   product: Product,
-  opts: { brand?: Brand; category?: Category },
+  opts: { brand?: Brand; category?: Category; settings?: SiteSettings },
 ) {
   const price =
     product.salePrice != null && product.salePrice < product.price
       ? product.salePrice
       : product.price;
   const images = imageMedia(product).map((i) => i.url).filter(Boolean);
+  const hasShippingPolicy = Boolean(clean(opts.settings?.shippingPolicy));
+  const hasReturnPolicy = Boolean(clean(opts.settings?.returnPolicy));
 
   return {
     "@context": "https://schema.org",
@@ -56,7 +181,6 @@ export function productJsonLd(
     description:
       stripHtml(product.description ?? "") ||
       `${product.name} — model ${product.model}`,
-    sku: product.model,
     mpn: product.model,
     ...(opts.brand
       ? { brand: { "@type": "Brand", name: opts.brand.name } }
@@ -70,6 +194,27 @@ export function productJsonLd(
       price: String(price),
       availability: AVAILABILITY[product.stockStatus],
       itemCondition: "https://schema.org/NewCondition",
+      ...(hasShippingPolicy
+        ? {
+            shippingDetails: {
+              "@type": "OfferShippingDetails",
+              shippingDestination: {
+                "@type": "DefinedRegion",
+                addressCountry: "VN",
+              },
+            },
+          }
+        : {}),
+      ...(hasReturnPolicy
+        ? {
+            hasMerchantReturnPolicy: {
+              "@type": "MerchantReturnPolicy",
+              applicableCountry: "VN",
+              returnPolicyCategory:
+                "https://schema.org/MerchantReturnFiniteReturnWindow",
+            },
+          }
+        : {}),
     },
   };
 }

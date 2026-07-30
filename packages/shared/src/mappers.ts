@@ -1,4 +1,9 @@
-import { heroBulletSchema, heroSlideSchema } from "./schemas";
+import {
+  faqEntrySchema,
+  heroBulletSchema,
+  heroSlideSchema,
+  openingHoursEntrySchema,
+} from "./schemas";
 
 import type {
 
@@ -6,11 +11,15 @@ import type {
 
   Category,
 
+  FaqEntry,
+
   HeroBullet,
 
   HeroSlide,
 
   Lead,
+
+  OpeningHoursEntry,
 
   Product,
 
@@ -197,6 +206,26 @@ export type SiteSettingsRow = {
 
   map_embed_url?: string | null;
 
+  address_locality?: string | null;
+
+  address_region?: string | null;
+
+  postal_code?: string | null;
+
+  latitude?: string | null;
+
+  longitude?: string | null;
+
+  price_range?: string | null;
+
+  opening_hours?: unknown;
+
+  faqs?: unknown;
+
+  shipping_policy?: string | null;
+
+  return_policy?: string | null;
+
   updated_at?: string;
 
 };
@@ -258,6 +287,42 @@ export function parseHeroBullets(value: unknown): HeroBullet[] {
     const parsed = heroBulletSchema.safeParse(item);
 
     return parsed.success && (parsed.data.bold || parsed.data.text)
+
+      ? [parsed.data]
+
+      : [];
+
+  });
+
+}
+
+
+
+export function parseOpeningHours(value: unknown): OpeningHoursEntry[] {
+
+  return toArray(value).flatMap((item) => {
+
+    const parsed = openingHoursEntrySchema.safeParse(item);
+
+    return parsed.success && parsed.data.days.length
+
+      ? [parsed.data]
+
+      : [];
+
+  });
+
+}
+
+
+
+export function parseFaqs(value: unknown): FaqEntry[] {
+
+  return toArray(value).flatMap((item) => {
+
+    const parsed = faqEntrySchema.safeParse(item);
+
+    return parsed.success && parsed.data.question && parsed.data.answer
 
       ? [parsed.data]
 
@@ -484,6 +549,26 @@ export function mapSiteSettingsRow(row: SiteSettingsRow): SiteSettings {
 
     mapEmbedUrl: row.map_embed_url ?? '',
 
+    addressLocality: row.address_locality ?? '',
+
+    addressRegion: row.address_region ?? '',
+
+    postalCode: row.postal_code ?? '',
+
+    latitude: row.latitude ?? '',
+
+    longitude: row.longitude ?? '',
+
+    priceRange: row.price_range ?? '',
+
+    openingHours: parseOpeningHours(row.opening_hours),
+
+    faqs: parseFaqs(row.faqs),
+
+    shippingPolicy: row.shipping_policy ?? '',
+
+    returnPolicy: row.return_policy ?? '',
+
     updatedAt: row.updated_at,
 
   };
@@ -551,6 +636,26 @@ export function siteSettingsToRow(
     fanpage_embed_url: settings.fanpageEmbedUrl ?? '',
 
     map_embed_url: settings.mapEmbedUrl ?? '',
+
+    address_locality: settings.addressLocality ?? '',
+
+    address_region: settings.addressRegion ?? '',
+
+    postal_code: settings.postalCode ?? '',
+
+    latitude: settings.latitude ?? '',
+
+    longitude: settings.longitude ?? '',
+
+    price_range: settings.priceRange ?? '',
+
+    opening_hours: settings.openingHours ?? [],
+
+    faqs: settings.faqs ?? [],
+
+    shipping_policy: settings.shippingPolicy ?? '',
+
+    return_policy: settings.returnPolicy ?? '',
 
   };
 

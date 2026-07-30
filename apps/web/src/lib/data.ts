@@ -345,6 +345,111 @@ export async function listPublishedBrandSlugs(): Promise<string[]> {
   return loadPublishedBrandSlugs();
 }
 
+export type SitemapEntry = {
+  slug: string;
+  lastModified?: string;
+};
+
+export type SitemapEntries = {
+  products: SitemapEntry[];
+  categories: SitemapEntry[];
+  brands: SitemapEntry[];
+  latest?: string;
+};
+
+type SitemapProductRow = {
+  slug: string;
+  category_id: string | null;
+  brand_id: string | null;
+  updated_at: string | null;
+  created_at: string | null;
+};
+
+function parseTimestamp(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? undefined : time;
+}
+
+function trackLatest(
+  store: Map<string, number>,
+  key: string | null,
+  time: number,
+): void {
+  if (!key) return;
+  const current = store.get(key);
+  if (current === undefined || time > current) {
+    store.set(key, time);
+  }
+}
+
+function toSitemapEntries(
+  items: { id: string; slug: string }[],
+  times: Map<string, number>,
+): SitemapEntry[] {
+  return items.flatMap((item) => {
+    const time = times.get(item.id);
+    if (time === undefined) return [];
+    return [{ slug: item.slug, lastModified: new Date(time).toISOString() }];
+  });
+}
+
+const loadSitemapEntries = unstable_cache(
+  async (): Promise<SitemapEntries> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("slug, category_id, brand_id, updated_at, created_at")
+      .eq("is_published", true);
+
+    if (error) {
+      throw new Error(`Failed to fetch sitemap entries: ${error.message}`);
+    }
+
+    const rows = (data ?? []) as SitemapProductRow[];
+    const categoryTimes = new Map<string, number>();
+    const brandTimes = new Map<string, number>();
+    let latestTime: number | undefined;
+
+    const products = rows.map((row) => {
+      const time = parseTimestamp(row.updated_at ?? row.created_at);
+      if (time === undefined) return { slug: row.slug };
+
+      if (latestTime === undefined || time > latestTime) {
+        latestTime = time;
+      }
+      trackLatest(categoryTimes, row.category_id, time);
+      trackLatest(brandTimes, row.brand_id, time);
+
+      return { slug: row.slug, lastModified: new Date(time).toISOString() };
+    });
+
+    const [categories, brands] = await Promise.all([
+      getCategories(),
+      getBrands(),
+    ]);
+
+    return {
+      products,
+      categories: toSitemapEntries(categories, categoryTimes),
+      brands: toSitemapEntries(brands, brandTimes),
+      latest:
+        latestTime === undefined
+          ? undefined
+          : new Date(latestTime).toISOString(),
+    };
+  },
+  ["sitemap-entries"],
+  {
+    revalidate: REVALIDATE_SECONDS,
+    tags: ["products", "categories", "brands"],
+  },
+);
+
+export async function listSitemapEntries(): Promise<SitemapEntries> {
+  return loadSitemapEntries();
+}
+
 async function queryListProducts(
   params: ListProductsParams,
 ): Promise<ListProductsResult> {

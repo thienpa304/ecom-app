@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { STOCK_STATUS, primaryImage } from "@ecom/shared";
+import { FaqSection } from "@/components/FaqSection";
 import { JsonLd } from "@/components/JsonLd";
 import { LeadForm } from "@/components/LeadForm";
+import { StorePolicies } from "@/components/StorePolicies";
 import {
   descriptionPlainText,
   ProductDescription,
@@ -18,7 +20,7 @@ import {
   listPublishedProductSlugs,
 } from "@/lib/data";
 import { discountPercent, formatVnd } from "@/lib/format";
-import { breadcrumbJsonLd, productJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, faqJsonLd, productJsonLd } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
 type Params = Promise<{ slug: string }>;
@@ -63,6 +65,9 @@ export async function generateMetadata({
     title,
     description,
     ...(keywords?.length ? { keywords } : {}),
+    ...(product.stockStatus === "discontinued"
+      ? { robots: { index: false, follow: true } }
+      : {}),
     alternates: { canonical: path },
     openGraph: {
       type: "website",
@@ -107,6 +112,8 @@ export default async function ProductDetailPage({
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
 
+  const faqData = faqJsonLd(settings.faqs ?? []);
+
   const crumbs = [
     { name: "Trang chủ", path: "/" },
     { name: "Sản phẩm", path: "/san-pham" },
@@ -123,8 +130,9 @@ export default async function ProductDetailPage({
 
   return (
     <div className="container-page min-w-0 py-6 sm:py-8">
-      <JsonLd data={productJsonLd(product, { brand, category })} />
+      <JsonLd data={productJsonLd(product, { brand, category, settings })} />
       <JsonLd data={breadcrumbJsonLd(crumbs)} />
+      {faqData ? <JsonLd data={faqData} /> : null}
 
       <nav
         className="mb-4 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 sm:text-sm"
@@ -273,6 +281,11 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
+      <StorePolicies
+        shippingPolicy={settings.shippingPolicy}
+        returnPolicy={settings.returnPolicy}
+      />
+
       {product.description ? (
         <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
           <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900">
@@ -283,6 +296,8 @@ export default async function ProductDetailPage({
           </div>
         </section>
       ) : null}
+
+      <FaqSection faqs={settings.faqs ?? []} />
     </div>
   );
 }

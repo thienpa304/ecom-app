@@ -13,7 +13,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   logoUrl: "",
   logoSquareUrl: "",
   headerCtaLabel: DEFAULT_HEADER_CTA_LABEL,
-  heroTitle: "Điện máy & thiết bị gia dụng",
+  heroTitle: "Máy xịt rửa cao áp, máy nén khí chính hãng tại TP.HCM",
   heroHighlight: "",
   heroSubtitle:
     "Xem thông số, giá khuyến mãi và liên hệ trực tiếp — không cần giỏ hàng, không thanh toán online.",
@@ -32,6 +32,16 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   tiktokUrl: "",
   fanpageEmbedUrl: "",
   mapEmbedUrl: "",
+  addressLocality: "",
+  addressRegion: "",
+  postalCode: "",
+  latitude: "",
+  longitude: "",
+  priceRange: "",
+  openingHours: [],
+  faqs: [],
+  shippingPolicy: "",
+  returnPolicy: "",
 };
 
 export const HOME_TOP_SELLERS_TITLE = "TOP MÁY XỊT RỬA CAO ÁP BÁN CHẠY";
@@ -40,6 +50,9 @@ export const HOME_SECTION_PRODUCT_COUNT = 4;
 export const HERO_SLIDE_INTERVAL_MS = 5000;
 export const HERO_SLIDE_MAX = 5;
 export const HERO_BULLET_MAX = 6;
+
+export const FAQ_MAX = 10;
+export const OPENING_HOURS_MAX = 7;
 
 export const STOCK_STATUS: Record<
   StockStatus,

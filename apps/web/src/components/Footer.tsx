@@ -1,13 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { SiteSettings } from "@ecom/shared";
-import { getBrands } from "@/lib/data";
+import { getBrands, getCategories } from "@/lib/data";
 
 export async function Footer({ settings }: { settings: SiteSettings }) {
   const tel = settings.phone.replace(/\D/g, "");
-  const brands = [...(await getBrands())].sort((a, b) =>
+  const [allBrands, allCategories] = await Promise.all([
+    getBrands(),
+    getCategories(),
+  ]);
+
+  const brands = [...allBrands].sort((a, b) =>
     a.name.localeCompare(b.name, "vi"),
   );
+
+  const categories = allCategories
+    .filter((category) => category.parentId === null)
+    .sort(
+      (a, b) =>
+        a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"),
+    );
 
   const socials = [
     {
@@ -113,17 +125,47 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
                 Danh mục sản phẩm
               </Link>
             </li>
-            {brands.map((brand) => (
-              <li key={brand.id}>
-                <Link
-                  href={`/thuong-hieu/${brand.slug}`}
-                  className="hover:text-accent"
-                >
-                  {brand.name}
-                </Link>
-              </li>
-            ))}
           </ul>
+
+          {categories.length > 0 ? (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Danh mục
+              </p>
+              <ul className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs leading-5 text-gray-600">
+                {categories.map((category) => (
+                  <li key={category.id}>
+                    <Link
+                      href={`/danh-muc/${category.slug}`}
+                      className="hover:text-accent"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {brands.length > 0 ? (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Thương hiệu
+              </p>
+              <ul className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs leading-5 text-gray-600">
+                {brands.map((brand) => (
+                  <li key={brand.id}>
+                    <Link
+                      href={`/thuong-hieu/${brand.slug}`}
+                      className="hover:text-accent"
+                    >
+                      {brand.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {socials.length > 0 ? (
             <div className="mt-6">

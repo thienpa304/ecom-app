@@ -2,11 +2,15 @@
 
 import {
   DEFAULT_HEADER_CTA_LABEL,
+  FAQ_MAX,
   HERO_BULLET_MAX,
   HERO_SLIDE_MAX,
+  OPENING_HOURS_MAX,
+  type FaqEntry,
   type HeroBullet,
   type HeroBulletIcon,
   type HeroSlide,
+  type OpeningHoursEntry,
   type SiteSettings,
 } from "@ecom/shared";
 import {
@@ -46,6 +50,16 @@ const BULLET_ICONS: { value: HeroBulletIcon; label: string }[] = [
   { value: "truck", label: "🚚 Xe giao hàng" },
 ];
 
+const WEEKDAYS: { value: string; label: string }[] = [
+  { value: "Mo", label: "T2" },
+  { value: "Tu", label: "T3" },
+  { value: "We", label: "T4" },
+  { value: "Th", label: "T5" },
+  { value: "Fr", label: "T6" },
+  { value: "Sa", label: "T7" },
+  { value: "Su", label: "CN" },
+];
+
 type PickerTarget = "logo" | "logoSquare" | "poster" | "slides";
 
 function move<T>(list: T[], from: number, to: number): T[] {
@@ -71,6 +85,10 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   const [bullets, setBullets] = useState<HeroBullet[]>(
     settings.heroBullets ?? [],
   );
+  const [openingHours, setOpeningHours] = useState<OpeningHoursEntry[]>(
+    settings.openingHours ?? [],
+  );
+  const [faqs, setFaqs] = useState<FaqEntry[]>(settings.faqs ?? []);
   const [picker, setPicker] = useState<PickerTarget | null>(null);
 
   function patchSlide(index: number, patch: Partial<HeroSlide>) {
@@ -82,6 +100,18 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   function patchBullet(index: number, patch: Partial<HeroBullet>) {
     setBullets((prev) =>
       prev.map((b, i) => (i === index ? { ...b, ...patch } : b)),
+    );
+  }
+
+  function patchHours(index: number, patch: Partial<OpeningHoursEntry>) {
+    setOpeningHours((prev) =>
+      prev.map((h, i) => (i === index ? { ...h, ...patch } : h)),
+    );
+  }
+
+  function patchFaq(index: number, patch: Partial<FaqEntry>) {
+    setFaqs((prev) =>
+      prev.map((f, i) => (i === index ? { ...f, ...patch } : f)),
     );
   }
 
@@ -101,6 +131,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           name="heroBullets"
           value={JSON.stringify(bullets)}
         />
+        <input
+          type="hidden"
+          name="openingHours"
+          value={JSON.stringify(openingHours)}
+        />
+        <input type="hidden" name="faqs" value={JSON.stringify(faqs)} />
         <input
           type="hidden"
           name="heroCardTitle"
@@ -611,6 +647,282 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
                   rows={3}
                   defaultValue={settings.mapEmbedUrl}
                   placeholder="https://www.google.com/maps/embed?pb=…"
+                />
+              </Form.Item>
+
+              <h3>Thông tin cửa hàng cho Google</h3>
+              <Typography.Paragraph type="secondary">
+                Google dùng những thông tin này để hiện cửa hàng trên Google Maps
+                và trong kết quả tìm kiếm địa phương (địa chỉ, giờ mở cửa,
+                khoảng giá). Điền càng đầy đủ, khách càng dễ tìm ra cửa hàng.
+              </Typography.Paragraph>
+              <Form.Item
+                label="Phường / Quận"
+                extra="Ví dụ: Phường Bình Hưng Hòa, Quận Bình Tân"
+              >
+                <Input
+                  name="addressLocality"
+                  defaultValue={settings.addressLocality}
+                  placeholder="Phường Bình Hưng Hòa, Quận Bình Tân"
+                />
+              </Form.Item>
+              <Form.Item label="Tỉnh / Thành phố">
+                <Input
+                  name="addressRegion"
+                  defaultValue={settings.addressRegion}
+                  placeholder="TP Hồ Chí Minh"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Mã bưu chính"
+                extra="Không bắt buộc — để trống nếu không rõ."
+              >
+                <Input
+                  name="postalCode"
+                  defaultValue={settings.postalCode}
+                  placeholder="700000"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Vĩ độ"
+                extra="Mở Google Maps, bấm chuột phải vào cửa hàng, chọn dòng toạ độ đầu tiên để copy. Số đầu là vĩ độ, số sau là kinh độ."
+              >
+                <Input
+                  name="latitude"
+                  defaultValue={settings.latitude}
+                  placeholder="10.802345"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Kinh độ"
+                extra="Mở Google Maps, bấm chuột phải vào cửa hàng, chọn dòng toạ độ đầu tiên để copy. Số đầu là vĩ độ, số sau là kinh độ."
+              >
+                <Input
+                  name="longitude"
+                  defaultValue={settings.longitude}
+                  placeholder="106.601234"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Khoảng giá"
+                extra="Khoảng giá chung của hàng bán tại cửa hàng, hiện kèm thông tin cửa hàng trên Google."
+              >
+                <Input
+                  name="priceRange"
+                  defaultValue={settings.priceRange}
+                  placeholder="2.500.000₫ - 16.000.000₫"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={`Giờ mở cửa (tối đa ${OPENING_HOURS_MAX} khung giờ)`}
+                extra="Mỗi dòng là một khung giờ áp dụng cho các ngày được chọn. Ví dụ: T2–T7 mở 08:00, đóng 18:00."
+              >
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Space wrap>
+                    <Button
+                      htmlType="button"
+                      onClick={() =>
+                        setOpeningHours((prev) => [
+                          ...prev,
+                          { days: [], opens: "08:00", closes: "18:00" },
+                        ])
+                      }
+                      disabled={openingHours.length >= OPENING_HOURS_MAX}
+                    >
+                      Thêm khung giờ
+                    </Button>
+                    <Typography.Text type="secondary">
+                      {openingHours.length}/{OPENING_HOURS_MAX} khung giờ
+                    </Typography.Text>
+                  </Space>
+
+                  {openingHours.length === 0 ? (
+                    <Typography.Text type="secondary">
+                      Chưa có khung giờ nào — Google sẽ không hiện giờ mở cửa.
+                    </Typography.Text>
+                  ) : null}
+
+                  {openingHours.map((entry, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "flex-start",
+                        flexWrap: "wrap",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 8,
+                        padding: 8,
+                      }}
+                    >
+                      <Select
+                        mode="multiple"
+                        value={entry.days}
+                        onChange={(days: string[]) =>
+                          patchHours(index, { days })
+                        }
+                        options={WEEKDAYS}
+                        placeholder="Chọn ngày"
+                        style={{ flex: 1, minWidth: 220 }}
+                      />
+                      <Input
+                        value={entry.opens}
+                        onChange={(e) =>
+                          patchHours(index, { opens: e.target.value })
+                        }
+                        placeholder="Giờ mở — 08:00"
+                        style={{ width: 150 }}
+                      />
+                      <Input
+                        value={entry.closes}
+                        onChange={(e) =>
+                          patchHours(index, { closes: e.target.value })
+                        }
+                        placeholder="Giờ đóng — 18:00"
+                        style={{ width: 150 }}
+                      />
+                      <Button
+                        danger
+                        htmlType="button"
+                        onClick={() =>
+                          setOpeningHours((prev) =>
+                            prev.filter((_, i) => i !== index),
+                          )
+                        }
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  ))}
+                </Space>
+              </Form.Item>
+
+              <h3>Câu hỏi thường gặp (FAQ)</h3>
+              <Form.Item
+                label={`Danh sách câu hỏi (tối đa ${FAQ_MAX} câu)`}
+                extra="Hiện ở trang sản phẩm và được Google dùng cho kết quả hỏi-đáp. Viết câu trả lời thật, ngắn gọn."
+              >
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Space wrap>
+                    <Button
+                      htmlType="button"
+                      onClick={() =>
+                        setFaqs((prev) => [
+                          ...prev,
+                          { question: "", answer: "" },
+                        ])
+                      }
+                      disabled={faqs.length >= FAQ_MAX}
+                    >
+                      Thêm câu hỏi
+                    </Button>
+                    <Typography.Text type="secondary">
+                      {faqs.length}/{FAQ_MAX} câu
+                    </Typography.Text>
+                  </Space>
+
+                  {faqs.length === 0 ? (
+                    <Typography.Text type="secondary">
+                      Chưa có câu hỏi nào — phần FAQ sẽ tự ẩn trên web.
+                    </Typography.Text>
+                  ) : null}
+
+                  {faqs.map((faq, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "flex-start",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 8,
+                        padding: 8,
+                      }}
+                    >
+                      <Space
+                        direction="vertical"
+                        size={6}
+                        style={{ flex: 1, minWidth: 0 }}
+                      >
+                        <Input
+                          size="small"
+                          value={faq.question}
+                          onChange={(e) =>
+                            patchFaq(index, { question: e.target.value })
+                          }
+                          placeholder="Câu hỏi — vd: Máy có được bảo hành bao lâu?"
+                        />
+                        <Input.TextArea
+                          size="small"
+                          rows={3}
+                          value={faq.answer}
+                          onChange={(e) =>
+                            patchFaq(index, { answer: e.target.value })
+                          }
+                          placeholder="Câu trả lời ngắn gọn, đúng thực tế"
+                        />
+                      </Space>
+                      <Space direction="vertical" size={4}>
+                        <Button
+                          size="small"
+                          htmlType="button"
+                          disabled={index === 0}
+                          onClick={() =>
+                            setFaqs((prev) => move(prev, index, index - 1))
+                          }
+                        >
+                          ↑
+                        </Button>
+                        <Button
+                          size="small"
+                          htmlType="button"
+                          disabled={index === faqs.length - 1}
+                          onClick={() =>
+                            setFaqs((prev) => move(prev, index, index + 1))
+                          }
+                        >
+                          ↓
+                        </Button>
+                        <Button
+                          size="small"
+                          danger
+                          htmlType="button"
+                          onClick={() =>
+                            setFaqs((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
+                        >
+                          Xóa
+                        </Button>
+                      </Space>
+                    </div>
+                  ))}
+                </Space>
+              </Form.Item>
+
+              <h3>Chính sách</h3>
+              <Form.Item
+                label="Chính sách giao hàng"
+                extra="Viết bằng chữ thường, mỗi ý một dòng."
+              >
+                <Input.TextArea
+                  name="shippingPolicy"
+                  rows={4}
+                  defaultValue={settings.shippingPolicy}
+                  placeholder="Giao hàng toàn quốc, nội thành TP.HCM giao trong ngày…"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Chính sách đổi trả / bảo hành"
+                extra="Viết bằng chữ thường, mỗi ý một dòng."
+              >
+                <Input.TextArea
+                  name="returnPolicy"
+                  rows={4}
+                  defaultValue={settings.returnPolicy}
+                  placeholder="Đổi trả trong 7 ngày nếu lỗi nhà sản xuất, bảo hành chính hãng 12 tháng…"
                 />
               </Form.Item>
             </Form>

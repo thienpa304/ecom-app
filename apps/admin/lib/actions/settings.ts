@@ -2,11 +2,15 @@
 
 import {
   DEFAULT_HEADER_CTA_LABEL,
+  FAQ_MAX,
   HERO_BULLET_MAX,
   HERO_SLIDE_MAX,
+  OPENING_HOURS_MAX,
   extractEmbedSrc,
+  parseFaqs,
   parseHeroBullets,
   parseHeroSlides,
+  parseOpeningHours,
   siteSettingsUpdateSchema,
 } from "@ecom/shared";
 import { revalidatePath } from "next/cache";
@@ -63,6 +67,19 @@ export async function updateSiteSettingsAction(
     tiktokUrl: text(formData, "tiktokUrl"),
     fanpageEmbedUrl: extractEmbedSrc(text(formData, "fanpageEmbedUrl")),
     mapEmbedUrl: extractEmbedSrc(text(formData, "mapEmbedUrl")),
+    addressLocality: text(formData, "addressLocality"),
+    addressRegion: text(formData, "addressRegion"),
+    postalCode: text(formData, "postalCode"),
+    latitude: text(formData, "latitude"),
+    longitude: text(formData, "longitude"),
+    priceRange: text(formData, "priceRange"),
+    openingHours: parseOpeningHours(text(formData, "openingHours")).slice(
+      0,
+      OPENING_HOURS_MAX,
+    ),
+    faqs: parseFaqs(text(formData, "faqs")).slice(0, FAQ_MAX),
+    shippingPolicy: text(formData, "shippingPolicy"),
+    returnPolicy: text(formData, "returnPolicy"),
   });
 
   if (!parsed.success) {

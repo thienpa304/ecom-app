@@ -91,6 +91,17 @@ export const heroBulletSchema = z.object({
   text: z.string().default(""),
 });
 
+export const openingHoursEntrySchema = z.object({
+  days: z.array(z.string()),
+  opens: z.string(),
+  closes: z.string(),
+});
+
+export const faqEntrySchema = z.object({
+  question: z.string(),
+  answer: z.string(),
+});
+
 export const siteSettingsSchema = z.object({
   id: z.number().int(),
   siteName: z.string().min(1),
@@ -118,6 +129,16 @@ export const siteSettingsSchema = z.object({
   tiktokUrl: z.string(),
   fanpageEmbedUrl: z.string(),
   mapEmbedUrl: z.string(),
+  addressLocality: z.string(),
+  addressRegion: z.string(),
+  postalCode: z.string(),
+  latitude: z.string(),
+  longitude: z.string(),
+  priceRange: z.string(),
+  openingHours: z.array(openingHoursEntrySchema),
+  faqs: z.array(faqEntrySchema),
+  shippingPolicy: z.string(),
+  returnPolicy: z.string(),
   updatedAt: z.string().optional(),
 });
 
