@@ -1,14 +1,16 @@
 import type { MetadataRoute } from "next";
 import {
+  listPublishedBrandSlugs,
   listPublishedCategorySlugs,
   listPublishedProductSlugs,
 } from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [slugs, categorySlugs] = await Promise.all([
+  const [slugs, categorySlugs, brandSlugs] = await Promise.all([
     listPublishedProductSlugs(),
     listPublishedCategorySlugs(),
+    listPublishedBrandSlugs(),
   ]);
   const now = new Date();
 
@@ -30,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "daily" as const,
       priority: 0.85,
+    })),
+    ...brandSlugs.map((slug) => ({
+      url: absoluteUrl(`/thuong-hieu/${slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
     })),
     ...slugs.map((slug) => ({
       url: absoluteUrl(`/san-pham/${slug}`),

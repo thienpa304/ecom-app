@@ -4,7 +4,8 @@ import { PRICE_RANGES, type Brand, type Category } from "@ecom/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useId, useTransition } from "react";
 
-const CATALOG_BASE_PATH = "/san-pham";
+const CATALOG_ROOT_PATH = "/san-pham";
+const NO_DROP_PARAMS: readonly string[] = [];
 
 type Props = {
   brands: Brand[];
@@ -12,14 +13,22 @@ type Props = {
   className?: string;
   basePath?: string;
   activeCategorySlug?: string;
+  activeBrandSlug?: string;
+  dropParams?: readonly string[];
+  categoryHrefBase?: string;
+  brandHrefBase?: string;
 };
 
 export function ProductFilters({
   brands,
   categories,
   className,
-  basePath = CATALOG_BASE_PATH,
+  basePath = CATALOG_ROOT_PATH,
   activeCategorySlug,
+  activeBrandSlug,
+  dropParams = NO_DROP_PARAMS,
+  categoryHrefBase,
+  brandHrefBase,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,13 +36,14 @@ export function ProductFilters({
   const uid = useId();
   const priceName = `price-${uid}`;
   const categoryName = `category-${uid}`;
-  const isCategoryRoute = basePath !== CATALOG_BASE_PATH;
 
   const selectedBrands = new Set(
-    (searchParams.get("brand") ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    activeBrandSlug
+      ? [activeBrandSlug]
+      : (searchParams.get("brand") ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
   );
   const selectedPrice = searchParams.get("price") ?? "";
   const selectedCategory = activeCategorySlug ?? searchParams.get("category") ?? "";
@@ -43,16 +53,25 @@ export function ProductFilters({
       const params = new URLSearchParams(searchParams.toString());
       mutate(params);
       params.delete("page");
-      if (isCategoryRoute) params.delete("category");
+      for (const key of dropParams) params.delete(key);
       startTransition(() => {
         const qs = params.toString();
         router.push(`${basePath}${qs ? `?${qs}` : ""}`);
       });
     },
-    [router, searchParams, basePath, isCategoryRoute],
+    [router, searchParams, basePath, dropParams],
   );
 
   function toggleBrand(slug: string) {
+    if (brandHrefBase) {
+      const target =
+        !slug || selectedBrands.has(slug)
+          ? CATALOG_ROOT_PATH
+          : `${brandHrefBase}/${slug}`;
+      startTransition(() => router.push(target));
+      return;
+    }
+
     updateParams((params) => {
       const next = new Set(selectedBrands);
       if (next.has(slug)) next.delete(slug);
@@ -70,11 +89,11 @@ export function ProductFilters({
   }
 
   function setCategory(slug: string) {
-    if (isCategoryRoute) {
+    if (categoryHrefBase) {
       const target =
         !slug || slug === selectedCategory
-          ? CATALOG_BASE_PATH
-          : `/danh-muc/${slug}`;
+          ? CATALOG_ROOT_PATH
+          : `${categoryHrefBase}/${slug}`;
       startTransition(() => router.push(target));
       return;
     }

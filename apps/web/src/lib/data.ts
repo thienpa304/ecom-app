@@ -315,6 +315,36 @@ export async function listPublishedCategorySlugs(): Promise<string[]> {
   return loadPublishedCategorySlugs();
 }
 
+const loadPublishedBrandSlugs = unstable_cache(
+  async (): Promise<string[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("brand_id")
+      .eq("is_published", true);
+
+    if (error) {
+      throw new Error(`Failed to fetch published brand ids: ${error.message}`);
+    }
+
+    const ids = new Set(
+      (data ?? [])
+        .map((row) => (row as { brand_id: string | null }).brand_id)
+        .filter((id): id is string => Boolean(id)),
+    );
+    if (ids.size === 0) return [];
+
+    const brands = await getBrands();
+    return brands.filter((b) => ids.has(b.id)).map((b) => b.slug);
+  },
+  ["published-brand-slugs"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["products", "brands"] },
+);
+
+export async function listPublishedBrandSlugs(): Promise<string[]> {
+  return loadPublishedBrandSlugs();
+}
+
 async function queryListProducts(
   params: ListProductsParams,
 ): Promise<ListProductsResult> {

@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { SiteSettings } from "@ecom/shared";
+import { getBrands } from "@/lib/data";
 
-export function Footer({ settings }: { settings: SiteSettings }) {
+export async function Footer({ settings }: { settings: SiteSettings }) {
   const tel = settings.phone.replace(/\D/g, "");
+  const brands = [...(await getBrands())].sort((a, b) =>
+    a.name.localeCompare(b.name, "vi"),
+  );
 
   const socials = [
     {
@@ -109,6 +113,16 @@ export function Footer({ settings }: { settings: SiteSettings }) {
                 Danh mục sản phẩm
               </Link>
             </li>
+            {brands.map((brand) => (
+              <li key={brand.id}>
+                <Link
+                  href={`/thuong-hieu/${brand.slug}`}
+                  className="hover:text-accent"
+                >
+                  {brand.name}
+                </Link>
+              </li>
+            ))}
           </ul>
 
           {socials.length > 0 ? (

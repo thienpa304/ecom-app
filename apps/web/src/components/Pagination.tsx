@@ -1,25 +1,28 @@
 import Link from "next/link";
 
-const CATALOG_BASE_PATH = "/san-pham";
+const CATALOG_ROOT_PATH = "/san-pham";
+const NO_DROP_PARAMS: readonly string[] = [];
 
 type Props = {
   page: number;
   totalPages: number;
   queryString?: string;
   basePath?: string;
+  dropParams?: readonly string[];
 };
 
 export function Pagination({
   page,
   totalPages,
   queryString = "",
-  basePath = CATALOG_BASE_PATH,
+  basePath = CATALOG_ROOT_PATH,
+  dropParams = NO_DROP_PARAMS,
 }: Props) {
   if (totalPages <= 1) return null;
 
   function hrefFor(p: number) {
     const params = new URLSearchParams(queryString);
-    if (basePath !== CATALOG_BASE_PATH) params.delete("category");
+    for (const key of dropParams) params.delete(key);
     params.set("page", String(p));
     return `${basePath}?${params.toString()}`;
   }

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Category } from "@ecom/shared";
+import type { Brand } from "@ecom/shared";
 import { CatalogToolbar } from "@/components/CatalogToolbar";
 import { JsonLd } from "@/components/JsonLd";
 import { MobileFilters } from "@/components/MobileFilters";
@@ -14,7 +14,7 @@ import {
   getCategories,
   getSiteSettings,
   listProducts,
-  listPublishedCategorySlugs,
+  listPublishedBrandSlugs,
 } from "@/lib/data";
 import { breadcrumbJsonLd, siteShareImage } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
@@ -22,11 +22,12 @@ import { absoluteUrl } from "@/lib/site";
 type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const FILTER_KEYS = ["brand", "price", "sort", "page", "pageSize"] as const;
-const CATEGORY_DROP_PARAMS = ["category"] as const;
-const CATEGORY_HREF_BASE = "/danh-muc";
+const FILTER_KEYS = ["category", "price", "sort", "page", "pageSize"] as const;
+const BRAND_DROP_PARAMS = ["brand"] as const;
+const BRAND_HREF_BASE = "/thuong-hieu";
 const DEFAULT_PAGE_SIZE = 12;
 const DEFAULT_SORT = "price_desc";
+const INDUSTRY_LABEL = "Máy xịt rửa, máy nén khí";
 
 export const revalidate = 60;
 
@@ -41,22 +42,21 @@ function hasAnyFilter(
   return FILTER_KEYS.some((key) => Boolean(first(sp[key])));
 }
 
-function byOrderThenName(a: Category, b: Category): number {
-  if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-  return a.name.localeCompare(b.name, "vi");
+function brandHeadline(name: string): string {
+  return `${INDUSTRY_LABEL} ${name} chính hãng`;
 }
 
-function categoryDescription(name: string, siteName: string): string {
-  return `${name} chính hãng tại ${siteName} — giá tốt, bảo hành đầy đủ, tư vấn miễn phí và giao hàng toàn quốc.`;
+function brandDescription(name: string, siteName: string): string {
+  return `${INDUSTRY_LABEL} ${name} chính hãng tại ${siteName} — giá tốt, bảo hành đầy đủ, tư vấn miễn phí và giao hàng toàn quốc.`;
 }
 
-async function findCategory(slug: string): Promise<Category | undefined> {
-  const categories = await getCategories();
-  return categories.find((c) => c.slug === slug);
+async function findBrand(slug: string): Promise<Brand | undefined> {
+  const brands = await getBrands();
+  return brands.find((b) => b.slug === slug);
 }
 
 export async function generateStaticParams() {
-  const slugs = await listPublishedCategorySlugs();
+  const slugs = await listPublishedBrandSlugs();
   return slugs.map((slug) => ({ slug }));
 }
 
@@ -68,22 +68,25 @@ export async function generateMetadata({
   searchParams: SearchParams;
 }): Promise<Metadata> {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
-  const category = await findCategory(slug);
+  const brand = await findBrand(slug);
 
-  if (!category) {
+  if (!brand) {
     return {
-      title: "Không tìm thấy danh mục",
+      title: "Không tìm thấy thương hiệu",
       robots: { index: false, follow: false },
     };
   }
 
   const settings = await getSiteSettings();
-  const path = `/danh-muc/${category.slug}`;
-  const description = categoryDescription(category.name, settings.siteName);
+  const path = `/thuong-hieu/${brand.slug}`;
+  const title = brand.metaTitle.trim() || brandHeadline(brand.name);
+  const description =
+    brand.metaDescription.trim() ||
+    brandDescription(brand.name, settings.siteName);
   const image = siteShareImage(settings);
 
   return {
-    title: category.name,
+    title,
     description,
     alternates: { canonical: path },
     robots: hasAnyFilter(sp)
@@ -92,7 +95,7 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       url: absoluteUrl(path),
-      title: `${category.name} | ${settings.siteName}`,
+      title: `${title} | ${settings.siteName}`,
       description,
       siteName: settings.siteName,
       ...(image ? { images: [{ url: image }] } : {}),
@@ -100,7 +103,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({
+export default async function BrandPage({
   params,
   searchParams,
 }: {
@@ -108,11 +111,11 @@ export default async function CategoryPage({
   searchParams: SearchParams;
 }) {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
-  const categories = await getCategories();
-  const category = categories.find((c) => c.slug === slug);
-  if (!category) notFound();
+  const brands = await getBrands();
+  const brand = brands.find((b) => b.slug === slug);
+  if (!brand) notFound();
 
-  const brand = first(sp.brand);
+  const category = first(sp.category);
   const price = first(sp.price);
   const sort = first(sp.sort) ?? DEFAULT_SORT;
   const page = Number(first(sp.page) ?? "1") || 1;
@@ -120,19 +123,19 @@ export default async function CategoryPage({
     DEFAULT_PAGE_SIZE;
 
   const query = new URLSearchParams();
-  if (brand) query.set("brand", brand);
+  if (category) query.set("category", category);
   if (price) query.set("price", price);
   if (sort) query.set("sort", sort);
   if (pageSize !== DEFAULT_PAGE_SIZE) query.set("pageSize", String(pageSize));
   const queryString = query.toString();
-  const basePath = `/danh-muc/${category.slug}`;
+  const basePath = `/thuong-hieu/${brand.slug}`;
 
-  const [brands, settings, result] = await Promise.all([
-    getBrands(),
+  const [categories, settings, result] = await Promise.all([
+    getCategories(),
     getSiteSettings(),
     listProducts({
-      brandSlug: brand,
-      categorySlug: category.slug,
+      brandSlug: brand.slug,
+      categorySlug: category,
       price,
       sort,
       page,
@@ -140,9 +143,8 @@ export default async function CategoryPage({
     }),
   ]);
 
-  const children = categories
-    .filter((c) => c.parentId === category.id)
-    .sort(byOrderThenName);
+  const headline = brandHeadline(brand.name);
+  const intro = brand.description.trim();
 
   return (
     <div className="container-page py-4 sm:py-6">
@@ -150,7 +152,7 @@ export default async function CategoryPage({
         data={breadcrumbJsonLd([
           { name: "Trang chủ", path: "/" },
           { name: "Sản phẩm", path: "/san-pham" },
-          { name: category.name },
+          { name: brand.name },
         ])}
       />
 
@@ -166,32 +168,21 @@ export default async function CategoryPage({
           Sản phẩm
         </Link>
         <span aria-hidden>/</span>
-        <span className="min-w-0 break-words text-gray-800">
-          {category.name}
-        </span>
+        <span className="min-w-0 break-words text-gray-800">{brand.name}</span>
       </nav>
 
       <header className="mb-4 border-b-2 border-gray-100 pb-3 sm:mb-5">
         <h1 className="text-xl font-extrabold uppercase tracking-wide text-brand sm:text-2xl">
-          {category.name}
+          {headline}
         </h1>
         <p className="mt-1.5 max-w-3xl text-sm text-gray-600">
-          {categoryDescription(category.name, settings.siteName)}
+          {brandDescription(brand.name, settings.siteName)}
         </p>
 
-        {children.length ? (
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {children.map((child) => (
-              <li key={child.id}>
-                <Link
-                  href={`/danh-muc/${child.slug}`}
-                  className="inline-flex min-h-9 items-center rounded-full border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 transition hover:border-accent hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:text-sm"
-                >
-                  {child.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {intro ? (
+          <div className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-gray-600">
+            {intro}
+          </div>
         ) : null}
       </header>
 
@@ -206,9 +197,9 @@ export default async function CategoryPage({
               brands={brands}
               categories={categories}
               basePath={basePath}
-              activeCategorySlug={category.slug}
-              dropParams={CATEGORY_DROP_PARAMS}
-              categoryHrefBase={CATEGORY_HREF_BASE}
+              activeBrandSlug={brand.slug}
+              dropParams={BRAND_DROP_PARAMS}
+              brandHrefBase={BRAND_HREF_BASE}
             />
           </div>
         </Suspense>
@@ -224,15 +215,15 @@ export default async function CategoryPage({
                 brands={brands}
                 categories={categories}
                 basePath={basePath}
-                activeCategorySlug={category.slug}
-                dropParams={CATEGORY_DROP_PARAMS}
-                categoryHrefBase={CATEGORY_HREF_BASE}
+                activeBrandSlug={brand.slug}
+                dropParams={BRAND_DROP_PARAMS}
+                brandHrefBase={BRAND_HREF_BASE}
               />
               <CatalogToolbar
                 shown={result.items.length}
                 total={result.total}
                 basePath={basePath}
-                dropParams={CATEGORY_DROP_PARAMS}
+                dropParams={BRAND_DROP_PARAMS}
               />
             </div>
           </Suspense>
@@ -243,7 +234,7 @@ export default async function CategoryPage({
                 Không tìm thấy sản phẩm phù hợp
               </p>
               <p className="mt-1 text-sm text-gray-500">
-                Thử bỏ bớt bộ lọc hoặc tìm từ khóa khác.
+                Thử bỏ bớt bộ lọc hoặc xem thương hiệu khác.
               </p>
             </div>
           ) : (
@@ -263,7 +254,7 @@ export default async function CategoryPage({
             totalPages={result.totalPages}
             queryString={queryString}
             basePath={basePath}
-            dropParams={CATEGORY_DROP_PARAMS}
+            dropParams={BRAND_DROP_PARAMS}
           />
         </div>
       </div>

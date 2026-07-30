@@ -3,18 +3,21 @@
 import { SORT_OPTIONS } from "@ecom/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const CATALOG_BASE_PATH = "/san-pham";
+const CATALOG_ROOT_PATH = "/san-pham";
+const NO_DROP_PARAMS: readonly string[] = [];
 
 type Props = {
   shown: number;
   total: number;
   basePath?: string;
+  dropParams?: readonly string[];
 };
 
 export function CatalogToolbar({
   shown,
   total,
-  basePath = CATALOG_BASE_PATH,
+  basePath = CATALOG_ROOT_PATH,
+  dropParams = NO_DROP_PARAMS,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,7 +29,7 @@ export function CatalogToolbar({
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     if (key !== "page") params.delete("page");
-    if (basePath !== CATALOG_BASE_PATH) params.delete("category");
+    for (const dropKey of dropParams) params.delete(dropKey);
     router.push(`${basePath}?${params.toString()}`);
   }
 

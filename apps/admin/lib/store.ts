@@ -732,13 +732,45 @@ export async function createBrand(input: Omit<Brand, "id">): Promise<Brand> {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("brands")
-    .insert({ id, name: input.name, slug: input.slug })
+    .insert({
+      id,
+      name: input.name,
+      slug: input.slug,
+      description: input.description,
+      meta_title: input.metaTitle,
+      meta_description: input.metaDescription,
+    })
     .select("*")
     .single();
 
   if (error) {
     throw new Error(`Failed to create brand: ${error.message}`);
   }
+  return mapBrandRow(data as BrandRow);
+}
+
+export async function updateBrand(
+  id: string,
+  input: Omit<Brand, "id">,
+): Promise<Brand | null> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("brands")
+    .update({
+      name: input.name,
+      slug: input.slug,
+      description: input.description,
+      meta_title: input.metaTitle,
+      meta_description: input.metaDescription,
+    })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to update brand: ${error.message}`);
+  }
+  if (!data) return null;
   return mapBrandRow(data as BrandRow);
 }
 

@@ -5,20 +5,29 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { ProductFilters } from "./ProductFilters";
 
-const CATALOG_BASE_PATH = "/san-pham";
+const CATALOG_ROOT_PATH = "/san-pham";
+const NO_DROP_PARAMS: readonly string[] = [];
 
 type Props = {
   brands: Brand[];
   categories: Category[];
   basePath?: string;
   activeCategorySlug?: string;
+  activeBrandSlug?: string;
+  dropParams?: readonly string[];
+  categoryHrefBase?: string;
+  brandHrefBase?: string;
 };
 
 export function MobileFilters({
   brands,
   categories,
-  basePath = CATALOG_BASE_PATH,
+  basePath = CATALOG_ROOT_PATH,
   activeCategorySlug,
+  activeBrandSlug,
+  dropParams = NO_DROP_PARAMS,
+  categoryHrefBase,
+  brandHrefBase,
 }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -26,13 +35,11 @@ export function MobileFilters({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const isCategoryRoute = basePath !== CATALOG_BASE_PATH;
-  const activeCategory = isCategoryRoute
-    ? (activeCategorySlug ?? null)
-    : searchParams.get("category");
+  const activeCategory = activeCategorySlug ?? searchParams.get("category");
+  const activeBrand = activeBrandSlug ?? searchParams.get("brand");
 
   const activeCount = [
-    searchParams.get("brand"),
+    activeBrand,
     searchParams.get("price"),
     activeCategory,
   ].filter(Boolean).length;
@@ -142,6 +149,10 @@ export function MobileFilters({
                 className="border-0 p-1 shadow-none"
                 basePath={basePath}
                 activeCategorySlug={activeCategorySlug}
+                activeBrandSlug={activeBrandSlug}
+                dropParams={dropParams}
+                categoryHrefBase={categoryHrefBase}
+                brandHrefBase={brandHrefBase}
               />
             </div>
 

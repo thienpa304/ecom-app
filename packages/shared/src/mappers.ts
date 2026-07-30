@@ -48,6 +48,12 @@ export type BrandRow = {
 
   slug: string;
 
+  description?: string | null;
+
+  meta_title?: string | null;
+
+  meta_description?: string | null;
+
 };
 
 
@@ -292,6 +298,12 @@ export function mapBrandRow(row: BrandRow): Brand {
     name: row.name,
 
     slug: row.slug,
+
+    description: row.description ?? '',
+
+    metaTitle: row.meta_title ?? '',
+
+    metaDescription: row.meta_description ?? '',
 
   };
 

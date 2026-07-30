@@ -18,6 +18,9 @@ export const brandSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
+  description: z.string(),
+  metaTitle: z.string(),
+  metaDescription: z.string(),
 });
 
 export const productMediaKindSchema = z.enum(["image", "video", "embed"]);
@@ -134,6 +137,9 @@ export const slugInputSchema = z
 export const brandInputSchema = z.object({
   name: z.string().trim().min(1, "Nhập tên thương hiệu"),
   slug: slugInputSchema,
+  description: z.string().default(""),
+  metaTitle: z.string().default(""),
+  metaDescription: z.string().default(""),
 });
 
 export const categoryInputSchema = z.object({

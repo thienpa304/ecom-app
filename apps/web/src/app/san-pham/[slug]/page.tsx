@@ -159,9 +159,12 @@ export default async function ProductDetailPage({
 
         <div className="min-w-0 space-y-4 sm:space-y-5">
           {brand && (
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <Link
+              href={`/thuong-hieu/${brand.slug}`}
+              className="text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-accent transition"
+            >
               {brand.name}
-            </p>
+            </Link>
           )}
           <h1 className="break-words text-xl font-extrabold leading-snug text-gray-900 sm:text-3xl">
             {product.name}
