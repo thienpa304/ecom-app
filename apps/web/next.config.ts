@@ -9,7 +9,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@ecom/shared"],
   poweredByHeader: false,
   async redirects() {
-    return [{ source: "/favicon.ico", destination: "/icon", permanent: false }];
+    return [
+      { source: "/favicon.ico", destination: "/icon.png", permanent: false },
+    ];
   },
   images: {
     formats: ["image/avif", "image/webp"],

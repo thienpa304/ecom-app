@@ -30,7 +30,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   const titleDefault = `${s.siteName} — Sản phẩm`;
   const description = s.metaDescription || s.tagline;
-  const icon = s.logoSquareUrl;
   const shareImage = siteShareImage(s);
 
   return {
@@ -43,9 +42,6 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: "/",
     },
-    ...(icon
-      ? { icons: { icon: [{ url: icon }], apple: [{ url: icon }] } }
-      : {}),
     openGraph: {
       type: "website",
       locale: "vi_VN",
