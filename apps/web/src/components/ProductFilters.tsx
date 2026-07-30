@@ -4,19 +4,30 @@ import { PRICE_RANGES, type Brand, type Category } from "@ecom/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useId, useTransition } from "react";
 
+const CATALOG_BASE_PATH = "/san-pham";
+
 type Props = {
   brands: Brand[];
   categories: Category[];
   className?: string;
+  basePath?: string;
+  activeCategorySlug?: string;
 };
 
-export function ProductFilters({ brands, categories, className }: Props) {
+export function ProductFilters({
+  brands,
+  categories,
+  className,
+  basePath = CATALOG_BASE_PATH,
+  activeCategorySlug,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const uid = useId();
   const priceName = `price-${uid}`;
   const categoryName = `category-${uid}`;
+  const isCategoryRoute = basePath !== CATALOG_BASE_PATH;
 
   const selectedBrands = new Set(
     (searchParams.get("brand") ?? "")
@@ -25,19 +36,20 @@ export function ProductFilters({ brands, categories, className }: Props) {
       .filter(Boolean),
   );
   const selectedPrice = searchParams.get("price") ?? "";
-  const selectedCategory = searchParams.get("category") ?? "";
+  const selectedCategory = activeCategorySlug ?? searchParams.get("category") ?? "";
 
   const updateParams = useCallback(
     (mutate: (params: URLSearchParams) => void) => {
       const params = new URLSearchParams(searchParams.toString());
       mutate(params);
       params.delete("page");
+      if (isCategoryRoute) params.delete("category");
       startTransition(() => {
         const qs = params.toString();
-        router.push(`/san-pham${qs ? `?${qs}` : ""}`);
+        router.push(`${basePath}${qs ? `?${qs}` : ""}`);
       });
     },
-    [router, searchParams],
+    [router, searchParams, basePath, isCategoryRoute],
   );
 
   function toggleBrand(slug: string) {
@@ -58,6 +70,15 @@ export function ProductFilters({ brands, categories, className }: Props) {
   }
 
   function setCategory(slug: string) {
+    if (isCategoryRoute) {
+      const target =
+        !slug || slug === selectedCategory
+          ? CATALOG_BASE_PATH
+          : `/danh-muc/${slug}`;
+      startTransition(() => router.push(target));
+      return;
+    }
+
     updateParams((params) => {
       if (!slug || slug === selectedCategory) params.delete("category");
       else params.set("category", slug);
@@ -65,7 +86,7 @@ export function ProductFilters({ brands, categories, className }: Props) {
   }
 
   function clearAll() {
-    startTransition(() => router.push("/san-pham"));
+    startTransition(() => router.push(basePath));
   }
 
   return (

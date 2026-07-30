@@ -8,6 +8,7 @@ import {
   descriptionPlainText,
   ProductDescription,
 } from "@/components/ProductDescription";
+import { ProductContactCta } from "@/components/ProductContactCta";
 import { ProductGallery } from "@/components/ProductGallery";
 import {
   getBrandById,
@@ -105,9 +106,6 @@ export default async function ProductDetailPage({
   ]);
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
-  const phone = settings.phone;
-  const zalo = settings.zaloUrl;
-  const telHref = `tel:${phone.replace(/\D/g, "")}`;
 
   const crumbs = [
     { name: "Trang chủ", path: "/" },
@@ -116,7 +114,7 @@ export default async function ProductDetailPage({
       ? [
           {
             name: category.name,
-            path: `/san-pham?category=${category.slug}`,
+            path: `/danh-muc/${category.slug}`,
           },
         ]
       : []),
@@ -143,7 +141,7 @@ export default async function ProductDetailPage({
           <>
             <span aria-hidden>/</span>
             <Link
-              href={`/san-pham?category=${category.slug}`}
+              href={`/danh-muc/${category.slug}`}
               className="hover:text-accent"
             >
               {category.name}
@@ -207,19 +205,12 @@ export default async function ProductDetailPage({
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <a href={telHref} className="btn-primary flex-1 sm:flex-none">
-              Gọi ngay
-            </a>
-            <a
-              href={zalo}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-outline flex-1 sm:flex-none"
-            >
-              Zalo
-            </a>
-          </div>
+          <ProductContactCta
+            phone={settings.phone}
+            zaloUrl={settings.zaloUrl}
+            productName={product.name}
+            productModel={product.model}
+          />
 
           <div
             id="lien-he"

@@ -1,5 +1,5 @@
 import type { Brand, Category, Product, SiteSettings } from "@ecom/shared";
-import { imageMedia } from "@ecom/shared";
+import { imageMedia, stripHtml } from "@ecom/shared";
 import { absoluteUrl } from "./site";
 
 const AVAILABILITY: Record<Product["stockStatus"], string> = {
@@ -54,7 +54,8 @@ export function productJsonLd(
     "@type": "Product",
     name: product.name,
     description:
-      product.description || `${product.name} — model ${product.model}`,
+      stripHtml(product.description ?? "") ||
+      `${product.name} — model ${product.model}`,
     sku: product.model,
     mpn: product.model,
     ...(opts.brand

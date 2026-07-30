@@ -11,6 +11,16 @@ import { absoluteUrl } from "@/lib/site";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+const FILTER_PARAMS = [
+  "q",
+  "brand",
+  "category",
+  "price",
+  "sort",
+  "page",
+  "pageSize",
+] as const;
+
 function first(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
@@ -38,26 +48,22 @@ export async function generateMetadata({
     ? `${title} tại ${s.siteName}. Lọc theo thương hiệu, giá, sắp xếp.`
     : `Danh mục sản phẩm tại ${s.siteName} — lọc theo thương hiệu, giá, sắp xếp.`;
 
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  if (brand) params.set("brand", brand);
-  if (category) params.set("category", category);
-  const qs = params.toString();
-  const path = qs ? `/san-pham?${qs}` : "/san-pham";
+  const hasFilter = FILTER_PARAMS.some((key) => Boolean(first(sp[key])));
+  const canonicalPath = category
+    ? `/danh-muc/${encodeURIComponent(category)}`
+    : "/san-pham";
 
   return {
     title,
     description,
-    alternates: { canonical: path },
+    alternates: { canonical: canonicalPath },
     openGraph: {
-      url: absoluteUrl(path),
+      url: absoluteUrl(canonicalPath),
       title: `${title} | ${s.siteName}`,
       description,
       ...(siteShareImage(s) ? { images: [{ url: siteShareImage(s) }] } : {}),
     },
-    ...(q || brand || category
-      ? { robots: { index: true, follow: true } }
-      : {}),
+    robots: { index: !hasFilter, follow: true },
   };
 }
 

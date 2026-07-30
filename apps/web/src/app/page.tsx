@@ -113,7 +113,7 @@ export default async function HomePage() {
         <ProductShelf
           key={category.id}
           title={category.name}
-          href={`/san-pham?category=${encodeURIComponent(category.slug)}`}
+          href={`/danh-muc/${category.slug}`}
           products={products}
           uppercase
         />

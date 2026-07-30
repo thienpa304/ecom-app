@@ -7,6 +7,9 @@ import {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isPublicFile = pathname === "/robots.txt";
+  if (isPublicFile) return NextResponse.next();
+
   const isLogin = pathname === "/login";
   const session = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   const authed = session === ADMIN_SESSION_VALUE;

@@ -1,18 +1,27 @@
 import Link from "next/link";
 
+const CATALOG_BASE_PATH = "/san-pham";
+
 type Props = {
   page: number;
   totalPages: number;
   queryString?: string;
+  basePath?: string;
 };
 
-export function Pagination({ page, totalPages, queryString = "" }: Props) {
+export function Pagination({
+  page,
+  totalPages,
+  queryString = "",
+  basePath = CATALOG_BASE_PATH,
+}: Props) {
   if (totalPages <= 1) return null;
 
   function hrefFor(p: number) {
     const params = new URLSearchParams(queryString);
+    if (basePath !== CATALOG_BASE_PATH) params.delete("category");
     params.set("page", String(p));
-    return `/san-pham?${params.toString()}`;
+    return `${basePath}?${params.toString()}`;
   }
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(

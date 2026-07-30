@@ -18,7 +18,7 @@ type CategoryNode = {
 const ALL_PRODUCTS_HREF = "/san-pham";
 
 function categoryHref(slug: string): string {
-  return `${ALL_PRODUCTS_HREF}?category=${encodeURIComponent(slug)}`;
+  return `/danh-muc/${slug}`;
 }
 
 function byOrderThenName(a: Category, b: Category): number {

@@ -1,9 +1,15 @@
 import type { MetadataRoute } from "next";
-import { listPublishedProductSlugs } from "@/lib/data";
+import {
+  listPublishedCategorySlugs,
+  listPublishedProductSlugs,
+} from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const slugs = await listPublishedProductSlugs();
+  const [slugs, categorySlugs] = await Promise.all([
+    listPublishedProductSlugs(),
+    listPublishedCategorySlugs(),
+  ]);
   const now = new Date();
 
   return [
@@ -19,6 +25,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    ...categorySlugs.map((slug) => ({
+      url: absoluteUrl(`/danh-muc/${slug}`),
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.85,
+    })),
     ...slugs.map((slug) => ({
       url: absoluteUrl(`/san-pham/${slug}`),
       lastModified: now,

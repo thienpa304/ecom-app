@@ -1,3 +1,7 @@
+"use client";
+
+import { trackEvent } from "@/lib/gtag";
+
 type Props = {
   phone: string;
   zaloUrl: string;
@@ -19,6 +23,7 @@ export function ContactFab({ phone, zaloUrl }: Props) {
           rel="noopener noreferrer"
           className="group flex items-center gap-2"
           aria-label="Chat Zalo"
+          onClick={() => trackEvent("contact_zalo", { location: "fab" })}
         >
           <span className="pointer-events-none rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-medium text-white shadow transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
             Chat Zalo
@@ -34,6 +39,7 @@ export function ContactFab({ phone, zaloUrl }: Props) {
           href={`tel:${tel}`}
           className="group flex items-center gap-2"
           aria-label={`Gọi ${phone}`}
+          onClick={() => trackEvent("contact_call", { location: "fab" })}
         >
           <span className="pointer-events-none rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-medium text-white shadow transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
             Gọi ngay

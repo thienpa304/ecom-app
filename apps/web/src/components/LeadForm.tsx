@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useTransition } from "react";
 import { submitLead } from "@/app/actions/lead";
+import { trackEvent } from "@/lib/gtag";
 
 type Props = {
   productId?: string | null;
@@ -30,6 +31,7 @@ export function LeadForm({ productId, productName }: Props) {
         setError(result.error);
         return;
       }
+      trackEvent("generate_lead", { location: "product_form" });
       setDone(true);
       form.reset();
     });

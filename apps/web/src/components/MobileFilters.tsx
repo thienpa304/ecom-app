@@ -5,23 +5,36 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { ProductFilters } from "./ProductFilters";
 
+const CATALOG_BASE_PATH = "/san-pham";
+
 type Props = {
   brands: Brand[];
   categories: Category[];
+  basePath?: string;
+  activeCategorySlug?: string;
 };
 
-export function MobileFilters({ brands, categories }: Props) {
+export function MobileFilters({
+  brands,
+  categories,
+  basePath = CATALOG_BASE_PATH,
+  activeCategorySlug,
+}: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const searchParams = useSearchParams();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const isCategoryRoute = basePath !== CATALOG_BASE_PATH;
+  const activeCategory = isCategoryRoute
+    ? (activeCategorySlug ?? null)
+    : searchParams.get("category");
 
   const activeCount = [
     searchParams.get("brand"),
     searchParams.get("price"),
-    searchParams.get("category"),
+    activeCategory,
   ].filter(Boolean).length;
 
   useEffect(() => {
@@ -127,6 +140,8 @@ export function MobileFilters({ brands, categories }: Props) {
                 brands={brands}
                 categories={categories}
                 className="border-0 p-1 shadow-none"
+                basePath={basePath}
+                activeCategorySlug={activeCategorySlug}
               />
             </div>
 

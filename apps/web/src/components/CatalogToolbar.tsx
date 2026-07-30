@@ -3,12 +3,19 @@
 import { SORT_OPTIONS } from "@ecom/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 
+const CATALOG_BASE_PATH = "/san-pham";
+
 type Props = {
   shown: number;
   total: number;
+  basePath?: string;
 };
 
-export function CatalogToolbar({ shown, total }: Props) {
+export function CatalogToolbar({
+  shown,
+  total,
+  basePath = CATALOG_BASE_PATH,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -19,7 +26,8 @@ export function CatalogToolbar({ shown, total }: Props) {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     if (key !== "page") params.delete("page");
-    router.push(`/san-pham?${params.toString()}`);
+    if (basePath !== CATALOG_BASE_PATH) params.delete("category");
+    router.push(`${basePath}?${params.toString()}`);
   }
 
   return (

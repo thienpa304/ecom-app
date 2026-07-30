@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Be_Vietnam_Pro } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ContactFab } from "@/components/ContactFab";
@@ -22,6 +23,8 @@ const beVietnam = Be_Vietnam_Pro({
 });
 
 export const revalidate = 60;
+
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID?.trim();
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
@@ -95,6 +98,20 @@ export default async function RootLayout({
         <main className="min-w-0 flex-1 pb-28 sm:pb-8">{children}</main>
         <Footer settings={settings} />
         <ContactFab phone={settings.phone} zaloUrl={settings.zaloUrl} />
+        {GA_ID ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', ${JSON.stringify(GA_ID)});`}
+            </Script>
+          </>
+        ) : null}
         <Analytics />
         <SpeedInsights />
       </body>
