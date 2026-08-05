@@ -70,6 +70,27 @@ export const leadSchema = z.object({
   createdAt: z.string(),
 });
 
+export const homeSectionKindSchema = z.enum([
+  "top_sellers",
+  "featured",
+  "video",
+  "category",
+  "all_products",
+]);
+
+export const homeSectionStyleSchema = z.enum(["plain", "red_banner"]);
+
+export const homeSectionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: homeSectionKindSchema,
+  categoryId: z.string().nullable(),
+  productLimit: z.number().int(),
+  style: homeSectionStyleSchema,
+  sortOrder: z.number().int(),
+  isPublished: z.boolean(),
+});
+
 export const heroBulletIconSchema = z.enum([
   "globe",
   "star",
@@ -169,6 +190,25 @@ export const categoryInputSchema = z.object({
   parentId: z.string().nullable(),
   sortOrder: z.number().int().nonnegative(),
 });
+
+export const homeSectionInputSchema = z
+  .object({
+    title: z.string().trim().min(1, "Nhập tiêu đề section"),
+    kind: homeSectionKindSchema,
+    categoryId: z.string().nullable(),
+    productLimit: z
+      .number()
+      .int()
+      .min(1, "Số sản phẩm phải từ 1 trở lên")
+      .max(48, "Số sản phẩm tối đa là 48"),
+    style: homeSectionStyleSchema,
+    sortOrder: z.number().int().nonnegative(),
+    isPublished: z.boolean(),
+  })
+  .refine((d) => d.kind !== "category" || Boolean(d.categoryId), {
+    message: "Chọn danh mục cho section theo danh mục",
+    path: ["categoryId"],
+  });
 
 export const productMediaDraftSchema = z.object({
   id: z.string().optional(),

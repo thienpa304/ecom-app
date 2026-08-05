@@ -1,7 +1,57 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { SiteSettings } from "@ecom/shared";
+import type { Brand, Category, SiteSettings } from "@ecom/shared";
 import { getBrands, getCategories } from "@/lib/data";
+
+const KEYWORD_CATEGORY_LIMIT = 6;
+const KEYWORD_BRAND_LIMIT = 5;
+const KEYWORD_COMBO_LIMIT = 5;
+
+type SearchKeyword = {
+  label: string;
+  href: string;
+};
+
+function buildSearchKeywords(
+  categories: Category[],
+  brands: Brand[],
+): SearchKeyword[] {
+  const comboCategories = categories.slice(0, KEYWORD_CATEGORY_LIMIT);
+  const comboBrands = brands.slice(0, KEYWORD_BRAND_LIMIT);
+  const comboCount = Math.min(
+    KEYWORD_COMBO_LIMIT,
+    comboCategories.length * comboBrands.length,
+  );
+
+  const combos = Array.from({ length: comboCount }, (_, i) => {
+    const category = comboCategories[i % comboCategories.length];
+    const brand = comboBrands[i % comboBrands.length];
+    return {
+      label: `${category.name} ${brand.name}`,
+      href: `/danh-muc/${category.slug}`,
+    };
+  });
+
+  const candidates: SearchKeyword[] = [
+    ...comboCategories.map((category) => ({
+      label: category.name,
+      href: `/danh-muc/${category.slug}`,
+    })),
+    ...comboBrands.map((brand) => ({
+      label: brand.name,
+      href: `/thuong-hieu/${brand.slug}`,
+    })),
+    ...combos,
+  ];
+
+  const seen = new Set<string>();
+  return candidates.filter((keyword) => {
+    const key = keyword.label.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 export async function Footer({ settings }: { settings: SiteSettings }) {
   const tel = settings.phone.replace(/\D/g, "");
@@ -20,6 +70,8 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
       (a, b) =>
         a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"),
     );
+
+  const searchKeywords = buildSearchKeywords(categories, brands);
 
   const socials = [
     {
@@ -225,6 +277,27 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
           </div>
         ) : null}
       </div>
+
+      {searchKeywords.length > 0 ? (
+        <div className="border-t border-gray-100">
+          <div className="container-page py-5">
+            <p className="text-sm font-semibold text-gray-900">
+              Mọi người cũng tìm kiếm
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {searchKeywords.map((keyword) => (
+                <Link
+                  key={keyword.label}
+                  href={keyword.href}
+                  className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-xs text-gray-700 transition hover:bg-accent/10 hover:text-accent"
+                >
+                  {keyword.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="border-t border-gray-100 py-4 text-center text-xs text-gray-500">
         © {new Date().getFullYear()} {settings.siteName}.

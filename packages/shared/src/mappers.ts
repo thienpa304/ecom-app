@@ -17,6 +17,12 @@ import type {
 
   HeroSlide,
 
+  HomeSection,
+
+  HomeSectionKind,
+
+  HomeSectionStyle,
+
   Lead,
 
   OpeningHoursEntry,
@@ -129,6 +135,28 @@ export type ProductRow = {
   meta_title?: string | null;
   meta_description?: string | null;
   seo_keywords?: string | null;
+
+};
+
+
+
+export type HomeSectionRow = {
+
+  id: string;
+
+  title: string;
+
+  kind: HomeSectionKind;
+
+  category_id: string | null;
+
+  product_limit: number;
+
+  style: HomeSectionStyle;
+
+  sort_order: number;
+
+  is_published: boolean;
 
 };
 
@@ -464,6 +492,62 @@ export function mapProductRow(
     seoKeywords: row.seo_keywords || undefined,
 
     media: mappedMedia,
+
+  };
+
+}
+
+
+
+export function mapHomeSectionRow(row: HomeSectionRow): HomeSection {
+
+  return {
+
+    id: row.id,
+
+    title: row.title,
+
+    kind: row.kind,
+
+    categoryId: row.category_id,
+
+    productLimit: row.product_limit,
+
+    style: row.style,
+
+    sortOrder: row.sort_order,
+
+    isPublished: row.is_published,
+
+  };
+
+}
+
+
+
+export function homeSectionToRow(
+
+  section: Omit<HomeSection, "id"> & { id?: string },
+
+): Omit<HomeSectionRow, "id"> & { id?: string } {
+
+  return {
+
+    ...(section.id ? { id: section.id } : {}),
+
+    title: section.title,
+
+    kind: section.kind,
+
+    category_id: section.kind === "category" ? section.categoryId : null,
+
+    product_limit: section.productLimit,
+
+    style: section.style,
+
+    sort_order: section.sortOrder,
+
+    is_published: section.isPublished,
 
   };
 

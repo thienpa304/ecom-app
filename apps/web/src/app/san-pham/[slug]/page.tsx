@@ -12,11 +12,16 @@ import {
 } from "@/components/ProductDescription";
 import { ProductContactCta } from "@/components/ProductContactCta";
 import { ProductGallery } from "@/components/ProductGallery";
+import { ProductPriceNote } from "@/components/ProductPriceNote";
+import { RecentlyViewed } from "@/components/RecentlyViewed";
+import { RelatedProducts } from "@/components/RelatedProducts";
+import { StoreCommitments } from "@/components/StoreCommitments";
 import {
   getBrandById,
   getCategoryById,
   getProductBySlug,
   getSiteSettings,
+  listProducts,
   listPublishedProductSlugs,
 } from "@/lib/data";
 import { discountPercent, formatVnd } from "@/lib/format";
@@ -26,6 +31,12 @@ import { absoluteUrl } from "@/lib/site";
 type Params = Promise<{ slug: string }>;
 
 export const revalidate = 60;
+
+const SPEC_LABELS_ALREADY_SHOWN = ["model", "động cơ", "dong co", "motor"];
+
+function isDuplicateSpec(key: string): boolean {
+  return SPEC_LABELS_ALREADY_SHOWN.includes(key.trim().toLowerCase());
+}
 
 export async function generateStaticParams() {
   const slugs = await listPublishedProductSlugs();
@@ -112,6 +123,14 @@ export default async function ProductDetailPage({
   const pct = discountPercent(product.price, product.salePrice);
   const stock = STOCK_STATUS[product.stockStatus];
 
+  const sameCategory = category
+    ? await listProducts({ categorySlug: category.slug, pageSize: 12 })
+    : null;
+  const categoryPeers = (sameCategory?.items ?? []).filter(
+    (item) => item.id !== product.id,
+  );
+  const relatedProducts = categoryPeers.slice(0, 4);
+
   const faqData = faqJsonLd(settings.faqs ?? []);
 
   const crumbs = [
@@ -163,6 +182,7 @@ export default async function ProductDetailPage({
       <div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-8">
         <div className="min-w-0">
           <ProductGallery media={product.media} name={product.name} />
+          <StoreCommitments />
         </div>
 
         <div className="min-w-0 space-y-4 sm:space-y-5">
@@ -196,6 +216,8 @@ export default async function ProductDetailPage({
               </span>
             )}
           </div>
+
+          <ProductPriceNote />
 
           <div className="flex flex-wrap gap-2 text-sm">
             <span
@@ -235,7 +257,7 @@ export default async function ProductDetailPage({
       <section className="mt-8 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-10">
         <h2
           id="specs-heading"
-          className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900"
+          className="border-b border-gray-100 px-4 py-3 text-base font-bold uppercase text-gray-900"
         >
           Thông số kỹ thuật
         </h2>
@@ -263,32 +285,29 @@ export default async function ProductDetailPage({
                   </td>
                 </tr>
               )}
-              {Object.entries(product.specs).map(([key, value]) => (
-                <tr
-                  key={key}
-                  className="border-b border-gray-50 odd:bg-gray-50/60"
-                >
-                  <th className="break-words px-4 py-2.5 text-left align-top font-medium text-gray-600">
-                    {key}
-                  </th>
-                  <td className="break-words px-4 py-2.5 text-gray-900">
-                    {value}
-                  </td>
-                </tr>
-              ))}
+              {Object.entries(product.specs)
+                .filter(([key]) => !isDuplicateSpec(key))
+                .map(([key, value]) => (
+                  <tr
+                    key={key}
+                    className="border-b border-gray-50 odd:bg-gray-50/60"
+                  >
+                    <th className="break-words px-4 py-2.5 text-left align-top font-medium text-gray-600">
+                      {key}
+                    </th>
+                    <td className="break-words px-4 py-2.5 text-gray-900">
+                      {value}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
       </section>
 
-      <StorePolicies
-        shippingPolicy={settings.shippingPolicy}
-        returnPolicy={settings.returnPolicy}
-      />
-
       {product.description ? (
         <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
-          <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold text-gray-900">
+          <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold uppercase text-gray-900">
             Mô tả sản phẩm
           </h2>
           <div className="min-w-0 px-4 py-4">
@@ -297,7 +316,16 @@ export default async function ProductDetailPage({
         </section>
       ) : null}
 
+      <StorePolicies
+        shippingPolicy={settings.shippingPolicy}
+        returnPolicy={settings.returnPolicy}
+      />
+
       <FaqSection faqs={settings.faqs ?? []} />
+
+      <RelatedProducts products={relatedProducts} />
+
+      <RecentlyViewed currentSlug={product.slug} products={categoryPeers} />
     </div>
   );
 }

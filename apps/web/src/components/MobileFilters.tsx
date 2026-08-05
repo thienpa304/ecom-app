@@ -39,9 +39,9 @@ export function MobileFilters({
   const activeBrand = activeBrandSlug ?? searchParams.get("brand");
 
   const activeCount = [
-    activeBrand,
+    searchParams.get("brand"),
     searchParams.get("price"),
-    activeCategory,
+    searchParams.get("category"),
   ].filter(Boolean).length;
 
   useEffect(() => {

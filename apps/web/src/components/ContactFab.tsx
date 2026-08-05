@@ -25,7 +25,7 @@ export function ContactFab({ phone, zaloUrl }: Props) {
           aria-label="Chat Zalo"
           onClick={() => trackEvent("contact_zalo", { location: "fab" })}
         >
-          <span className="pointer-events-none rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-medium text-white shadow transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
+          <span className="pointer-events-none hidden rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-medium text-white shadow transition sm:block sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
             Chat Zalo
           </span>
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0068FF] text-white shadow-lg ring-4 ring-[#0068FF]/25 transition hover:scale-105 hover:bg-[#0054cc]">
@@ -41,12 +41,12 @@ export function ContactFab({ phone, zaloUrl }: Props) {
           aria-label={`Gọi ${phone}`}
           onClick={() => trackEvent("contact_call", { location: "fab" })}
         >
-          <span className="pointer-events-none rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-medium text-white shadow transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
+          <span className="pointer-events-none hidden rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-medium text-white shadow transition sm:block sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-visible:opacity-100">
             Gọi ngay
           </span>
-          <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg ring-4 ring-accent/25 transition hover:scale-105 hover:bg-accent-dark">
+          <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-call text-white shadow-lg ring-4 ring-call/25 transition hover:scale-105 hover:bg-call-dark">
             <span
-              className="absolute inset-0 animate-ping rounded-full bg-accent/40"
+              className="absolute inset-0 animate-ping rounded-full bg-call/40"
               aria-hidden
             />
             <PhoneIcon className="relative h-7 w-7" />

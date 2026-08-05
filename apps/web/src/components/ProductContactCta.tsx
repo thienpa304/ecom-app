@@ -21,7 +21,7 @@ export function ProductContactCta({
     <div className="flex flex-wrap gap-3">
       <a
         href={telHref}
-        className="btn-primary flex-1 sm:flex-none"
+        className="btn-primary flex-1 bg-call hover:bg-call-dark focus:ring-call/40 sm:flex-none"
         onClick={() =>
           trackEvent("contact_call", {
             location: "product",
@@ -36,7 +36,7 @@ export function ProductContactCta({
         href={zaloUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="btn-outline flex-1 sm:flex-none"
+        className="btn-primary flex-1 bg-zalo hover:bg-zalo-dark focus:ring-zalo/40 sm:flex-none"
         onClick={() =>
           trackEvent("contact_zalo", {
             location: "product",
@@ -45,7 +45,7 @@ export function ProductContactCta({
           })
         }
       >
-        Zalo
+        Nhận báo giá Zalo
       </a>
     </div>
   );

@@ -31,11 +31,11 @@ export function HeroIntro({
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-accent sm:text-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-accent">
         {eyebrow}
       </p>
 
-      <h1 className="mt-2 text-2xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-3xl">
+      <h1 className="mt-2 text-xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-2xl">
         {parts ? (
           <>
             {parts.before}
@@ -50,19 +50,19 @@ export function HeroIntro({
       <span className="mt-3 block h-1 w-20 rounded-full bg-accent" aria-hidden />
 
       {subtitle ? (
-        <p className="mt-3 max-w-xl text-sm text-gray-600 sm:text-base">
+        <p className="mt-3 max-w-xl text-xs text-gray-600 sm:text-sm">
           {subtitle}
         </p>
       ) : null}
 
       {bullets.length ? (
-        <ul className="mt-5 space-y-3.5">
+        <ul className="mt-4 space-y-3">
           {bullets.map((bullet, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                <BulletIcon name={bullet.icon} className="h-[18px] w-[18px]" />
+            <li key={i} className="flex gap-2.5">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+                <BulletIcon name={bullet.icon} className="h-4 w-4" />
               </span>
-              <p className="min-w-0 text-sm leading-relaxed text-gray-600">
+              <p className="min-w-0 text-xs leading-relaxed text-gray-600">
                 {bullet.bold ? (
                   <strong className="font-semibold text-brand">
                     {bullet.bold}

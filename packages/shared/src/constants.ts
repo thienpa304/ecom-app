@@ -1,4 +1,4 @@
-import type { SiteSettings, StockStatus } from "./types";
+import type { HomeSectionKind, SiteSettings, StockStatus } from "./types";
 
 export const DEFAULT_HEADER_CTA_LABEL = "Tư vấn và đặt hàng";
 
@@ -46,6 +46,14 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 
 export const HOME_TOP_SELLERS_TITLE = "TOP MÁY XỊT RỬA CAO ÁP BÁN CHẠY";
 export const HOME_SECTION_PRODUCT_COUNT = 4;
+
+export const HOME_SECTION_KIND_LABELS: Record<HomeSectionKind, string> = {
+  top_sellers: "Bán chạy nhất",
+  featured: "Sản phẩm nổi bật",
+  video: "Video review",
+  category: "Theo danh mục",
+  all_products: "Tất cả sản phẩm",
+};
 
 export const HERO_SLIDE_INTERVAL_MS = 5000;
 export const HERO_SLIDE_MAX = 5;

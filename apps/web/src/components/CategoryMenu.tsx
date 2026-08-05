@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import type { Category } from "@ecom/shared";
 
@@ -16,6 +23,14 @@ type CategoryNode = {
 };
 
 const ALL_PRODUCTS_HREF = "/san-pham";
+const HOVER_CLOSE_DELAY_MS = 150;
+const TRIGGER_CLASS =
+  "inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold text-gray-800 transition hover:border-accent hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:gap-2 sm:px-3.5 sm:text-sm";
+
+function supportsHoverMenu(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(min-width: 640px) and (hover: hover)").matches;
+}
 
 function categoryHref(slug: string): string {
   return `/danh-muc/${slug}`;
@@ -31,6 +46,7 @@ export function CategoryMenu({ categories }: CategoryMenuProps) {
   const [mounted, setMounted] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -49,15 +65,50 @@ export function CategoryMenu({ categories }: CategoryMenuProps) {
 
   const hasCategories = tree.length > 0;
 
-  const close = useCallback(() => setOpen(false), []);
+  const cancelCloseTimer = useCallback(() => {
+    if (closeTimerRef.current === null) return;
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }, []);
+
+  const close = useCallback(() => {
+    cancelCloseTimer();
+    setOpen(false);
+  }, [cancelCloseTimer]);
+
+  const onPointerEnter = useCallback(() => {
+    if (!supportsHoverMenu()) return;
+    cancelCloseTimer();
+    setOpen(true);
+  }, [cancelCloseTimer]);
+
+  const onPointerLeave = useCallback(() => {
+    if (!supportsHoverMenu()) return;
+    cancelCloseTimer();
+    closeTimerRef.current = window.setTimeout(
+      () => setOpen(false),
+      HOVER_CLOSE_DELAY_MS,
+    );
+  }, [cancelCloseTimer]);
+
+  const onTriggerKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== "ArrowDown") return;
+      event.preventDefault();
+      cancelCloseTimer();
+      setOpen(true);
+    },
+    [cancelCloseTimer],
+  );
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    return cancelCloseTimer;
+  }, [cancelCloseTimer]);
 
   useEffect(() => {
-    setOpen(false);
-  }, [pathname, searchParams]);
+    close();
+  }, [pathname, searchParams, close]);
 
   useEffect(() => {
     if (!open) return;
@@ -98,32 +149,37 @@ export function CategoryMenu({ categories }: CategoryMenuProps) {
       <Link
         href={ALL_PRODUCTS_HREF}
         aria-label="Danh sách sản phẩm"
-        className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 text-sm font-semibold text-gray-800 transition hover:border-accent hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:px-3.5"
+        className={TRIGGER_CLASS}
       >
         <MenuIcon className="h-5 w-5 shrink-0" />
-        <span className="hidden whitespace-nowrap sm:inline">
-          Danh sách sản phẩm
-        </span>
+        <TriggerLabel />
       </Link>
     );
   }
 
   return (
-    <div ref={wrapperRef} className="relative shrink-0">
+    <div
+      ref={wrapperRef}
+      onMouseEnter={onPointerEnter}
+      onMouseLeave={onPointerLeave}
+      className="relative shrink-0"
+    >
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          cancelCloseTimer();
+          setOpen((v) => !v);
+        }}
+        onKeyDown={onTriggerKeyDown}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Danh sách sản phẩm"
-        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 text-sm font-semibold text-gray-800 transition hover:border-accent hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:px-3.5"
+        className={TRIGGER_CLASS}
       >
         <MenuIcon className="h-5 w-5 shrink-0" />
-        <span className="hidden whitespace-nowrap sm:inline">
-          Danh sách sản phẩm
-        </span>
+        <TriggerLabel />
         <ChevronDownIcon
-          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
+          className={`hidden h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 sm:block ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -176,6 +232,17 @@ export function CategoryMenu({ categories }: CategoryMenuProps) {
           )
         : null}
     </div>
+  );
+}
+
+function TriggerLabel() {
+  return (
+    <>
+      <span className="whitespace-nowrap sm:hidden">Danh sách SP</span>
+      <span className="hidden whitespace-nowrap sm:inline">
+        Danh sách sản phẩm
+      </span>
+    </>
   );
 }
 

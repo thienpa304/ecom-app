@@ -47,7 +47,7 @@ export function HeroSlider({ slides, fallbackAlt }: Props) {
       aria-roledescription="carousel"
       aria-label="Ảnh giới thiệu"
     >
-      <div className="relative aspect-[16/10] w-full">
+      <div className="relative aspect-[16/9] w-full lg:aspect-[2/1]">
         {slides.map((slide, i) => {
           const active = i === index;
           const image = (
@@ -55,7 +55,7 @@ export function HeroSlider({ slides, fallbackAlt }: Props) {
               src={slide.url}
               alt={slide.alt || fallbackAlt}
               fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
+              sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover"
               priority={i === 0}
             />

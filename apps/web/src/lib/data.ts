@@ -5,6 +5,7 @@ import {
   PRICE_RANGES,
   mapBrandRow,
   mapCategoryRow,
+  mapHomeSectionRow,
   mapLeadRow,
   mapProductRow,
   mapSiteSettingsRow,
@@ -12,6 +13,8 @@ import {
   type BrandRow,
   type Category,
   type CategoryRow,
+  type HomeSection,
+  type HomeSectionRow,
   type Lead,
   type LeadRow,
   type Product,
@@ -172,6 +175,26 @@ const loadPublishedSlugs = unstable_cache(
 export const getSiteSettings = cache(() => loadSiteSettings());
 export const getBrands = cache(() => loadBrands());
 export const getCategories = cache(() => loadCategories());
+
+const loadHomeSections = unstable_cache(
+  async (): Promise<HomeSection[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("home_sections")
+      .select("*")
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch home sections: ${error.message}`);
+    }
+    return ((data ?? []) as HomeSectionRow[]).map(mapHomeSectionRow);
+  },
+  ["home-sections"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["home-sections"] },
+);
+
+export const listHomeSections = cache(() => loadHomeSections());
 
 export type HomeCategorySection = {
   category: Category;

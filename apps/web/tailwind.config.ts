@@ -18,6 +18,14 @@ const config: Config = {
           DEFAULT: "#dc2626",
           soft: "#fef2f2",
         },
+        call: {
+          DEFAULT: "#22c55e",
+          dark: "#16a34a",
+        },
+        zalo: {
+          DEFAULT: "#0068FF",
+          dark: "#0054cc",
+        },
         brand: {
           DEFAULT: "#1e3a6e",
           light: "#2f5597",

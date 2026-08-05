@@ -2,8 +2,10 @@ import {
   DEFAULT_SITE_SETTINGS,
   MAX_UPLOAD_BYTES,
   MAX_UPLOAD_MB,
+  homeSectionToRow,
   mapBrandRow,
   mapCategoryRow,
+  mapHomeSectionRow,
   mapLeadRow,
   mapProductRow,
   mapSiteSettingsRow,
@@ -15,6 +17,8 @@ import {
   type BrandRow,
   type Category,
   type CategoryRow,
+  type HomeSection,
+  type HomeSectionRow,
   type Lead,
   type LeadRow,
   type Product,
@@ -821,6 +825,97 @@ export async function deleteCategory(id: string): Promise<boolean> {
     throw new Error(`Failed to delete category: ${error.message}`);
   }
   return (count ?? 0) > 0;
+}
+
+export async function listHomeSections(): Promise<HomeSection[]> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("home_sections")
+    .select("*")
+    .order("sort_order");
+
+  if (error) {
+    throw new Error(`Failed to fetch home sections: ${error.message}`);
+  }
+  return ((data ?? []) as HomeSectionRow[]).map(mapHomeSectionRow);
+}
+
+export async function createHomeSection(
+  input: Omit<HomeSection, "id">,
+): Promise<HomeSection> {
+  const id = `home-section-${Date.now()}`;
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("home_sections")
+    .insert(homeSectionToRow({ ...input, id }))
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create home section: ${error.message}`);
+  }
+  return mapHomeSectionRow(data as HomeSectionRow);
+}
+
+export async function updateHomeSection(
+  id: string,
+  input: Omit<HomeSection, "id">,
+): Promise<HomeSection | null> {
+  const row = homeSectionToRow(input);
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("home_sections")
+    .update({
+      title: row.title,
+      kind: row.kind,
+      category_id: row.category_id,
+      product_limit: row.product_limit,
+      style: row.style,
+      sort_order: row.sort_order,
+      is_published: row.is_published,
+    })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to update home section: ${error.message}`);
+  }
+  if (!data) return null;
+  return mapHomeSectionRow(data as HomeSectionRow);
+}
+
+export async function deleteHomeSection(id: string): Promise<boolean> {
+  const supabase = createServerClient();
+  const { error, count } = await supabase
+    .from("home_sections")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Failed to delete home section: ${error.message}`);
+  }
+  return (count ?? 0) > 0;
+}
+
+export async function reorderHomeSections(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+
+  const supabase = createServerClient();
+  const results = await Promise.all(
+    ids.map((id, index) =>
+      supabase
+        .from("home_sections")
+        .update({ sort_order: index + 1 })
+        .eq("id", id),
+    ),
+  );
+
+  for (const res of results) {
+    if (res.error) {
+      throw new Error(`Failed to reorder home sections: ${res.error.message}`);
+    }
+  }
 }
 
 export async function getDashboardCounts() {

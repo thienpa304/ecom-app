@@ -108,7 +108,7 @@ export function ProductGallery({ media, name }: Props) {
   return (
     <div className="min-w-0 space-y-3">
       <div
-        className="relative aspect-[4/3] w-full max-w-full overflow-hidden rounded-lg border border-gray-200 bg-black/5"
+        className="relative -mx-4 aspect-square w-auto overflow-hidden border-y border-gray-200 bg-black/5 sm:mx-0 sm:w-full sm:max-w-full sm:rounded-lg sm:border"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -128,7 +128,7 @@ export function ProductGallery({ media, name }: Props) {
             <button
               type="button"
               onClick={() => go(-1)}
-              className="absolute left-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md ring-1 ring-black/5 transition hover:bg-white"
+              className="absolute left-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white shadow-md backdrop-blur-sm transition hover:bg-black/60 sm:left-2 sm:h-10 sm:w-10"
               aria-label="Ảnh trước"
             >
               <ChevronIcon className="h-5 w-5 rotate-180" />
@@ -136,7 +136,7 @@ export function ProductGallery({ media, name }: Props) {
             <button
               type="button"
               onClick={() => go(1)}
-              className="absolute right-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md ring-1 ring-black/5 transition hover:bg-white"
+              className="absolute right-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white shadow-md backdrop-blur-sm transition hover:bg-black/60 sm:right-2 sm:h-10 sm:w-10"
               aria-label="Ảnh sau"
             >
               <ChevronIcon className="h-5 w-5" />
@@ -261,7 +261,7 @@ function MediaSlide({
           alt={item.alt || name}
           fill
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-contain p-2 sm:p-4"
+          className="object-contain p-0 sm:p-2"
           priority={priority}
           draggable={false}
         />

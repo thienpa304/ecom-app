@@ -6,6 +6,9 @@ import type {
   heroBulletIconSchema,
   heroBulletSchema,
   heroSlideSchema,
+  homeSectionKindSchema,
+  homeSectionSchema,
+  homeSectionStyleSchema,
   leadSchema,
   openingHoursEntrySchema,
   productMediaSchema,
@@ -21,6 +24,9 @@ export type ProductMedia = z.infer<typeof productMediaSchema>;
 export type ProductImage = ProductMedia;
 export type Product = z.infer<typeof productSchema>;
 export type Lead = z.infer<typeof leadSchema>;
+export type HomeSectionKind = z.infer<typeof homeSectionKindSchema>;
+export type HomeSectionStyle = z.infer<typeof homeSectionStyleSchema>;
+export type HomeSection = z.infer<typeof homeSectionSchema>;
 export type HeroBulletIcon = z.infer<typeof heroBulletIconSchema>;
 export type HeroSlide = z.infer<typeof heroSlideSchema>;
 export type HeroBullet = z.infer<typeof heroBulletSchema>;

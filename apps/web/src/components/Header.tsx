@@ -26,15 +26,15 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-      <div className="container-page flex flex-wrap items-center gap-x-2 gap-y-2 py-2.5 sm:gap-x-3 sm:py-3">
+      <div className="container-page flex flex-wrap items-center gap-x-2 gap-y-2 py-3 sm:gap-x-3 sm:py-4">
         {logoUrl ? (
           <Link href="/" className="flex shrink-0 items-center">
             <Image
               src={logoUrl}
               alt={siteName}
-              width={360}
-              height={88}
-              className="h-9 w-auto object-contain sm:h-11"
+              width={500}
+              height={200}
+              className="h-14 w-auto object-contain sm:h-20"
             />
           </Link>
         ) : (
@@ -68,18 +68,24 @@ export function Header({
         >
           <a
             href={`tel:${tel}`}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white shadow-sm transition hover:bg-accent-dark sm:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-call text-white shadow-sm transition hover:bg-call-dark sm:hidden"
             aria-label={`${ctaLabel} ${phone}`}
           >
             <PhoneIcon className="h-5 w-5" />
           </a>
           <a
             href={`tel:${tel}`}
-            className="btn-primary hidden items-center gap-2 whitespace-nowrap text-sm sm:inline-flex"
+            className="hidden min-h-11 shrink-0 items-center gap-2 rounded-md bg-call px-3 py-1.5 text-white transition hover:bg-call-dark focus:outline-none focus:ring-2 focus:ring-call/40 sm:inline-flex"
+            aria-label={`${ctaLabel} ${phone}`}
           >
-            <PhoneIcon className="h-4 w-4 shrink-0" />
-            <span>
-              {ctaLabel} {phone}
+            <PhoneIcon className="h-5 w-5 shrink-0" />
+            <span className="flex flex-col items-start leading-tight">
+              <span className="whitespace-nowrap text-[11px] font-medium text-white/90">
+                {ctaLabel}
+              </span>
+              <span className="whitespace-nowrap text-base font-bold tracking-tight">
+                {phone}
+              </span>
             </span>
           </a>
         </nav>
