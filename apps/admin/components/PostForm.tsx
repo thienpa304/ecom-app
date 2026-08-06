@@ -19,7 +19,6 @@ import { MediaLibraryModal } from "@/components/media/MediaLibraryModal";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import type { PostActionState } from "@/lib/actions/posts";
 
-// Ngưỡng thực dụng để tránh bị Google cắt trên mobile, không phải luật cứng.
 const META_TITLE_SOFT_MAX = 60;
 const META_DESC_SOFT_MAX = 160;
 const META_DESC_SOFT_MIN = 70;
@@ -99,13 +98,9 @@ export function PostForm({ action, post, siteName, submitLabel }: Props) {
     post?.metaDescription ?? "",
   );
 
-  // Lỗi hay gặp nhất trong repo này: copy 155 ký tự đầu của bài rồi để câu bị
-  // cắt giữa dòng. Cảnh báo ngay tại chỗ nhập.
   const descTrimmed = metaDescription.trim();
   const descIncomplete = descTrimmed.length > 0 && !/[.!?…]$/.test(descTrimmed);
 
-  // layout.tsx có title.template = "%s | siteName" nên gõ thêm tên shop sẽ ra
-  // "... | Shop | Shop" — Google coi redundant branding là lý do viết lại title.
   const titleRepeatsBrand =
     siteName.length > 0 &&
     metaTitle.toLowerCase().includes(siteName.toLowerCase());
@@ -126,7 +121,6 @@ export function PostForm({ action, post, siteName, submitLabel }: Props) {
       fd.set("metaTitle", values.metaTitle ?? "");
       fd.set("metaDescription", values.metaDescription ?? "");
       fd.set("authorName", values.authorName ?? "");
-      // Ngày đăng do server giữ: đặt lần đầu khi đăng, sau đó không đổi.
       fd.set("publishedAt", post?.publishedAt ?? "");
       if (values.isPublished) fd.set("isPublished", "on");
 

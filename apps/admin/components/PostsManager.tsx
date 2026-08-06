@@ -68,13 +68,17 @@ export function PostsManager({ posts }: { posts: Post[] }) {
 
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-      <Space style={{ justifyContent: "space-between", width: "100%" }} wrap>
+      <Space
+        style={{ justifyContent: "space-between", width: "100%" }}
+        direction={isMobile ? "vertical" : "horizontal"}
+        wrap
+      >
         <Typography.Text type="secondary">
           {posts.length} bài viết · {posts.filter((p) => p.isPublished).length}{" "}
           đang đăng
         </Typography.Text>
-        <Link href="/posts/new">
-          <Button type="primary" icon={<PlusOutlined />}>
+        <Link href="/posts/new" style={isMobile ? { display: "block" } : undefined}>
+          <Button type="primary" icon={<PlusOutlined />} block={isMobile}>
             Viết bài mới
           </Button>
         </Link>
@@ -85,18 +89,29 @@ export function PostsManager({ posts }: { posts: Post[] }) {
         rowKey="id"
         loading={pending}
         size={isMobile ? "small" : "middle"}
-        scroll={{ x: true }}
-        pagination={{ pageSize: 20, hideOnSinglePage: true }}
+        scroll={{ x: isMobile ? 620 : 860 }}
+        pagination={{
+          pageSize: 20,
+          hideOnSinglePage: true,
+          simple: isMobile,
+        }}
         columns={[
           {
             title: "Tiêu đề",
             dataIndex: "title",
+            width: isMobile ? 220 : 360,
             render: (_: unknown, post: Post) => (
-              <Space direction="vertical" size={0}>
+              <Space direction="vertical" size={0} style={{ maxWidth: "100%" }}>
                 <Link href={`/posts/${post.id}/edit`}>
-                  <Typography.Text strong>{post.title}</Typography.Text>
+                  <Typography.Text strong style={{ whiteSpace: "normal" }}>
+                    {post.title}
+                  </Typography.Text>
                 </Link>
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                <Typography.Text
+                  type="secondary"
+                  style={{ fontSize: 12 }}
+                  ellipsis
+                >
                   /cam-nang/{post.slug}
                 </Typography.Text>
               </Space>
@@ -105,7 +120,7 @@ export function PostsManager({ posts }: { posts: Post[] }) {
           {
             title: "Trạng thái",
             dataIndex: "isPublished",
-            width: 120,
+            width: 110,
             render: (_: unknown, post: Post) =>
               post.isPublished ? (
                 <Tag color="green">Đang đăng</Tag>
@@ -123,9 +138,10 @@ export function PostsManager({ posts }: { posts: Post[] }) {
           {
             title: "",
             key: "actions",
-            width: 200,
+            width: isMobile ? 150 : 200,
+            fixed: isMobile ? undefined : "right",
             render: (_: unknown, post: Post) => (
-              <Space size={4} wrap>
+              <Space size={4} wrap={false}>
                 <Button size="small" onClick={() => onToggle(post)}>
                   {post.isPublished ? "Gỡ" : "Đăng"}
                 </Button>
