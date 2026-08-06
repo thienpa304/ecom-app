@@ -358,15 +358,11 @@ export async function listPublishedCategorySlugs(): Promise<string[]> {
 
 export type NavCategory = {
   category: Category;
-  productCount: number;
-  imageUrl: string;
-  children: { category: Category; productCount: number }[];
+  children: { category: Category }[];
 };
 
 type NavProductRow = {
   category_id: string | null;
-  sold_count: number | null;
-  product_media?: { url: string; kind: string; sort_order: number }[] | null;
 };
 
 const loadCategoryNav = unstable_cache(
@@ -376,9 +372,8 @@ const loadCategoryNav = unstable_cache(
 
     const { data, error } = await supabase
       .from("products")
-      .select("category_id, sold_count, product_media(url, kind, sort_order)")
-      .eq("is_published", true)
-      .order("sold_count", { ascending: false, nullsFirst: false });
+      .select("category_id")
+      .eq("is_published", true);
 
     if (error) {
       console.error("listCategoryNav:", error.message);
@@ -387,18 +382,11 @@ const loadCategoryNav = unstable_cache(
 
     const rows = (data ?? []) as NavProductRow[];
     const countById = new Map<string, number>();
-    const imageById = new Map<string, string>();
 
     for (const row of rows) {
       const id = row.category_id;
       if (!id) continue;
       countById.set(id, (countById.get(id) ?? 0) + 1);
-      if (!imageById.has(id)) {
-        const image = (row.product_media ?? [])
-          .filter((m) => m.kind === "image")
-          .sort((a, b) => a.sort_order - b.sort_order)[0];
-        if (image?.url) imageById.set(id, image.url);
-      }
     }
 
     const countFor = (rootId: string): number =>
@@ -406,14 +394,6 @@ const loadCategoryNav = unstable_cache(
         (sum, id) => sum + (countById.get(id) ?? 0),
         0,
       );
-
-    const imageFor = (rootId: string): string => {
-      for (const id of collectCategoryIds(categories, rootId)) {
-        const url = imageById.get(id);
-        if (url) return url;
-      }
-      return "";
-    };
 
     return categories
       .filter((c) => c.parentId === null && countFor(c.id) > 0)
@@ -423,18 +403,13 @@ const loadCategoryNav = unstable_cache(
       )
       .map((category) => ({
         category,
-        productCount: countFor(category.id),
-        imageUrl: imageFor(category.id),
         children: categories
           .filter((c) => c.parentId === category.id && countFor(c.id) > 0)
           .sort(
             (a, b) =>
               a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"),
           )
-          .map((child) => ({
-            category: child,
-            productCount: countFor(child.id),
-          })),
+          .map((child) => ({ category: child })),
       }));
   },
   ["category-nav"],
