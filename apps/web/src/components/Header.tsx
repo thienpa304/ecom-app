@@ -12,6 +12,7 @@ type HeaderProps = {
   logoUrl?: string;
   ctaLabel?: string;
   categories: Category[];
+  navCategories?: Category[];
 };
 
 export function Header({
@@ -21,10 +22,12 @@ export function Header({
   logoUrl = "",
   ctaLabel = DEFAULT_HEADER_CTA_LABEL,
   categories,
+  navCategories = [],
 }: HeaderProps) {
   const tel = phone.replace(/\D/g, "");
 
   return (
+    <>
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
       <div className="container-page flex flex-wrap items-center gap-x-2 gap-y-2 py-3 sm:gap-x-3 sm:py-4">
         {logoUrl ? (
@@ -91,6 +94,36 @@ export function Header({
         </nav>
       </div>
     </header>
+
+    <nav
+      className="border-b border-gray-200 bg-white"
+      aria-label="Danh mục chính"
+    >
+      <div className="container-page flex items-center gap-1 overflow-x-auto py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-x-1.5 sm:gap-y-0.5 sm:overflow-x-visible [&::-webkit-scrollbar]:hidden">
+        <Link
+          href="/san-pham"
+          className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-semibold text-gray-700 transition hover:bg-accent/10 hover:text-accent sm:text-sm"
+        >
+          Tất cả sản phẩm
+        </Link>
+        {navCategories.map((category) => (
+          <Link
+            key={category.id}
+            href={`/danh-muc/${category.slug}`}
+            className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium text-gray-600 transition hover:bg-accent/10 hover:text-accent sm:text-sm"
+          >
+            {category.name}
+          </Link>
+        ))}
+        <Link
+          href="/cam-nang"
+          className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-semibold text-accent transition hover:bg-accent/10 sm:text-sm"
+        >
+          Cẩm nang
+        </Link>
+      </div>
+    </nav>
+    </>
   );
 }
 
