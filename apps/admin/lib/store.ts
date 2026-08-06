@@ -7,6 +7,7 @@ import {
   mapCategoryRow,
   mapHomeSectionRow,
   mapLeadRow,
+  mapPostRow,
   mapProductRow,
   mapSiteSettingsRow,
   mediaToRow,
@@ -21,6 +22,8 @@ import {
   type HomeSectionRow,
   type Lead,
   type LeadRow,
+  type Post,
+  type PostRow,
   type Product,
   type StockStatus,
   type ProductMedia,
@@ -729,6 +732,116 @@ export async function toggleProductPublished(
   const product = await getProduct(id);
   if (!product) return null;
   return updateProduct(id, { isPublished: !product.isPublished });
+}
+
+export type PostInput = Omit<Post, "id" | "createdAt" | "updatedAt">;
+
+export async function getPosts(): Promise<Post[]> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("published_at", { ascending: false, nullsFirst: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch posts: ${error.message}`);
+  }
+  return ((data ?? []) as PostRow[]).map(mapPostRow);
+}
+
+export async function getPost(id: string): Promise<Post | undefined> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch post: ${error.message}`);
+  }
+  if (!data) return undefined;
+  return mapPostRow(data as PostRow);
+}
+
+function postFields(input: PostInput) {
+  return {
+    title: input.title,
+    slug: input.slug,
+    excerpt: input.excerpt,
+    body: input.body,
+    cover_url: input.coverUrl,
+    cover_alt: input.coverAlt,
+    meta_title: input.metaTitle,
+    meta_description: input.metaDescription,
+    author_name: input.authorName,
+    is_published: input.isPublished,
+    published_at: input.publishedAt,
+  };
+}
+
+export async function createPost(
+  input: PostInput & { id?: string },
+): Promise<Post> {
+  const id = input.id ?? `post-${Date.now()}`;
+  const supabase = createServerClient();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .insert({ id, ...postFields(input) })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create post: ${error.message}`);
+  }
+  return mapPostRow(data as PostRow);
+}
+
+export async function updatePost(
+  id: string,
+  input: PostInput,
+): Promise<Post | null> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .update({ ...postFields(input), updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to update post: ${error.message}`);
+  }
+  if (!data) return null;
+  return mapPostRow(data as PostRow);
+}
+
+export async function deletePost(id: string): Promise<boolean> {
+  const supabase = createServerClient();
+  const { error, count } = await supabase
+    .from("posts")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Failed to delete post: ${error.message}`);
+  }
+  return (count ?? 0) > 0;
+}
+
+export async function togglePostPublished(id: string): Promise<Post | null> {
+  const post = await getPost(id);
+  if (!post) return null;
+
+  const isPublished = !post.isPublished;
+  const publishedAt =
+    isPublished && !post.publishedAt
+      ? new Date().toISOString()
+      : post.publishedAt;
+
+  return updatePost(id, { ...post, isPublished, publishedAt });
 }
 
 export async function createBrand(input: Omit<Brand, "id">): Promise<Brand> {

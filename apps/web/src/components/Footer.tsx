@@ -177,6 +177,11 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
                 Danh mục sản phẩm
               </Link>
             </li>
+            <li>
+              <Link href="/cam-nang" className="hover:text-accent">
+                Cẩm nang
+              </Link>
+            </li>
           </ul>
 
           {categories.length > 0 ? (

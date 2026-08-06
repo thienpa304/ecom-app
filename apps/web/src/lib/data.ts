@@ -7,6 +7,7 @@ import {
   mapCategoryRow,
   mapHomeSectionRow,
   mapLeadRow,
+  mapPostRow,
   mapProductRow,
   mapSiteSettingsRow,
   type Brand,
@@ -17,6 +18,8 @@ import {
   type HomeSectionRow,
   type Lead,
   type LeadRow,
+  type Post,
+  type PostRow,
   type Product,
   type ProductMediaRow,
   type ProductRow,
@@ -377,6 +380,7 @@ export type SitemapEntries = {
   products: SitemapEntry[];
   categories: SitemapEntry[];
   brands: SitemapEntry[];
+  posts: SitemapEntry[];
   latest?: string;
 };
 
@@ -447,15 +451,41 @@ const loadSitemapEntries = unstable_cache(
       return { slug: row.slug, lastModified: new Date(time).toISOString() };
     });
 
-    const [categories, brands] = await Promise.all([
+    const [categories, brands, postRows] = await Promise.all([
       getCategories(),
       getBrands(),
+      supabase
+        .from("posts")
+        .select("slug, published_at, updated_at, created_at")
+        .eq("is_published", true),
     ]);
+
+    if (postRows.error) {
+      throw new Error(
+        `Failed to fetch sitemap posts: ${postRows.error.message}`,
+      );
+    }
+
+    type SitemapPostRow = {
+      slug: string;
+      published_at: string | null;
+      updated_at: string | null;
+      created_at: string | null;
+    };
+
+    const posts = ((postRows.data ?? []) as SitemapPostRow[]).map((row) => {
+      const time = parseTimestamp(
+        row.updated_at ?? row.published_at ?? row.created_at,
+      );
+      if (time === undefined) return { slug: row.slug };
+      return { slug: row.slug, lastModified: new Date(time).toISOString() };
+    });
 
     return {
       products,
       categories: toSitemapEntries(categories, categoryTimes),
       brands: toSitemapEntries(brands, brandTimes),
+      posts,
       latest:
         latestTime === undefined
           ? undefined
@@ -465,7 +495,7 @@ const loadSitemapEntries = unstable_cache(
   ["sitemap-entries"],
   {
     revalidate: REVALIDATE_SECONDS,
-    tags: ["products", "categories", "brands"],
+    tags: ["products", "categories", "brands", "posts"],
   },
 );
 
@@ -622,6 +652,123 @@ export async function createLead(input: {
   }
 
   return mapLeadRow(data as LeadRow);
+}
+
+export const POSTS_PAGE_SIZE = 12;
+
+export type ListPostsResult = {
+  items: Post[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+async function queryListPosts(
+  page: number,
+  pageSize: number,
+): Promise<ListPostsResult> {
+  const supabase = createServerClient();
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
+    .from("posts")
+    .select("*", { count: "exact" })
+    .eq("is_published", true)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw new Error(`Failed to list posts: ${error.message}`);
+  }
+
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+
+  return {
+    items: ((data ?? []) as PostRow[]).map(mapPostRow),
+    total,
+    page: Math.min(page, totalPages),
+    pageSize,
+    totalPages,
+  };
+}
+
+export async function listPosts(
+  params: { page?: number; pageSize?: number } = {},
+): Promise<ListPostsResult> {
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = params.pageSize === 24 ? 24 : POSTS_PAGE_SIZE;
+
+  return unstable_cache(
+    () => queryListPosts(page, pageSize),
+    ["list-posts", JSON.stringify({ page, pageSize })],
+    { revalidate: REVALIDATE_SECONDS, tags: ["posts"] },
+  )();
+}
+
+const loadLatestPosts = unstable_cache(
+  async (limit: number, excludeSlug: string): Promise<Post[]> => {
+    const supabase = createServerClient();
+    let query = supabase.from("posts").select("*").eq("is_published", true);
+    if (excludeSlug) query = query.neq("slug", excludeSlug);
+
+    const { data, error } = await query
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("listLatestPosts:", error.message);
+      return [];
+    }
+    return ((data ?? []) as PostRow[]).map(mapPostRow);
+  },
+  ["latest-posts"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["posts"] },
+);
+
+export function listLatestPosts(limit = 3, excludeSlug = ""): Promise<Post[]> {
+  return loadLatestPosts(limit, excludeSlug);
+}
+
+export async function getPostBySlug(slug: string): Promise<Post | undefined> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch post: ${error.message}`);
+  }
+  if (!data) return undefined;
+  return mapPostRow(data as PostRow);
+}
+
+const loadPublishedPostSlugs = unstable_cache(
+  async (): Promise<string[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("posts")
+      .select("slug")
+      .eq("is_published", true);
+
+    if (error) {
+      throw new Error(`Failed to fetch post slugs: ${error.message}`);
+    }
+    return (data ?? []).map((row) => row.slug as string);
+  },
+  ["published-post-slugs"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["posts"] },
+);
+
+export async function listPublishedPostSlugs(): Promise<string[]> {
+  return loadPublishedPostSlugs();
 }
 
 export async function getBrandById(id: string): Promise<Brand | undefined> {

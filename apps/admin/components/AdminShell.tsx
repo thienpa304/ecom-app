@@ -9,6 +9,7 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   PhoneOutlined,
+  ReadOutlined,
   SettingOutlined,
   ShoppingOutlined,
   TagsOutlined,
@@ -48,6 +49,12 @@ const NAV = [
     href: "/categories",
     label: "Danh mục",
     icon: <AppstoreOutlined />,
+  },
+  {
+    key: "/posts",
+    href: "/posts",
+    label: "Cẩm nang",
+    icon: <ReadOutlined />,
   },
   {
     key: "/home-sections",

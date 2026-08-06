@@ -9,7 +9,7 @@ function toDate(value?: string): Date | undefined {
 function toSitemapItems(
   entries: SitemapEntry[],
   buildPath: (slug: string) => string,
-  changeFrequency: "daily" | "weekly",
+  changeFrequency: "daily" | "weekly" | "monthly",
   priority: number,
 ): MetadataRoute.Sitemap {
   return entries.map((entry) => ({
@@ -18,6 +18,15 @@ function toSitemapItems(
     changeFrequency,
     priority,
   }));
+}
+
+function newestLastModified(entries: SitemapEntry[]): Date | undefined {
+  let newest: Date | undefined;
+  for (const entry of entries) {
+    const date = toDate(entry.lastModified);
+    if (date && (!newest || date > newest)) newest = date;
+  }
+  return newest;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -54,6 +63,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       (slug) => `/san-pham/${slug}`,
       "weekly",
       0.8,
+    ),
+    ...(entries.posts.length
+      ? [
+          {
+            url: absoluteUrl("/cam-nang"),
+            lastModified: newestLastModified(entries.posts),
+            changeFrequency: "weekly" as const,
+            priority: 0.7,
+          },
+        ]
+      : []),
+    ...toSitemapItems(
+      entries.posts,
+      (slug) => `/cam-nang/${slug}`,
+      "monthly",
+      0.6,
     ),
   ];
 }

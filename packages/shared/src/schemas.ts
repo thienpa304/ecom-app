@@ -61,6 +61,23 @@ export const productSchema = z.object({
   media: z.array(productMediaSchema),
 });
 
+export const postSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  excerpt: z.string(),
+  body: z.string(),
+  coverUrl: z.string(),
+  coverAlt: z.string(),
+  metaTitle: z.string(),
+  metaDescription: z.string(),
+  authorName: z.string(),
+  isPublished: z.boolean(),
+  publishedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 export const leadSchema = z.object({
   id: z.string(),
   productId: z.string().nullable(),
@@ -182,6 +199,20 @@ export const brandInputSchema = z.object({
   description: z.string().default(""),
   metaTitle: z.string().default(""),
   metaDescription: z.string().default(""),
+});
+
+export const postInputSchema = z.object({
+  title: z.string().trim().min(1, "Nhập tiêu đề bài viết"),
+  slug: slugInputSchema,
+  excerpt: z.string().trim().default(""),
+  body: z.string().default(""),
+  coverUrl: z.string().trim().default(""),
+  coverAlt: z.string().trim().default(""),
+  metaTitle: z.string().trim().default(""),
+  metaDescription: z.string().trim().default(""),
+  authorName: z.string().trim().default(""),
+  isPublished: z.boolean(),
+  publishedAt: z.string().trim().nullable(),
 });
 
 export const categoryInputSchema = z.object({

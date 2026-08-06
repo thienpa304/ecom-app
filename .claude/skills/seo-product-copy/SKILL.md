@@ -110,11 +110,44 @@ Domain mới, ít backlink, chưa có Google Business Profile.
 | Alt ảnh | `product_media.alt` | Sản phẩm → Media |
 | Mô tả thương hiệu | `brands.description` | Thương hiệu → Sửa |
 | FAQ, chính sách, giờ mở cửa | `site_settings` | Cấu hình cửa hàng |
+| Bài viết Cẩm nang | `posts` | Cẩm nang → Viết bài mới |
 
 Web đọc các cột này qua `packages/shared/src/mappers.ts` và render ở
 `apps/web/src/app/san-pham/[slug]/page.tsx`. `meta_title` rỗng thì fallback về
 `product.name`; `meta_description` rỗng thì fallback về text thuần của
 `description`.
+
+## Bài viết Cẩm nang (`/cam-nang/<slug>`)
+
+Blog tồn tại để nhắm loại truy vấn mà **trang sản phẩm không nhắm được**:
+câu hỏi trước khi mua, xử lý sự cố, so sánh. Không phải để viết thêm về
+cùng một từ khoá.
+
+### Chọn đề tài
+- **Được:** `máy xịt rửa bao nhiêu bar là đủ`, `máy rửa xe bị yếu nước`,
+  `mở tiệm rửa xe cần máy gì`, `so sánh DK-P25 với DK-P2000A`.
+- **Không được:** `máy xịt rửa cao áp giá rẻ` — trang danh mục đang nhắm từ
+  đó rồi, hai trang cùng nhắm một từ sẽ cắn nhau (xem mục Chiến lược từ khoá).
+
+### Cấu trúc bài
+- **Tiêu đề** = đúng câu khách gõ. Đặt dạng câu hỏi nếu truy vấn là câu hỏi.
+- **Tóm tắt (`excerpt`)** = 1-2 câu hoàn chỉnh, trả lời thẳng câu hỏi ngay.
+  Đây cũng là meta description mặc định.
+- **Đoạn mở** trả lời câu hỏi trong 2-3 câu đầu. Đừng bắt đọc hết mới biết.
+- **H2 cho từng phần**, H3 cho ý con. Bài dài mà không có H2 thì Google khó
+  lấy đoạn trích.
+- **Link nội bộ**: mỗi bài trỏ tới ít nhất 1 danh mục và 1-2 sản phẩm cụ thể
+  bằng đường dẫn tương đối (`/san-pham/<slug>`) — sanitizer giữ nguyên tab
+  cho link nội bộ, link ngoài mới mở tab mới.
+
+### Ràng buộc — giống hệt trang sản phẩm
+Toàn bộ mục "Ràng buộc cứng" ở đầu file áp dụng nguyên vẹn cho bài viết:
+không bịa thông số, không bịa thông tin hãng, không hứa chính sách, không
+gõ tên shop vào meta title. Số liệu trong bài phải lấy từ `specs` / `price`
+/ `warranty` của sản phẩm thật đang bán.
+
+Form admin đã cài sẵn cảnh báo cho 3 lỗi hay gặp: meta title quá 60 ký tự,
+meta title lặp tên shop, meta description không kết thúc bằng dấu câu.
 
 ## Cách tự kiểm sau khi sửa
 ```

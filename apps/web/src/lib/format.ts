@@ -6,6 +6,18 @@ export function formatVnd(amount: number): string {
   }).format(amount);
 }
 
+export function formatPostDate(value?: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date);
+}
+
 export function discountPercent(price: number, salePrice: number | null): number | null {
   if (salePrice == null || salePrice >= price || price <= 0) return null;
   return Math.round(((price - salePrice) / price) * 100);

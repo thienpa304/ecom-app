@@ -3,6 +3,7 @@ import type {
   Category,
   FaqEntry,
   OpeningHoursEntry,
+  Post,
   Product,
   SiteSettings,
 } from "@ecom/shared";
@@ -212,6 +213,44 @@ export function productJsonLd(
               applicableCountry: "VN",
               returnPolicyCategory:
                 "https://schema.org/MerchantReturnFiniteReturnWindow",
+            },
+          }
+        : {}),
+    },
+  };
+}
+
+export function articleJsonLd(post: Post, settings: SiteSettings) {
+  const path = `/cam-nang/${post.slug}`;
+  const image = clean(post.coverUrl) || siteShareImage(settings);
+  const datePublished = clean(post.publishedAt ?? "") || clean(post.createdAt);
+  const dateModified = clean(post.updatedAt) || datePublished;
+  const author = clean(post.authorName) || settings.siteName;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: clean(post.metaTitle) || post.title,
+    description:
+      clean(post.metaDescription) ||
+      clean(post.excerpt) ||
+      stripHtml(post.body).slice(0, 200),
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": absoluteUrl(path),
+    },
+    ...(image ? { image: [image] } : {}),
+    ...(datePublished ? { datePublished } : {}),
+    ...(dateModified ? { dateModified } : {}),
+    author: { "@type": "Person", name: author },
+    publisher: {
+      "@type": "Organization",
+      name: settings.siteName,
+      ...(settings.logoSquareUrl || settings.logoUrl
+        ? {
+            logo: {
+              "@type": "ImageObject",
+              url: settings.logoSquareUrl || settings.logoUrl,
             },
           }
         : {}),

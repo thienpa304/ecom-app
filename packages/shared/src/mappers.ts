@@ -27,6 +27,8 @@ import type {
 
   OpeningHoursEntry,
 
+  Post,
+
   Product,
 
   ProductMedia,
@@ -72,6 +74,23 @@ export type BrandRow = {
 };
 
 
+
+export type PostRow = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  body?: string | null;
+  cover_url?: string | null;
+  cover_alt?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  author_name?: string | null;
+  is_published?: boolean | null;
+  published_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
 
 export type ProductMediaRow = {
 
@@ -403,6 +422,25 @@ export function mapBrandRow(row: BrandRow): Brand {
 }
 
 
+
+export function mapPostRow(row: PostRow): Post {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    excerpt: row.excerpt ?? "",
+    body: row.body ?? "",
+    coverUrl: row.cover_url ?? "",
+    coverAlt: row.cover_alt ?? "",
+    metaTitle: row.meta_title ?? "",
+    metaDescription: row.meta_description ?? "",
+    authorName: row.author_name ?? "",
+    isPublished: Boolean(row.is_published),
+    publishedAt: row.published_at ?? null,
+    createdAt: row.created_at ?? "",
+    updatedAt: row.updated_at ?? "",
+  };
+}
 
 export function mapMediaRow(row: ProductMediaRow): ProductMedia {
 
