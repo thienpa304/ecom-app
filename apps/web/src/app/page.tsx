@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HOME_SECTION_PRODUCT_COUNT, type Product } from "@ecom/shared";
-import { CategoryTiles } from "@/components/CategoryTiles";
 import { HeroIntro } from "@/components/HeroIntro";
 import { HeroSlider } from "@/components/HeroSlider";
 import { ProductRow } from "@/components/ProductRow";
 import { VideoReviewSection } from "@/components/VideoReviewSection";
 import {
   getSiteSettings,
-  listCategoryNav,
   listHomeCategorySections,
   listHomeSections,
   listProducts,
@@ -44,7 +42,7 @@ export default async function HomePage() {
   const soldOffset =
     sections.find((s) => s.kind === "top_sellers")?.productLimit ?? 0;
 
-  const [soldList, newestList, categorySections, videoProducts, navCategories] =
+  const [soldList, newestList, categorySections, videoProducts] =
     await Promise.all([
       listProducts({
         sort: "sold_desc",
@@ -58,7 +56,6 @@ export default async function HomePage() {
       }),
       listHomeCategorySections(maxLimit),
       listVideoProducts(maxLimit),
-      listCategoryNav(),
     ]);
 
   const categoryById = new Map(categorySections.map((s) => [s.category.id, s]));
@@ -159,8 +156,6 @@ export default async function HomePage() {
           )}
         </div>
       </section>
-
-      <CategoryTiles items={navCategories} />
 
       {shelves.map(({ section, products, href }) => {
         if (!products.length) return null;

@@ -56,17 +56,10 @@ export function Header({
             <SearchForm placeholder={searchPlaceholder} />
           </Suspense>
 
-          <nav className="shrink-0" aria-label="Liên hệ">
+          <nav className="hidden shrink-0 sm:block" aria-label="Liên hệ">
             <a
               href={`tel:${tel}`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-call text-white shadow-sm transition hover:bg-call-dark sm:hidden"
-              aria-label={`${ctaLabel} ${phone}`}
-            >
-              <PhoneIcon className="h-5 w-5" />
-            </a>
-            <a
-              href={`tel:${tel}`}
-              className="hidden min-h-11 items-center gap-2 rounded-md bg-call px-3 py-1.5 text-white transition hover:bg-call-dark focus:outline-none focus:ring-2 focus:ring-call/40 sm:inline-flex"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-call px-3 py-1.5 text-white transition hover:bg-call-dark focus:outline-none focus:ring-2 focus:ring-call/40"
               aria-label={`${ctaLabel} ${phone}`}
             >
               <PhoneIcon className="h-5 w-5 shrink-0" />
