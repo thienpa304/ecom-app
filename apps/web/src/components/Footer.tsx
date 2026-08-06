@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Brand, Category, SiteSettings } from "@ecom/shared";
+import { SafeImage } from "@/components/SafeImage";
 import { getBrands, getCategories } from "@/lib/data";
 
 const KEYWORD_CATEGORY_LIMIT = 6;
@@ -117,7 +117,7 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
       >
         <div>
           {settings.logoSquareUrl ? (
-            <Image
+            <SafeImage
               src={settings.logoSquareUrl}
               alt={settings.siteName}
               width={96}

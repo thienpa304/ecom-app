@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useEffect,
@@ -11,6 +10,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import type { SearchSuggestItem } from "@/app/api/search-suggest/route";
+import { SafeImage } from "@/components/SafeImage";
 import { formatVnd } from "@/lib/format";
 
 const SUGGEST_DEBOUNCE_MS = 250;
@@ -317,7 +317,7 @@ export function SearchForm({
             >
               <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-100 bg-gray-50">
                 {item.imageUrl ? (
-                  <Image
+                  <SafeImage
                     src={item.imageUrl}
                     alt={item.name}
                     width={96}

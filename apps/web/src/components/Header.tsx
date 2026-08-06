@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { DEFAULT_HEADER_CTA_LABEL, type Category } from "@ecom/shared";
 import { CategoryMenu } from "@/components/CategoryMenu";
+import { SafeImage } from "@/components/SafeImage";
 import { SearchForm } from "@/components/SearchForm";
 
 type HeaderProps = {
@@ -29,7 +29,7 @@ export function Header({
       <div className="container-page flex flex-wrap items-center gap-x-2 gap-y-2 py-3 sm:gap-x-3 sm:py-4">
         {logoUrl ? (
           <Link href="/" className="flex shrink-0 items-center">
-            <Image
+            <SafeImage
               src={logoUrl}
               alt={siteName}
               width={500}
