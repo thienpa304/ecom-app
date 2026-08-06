@@ -230,7 +230,7 @@ export function SearchForm({
     <form
       ref={formRef}
       onSubmit={onSearch}
-      className="relative order-last w-full basis-full sm:order-none sm:mx-2 sm:w-auto sm:flex-1 sm:basis-auto"
+      className="relative min-w-0 flex-1"
       role="search"
     >
       <label htmlFor="header-search" className="sr-only">
@@ -263,7 +263,7 @@ export function SearchForm({
           placeholder={activePlaceholder}
           enterKeyHint="search"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 [&::-webkit-search-cancel-button]:hidden"
+          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-gray-900 outline-none placeholder:text-gray-400 [&::-webkit-search-cancel-button]:hidden"
         />
         {q ? (
           <button

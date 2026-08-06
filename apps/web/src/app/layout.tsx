@@ -9,11 +9,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { NavigationProgress } from "@/components/NavigationProgress";
-import {
-  getCategories,
-  getSiteSettings,
-  listPublishedCategorySlugs,
-} from "@/lib/data";
+import { getSiteSettings, listCategoryNav } from "@/lib/data";
 import { DEFAULT_HEADER_CTA_LABEL } from "@ecom/shared";
 import { organizationJsonLd, siteShareImage } from "@/lib/seo";
 import { absoluteUrl, getSiteUrl } from "@/lib/site";
@@ -73,18 +69,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [settings, categories, stockedSlugs] = await Promise.all([
+  const [settings, navCategories] = await Promise.all([
     getSiteSettings(),
-    getCategories(),
-    listPublishedCategorySlugs(),
+    listCategoryNav(),
   ]);
-
-  const navCategories = categories
-    .filter((category) => stockedSlugs.includes(category.slug))
-    .sort(
-      (a, b) =>
-        a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"),
-    );
 
   return (
     <html lang="vi" className={beVietnam.variable}>
@@ -101,7 +89,6 @@ export default async function RootLayout({
           searchPlaceholder={settings.searchPlaceholder}
           logoUrl={settings.logoUrl}
           ctaLabel={settings.headerCtaLabel || DEFAULT_HEADER_CTA_LABEL}
-          categories={categories}
           navCategories={navCategories}
         />
         <main className="min-w-0 flex-1 pb-28 sm:pb-8">{children}</main>

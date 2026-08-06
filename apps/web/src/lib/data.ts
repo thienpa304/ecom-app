@@ -88,6 +88,16 @@ function normalizeSlugs(value?: string | string[]): string[] {
   return arr.map((s) => s.trim()).filter(Boolean);
 }
 
+function collectCategoryIds(categories: Category[], rootId: string): string[] {
+  const ids = [rootId];
+  for (const category of categories) {
+    if (category.parentId === rootId) {
+      ids.push(...collectCategoryIds(categories, category.id));
+    }
+  }
+  return ids;
+}
+
 function mapRows(data: ProductWithMedia[] | null | undefined): Product[] {
   return ((data ?? []) as ProductWithMedia[]).map((row) => {
     const { product_media, ...product } = row;
@@ -331,14 +341,108 @@ const loadPublishedCategorySlugs = unstable_cache(
     if (ids.size === 0) return [];
 
     const categories = await getCategories();
-    return categories.filter((c) => ids.has(c.id)).map((c) => c.slug);
+    // Danh mục cha gom hàng của con, nên cha cũng là trang có sản phẩm.
+    return categories
+      .filter((c) =>
+        collectCategoryIds(categories, c.id).some((id) => ids.has(id)),
+      )
+      .map((c) => c.slug);
   },
-  ["published-category-slugs"],
+  ["published-category-slugs-v2"],
   { revalidate: REVALIDATE_SECONDS, tags: ["products", "categories"] },
 );
 
 export async function listPublishedCategorySlugs(): Promise<string[]> {
   return loadPublishedCategorySlugs();
+}
+
+export type NavCategory = {
+  category: Category;
+  productCount: number;
+  imageUrl: string;
+  children: { category: Category; productCount: number }[];
+};
+
+type NavProductRow = {
+  category_id: string | null;
+  sold_count: number | null;
+  product_media?: { url: string; kind: string; sort_order: number }[] | null;
+};
+
+const loadCategoryNav = unstable_cache(
+  async (): Promise<NavCategory[]> => {
+    const categories = await getCategories();
+    const supabase = createServerClient();
+
+    const { data, error } = await supabase
+      .from("products")
+      .select("category_id, sold_count, product_media(url, kind, sort_order)")
+      .eq("is_published", true)
+      .order("sold_count", { ascending: false, nullsFirst: false });
+
+    if (error) {
+      console.error("listCategoryNav:", error.message);
+      return [];
+    }
+
+    const rows = (data ?? []) as NavProductRow[];
+    const countById = new Map<string, number>();
+    const imageById = new Map<string, string>();
+
+    for (const row of rows) {
+      const id = row.category_id;
+      if (!id) continue;
+      countById.set(id, (countById.get(id) ?? 0) + 1);
+      if (!imageById.has(id)) {
+        const image = (row.product_media ?? [])
+          .filter((m) => m.kind === "image")
+          .sort((a, b) => a.sort_order - b.sort_order)[0];
+        if (image?.url) imageById.set(id, image.url);
+      }
+    }
+
+    const countFor = (rootId: string): number =>
+      collectCategoryIds(categories, rootId).reduce(
+        (sum, id) => sum + (countById.get(id) ?? 0),
+        0,
+      );
+
+    const imageFor = (rootId: string): string => {
+      for (const id of collectCategoryIds(categories, rootId)) {
+        const url = imageById.get(id);
+        if (url) return url;
+      }
+      return "";
+    };
+
+    return categories
+      .filter((c) => c.parentId === null && countFor(c.id) > 0)
+      .sort(
+        (a, b) =>
+          a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"),
+      )
+      .map((category) => ({
+        category,
+        productCount: countFor(category.id),
+        imageUrl: imageFor(category.id),
+        children: categories
+          .filter((c) => c.parentId === category.id && countFor(c.id) > 0)
+          .sort(
+            (a, b) =>
+              a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "vi"),
+          )
+          .map((child) => ({
+            category: child,
+            productCount: countFor(child.id),
+          })),
+      }));
+  },
+  ["category-nav"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["products", "categories"] },
+);
+
+export function listCategoryNav(): Promise<NavCategory[]> {
+  return loadCategoryNav();
 }
 
 const loadPublishedBrandSlugs = unstable_cache(
@@ -522,11 +626,10 @@ async function queryListProducts(
     ? brands.filter((b) => brandSlugs.includes(b.slug)).map((b) => b.id)
     : [];
 
-  let categoryId: string | null = null;
+  let categoryIds: string[] = [];
   if (params.categorySlug) {
-    categoryId =
-      categories.find((c) => c.slug === params.categorySlug)?.id ?? null;
-    if (!categoryId) {
+    const matched = categories.find((c) => c.slug === params.categorySlug);
+    if (!matched) {
       return {
         items: [],
         total: 0,
@@ -535,6 +638,7 @@ async function queryListProducts(
         totalPages: 1,
       };
     }
+    categoryIds = collectCategoryIds(categories, matched.id);
   }
 
   if (brandSlugs.length && brandIds.length === 0) {
@@ -559,8 +663,10 @@ async function queryListProducts(
     query = query.in("brand_id", brandIds);
   }
 
-  if (categoryId) {
-    query = query.eq("category_id", categoryId);
+  if (categoryIds.length === 1) {
+    query = query.eq("category_id", categoryIds[0]!);
+  } else if (categoryIds.length > 1) {
+    query = query.in("category_id", categoryIds);
   }
 
   if (min != null) {
