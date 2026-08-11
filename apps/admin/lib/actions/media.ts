@@ -4,15 +4,17 @@ import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@ecom/shared";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
 import {
+  MAX_MEDIA_LABEL_LENGTH,
   deleteMediaAssets,
   findMediaUsage,
   listMediaAssets,
+  setMediaLabel,
   uploadProductMedia,
   type ListMediaParams,
   type ListMediaResult,
   type MediaAsset,
   type MediaUsage,
-} from "@/lib/store";
+} from "@/lib/media-store";
 
 const STORAGE_PATH_RE = /^(img|video|media)\/.+/;
 
@@ -46,10 +48,16 @@ export async function uploadMediaAction(
       }
     }
 
+    const label = String(formData.get("label") ?? "").trim();
+
     const urls: string[] = [];
     for (const file of files) {
       const isVideo = file.type.startsWith("video/");
-      const url = await uploadProductMedia(file, isVideo ? "video" : "img");
+      const url = await uploadProductMedia(
+        file,
+        isVideo ? "video" : "img",
+        label || undefined,
+      );
       urls.push(url);
     }
 
@@ -74,6 +82,34 @@ function validatePaths(paths: string[]): { unique: string[]; error?: string } {
     }
   }
   return { unique };
+}
+
+export async function renameMediaAction(
+  path: string,
+  label: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin();
+
+  const { error } = validatePaths([path]);
+  if (error) return { ok: false, error };
+
+  if (label.trim().length > MAX_MEDIA_LABEL_LENGTH) {
+    return {
+      ok: false,
+      error: `Tên file tối đa ${MAX_MEDIA_LABEL_LENGTH} ký tự.`,
+    };
+  }
+
+  try {
+    await setMediaLabel(path, label);
+    revalidatePath("/media");
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Không lưu được tên file",
+    };
+  }
 }
 
 export async function checkMediaUsageAction(

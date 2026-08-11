@@ -2,7 +2,7 @@
 
 import { Button, Modal, Space, Typography } from "antd";
 import { useCallback, useState } from "react";
-import type { MediaAsset } from "@/lib/store";
+import type { MediaAsset } from "@/lib/media-store";
 import { MediaLibraryPanel } from "./MediaLibraryPanel";
 
 type Props = {
