@@ -34,6 +34,14 @@ function fileKey(file: File): string {
   return `${file.name}|${file.size}|${file.lastModified}`;
 }
 
+function baseName(fileName: string): string {
+  return fileName.replace(/\.[^.]*$/, "");
+}
+
+function autoLabelFor(files: File[]): string {
+  return files.length === 1 ? baseName(files[0]!.name) : "";
+}
+
 export function MediaUploadModal({
   open,
   uploading,
@@ -46,13 +54,20 @@ export function MediaUploadModal({
   const { token } = theme.useToken();
   const [files, setFiles] = useState<File[]>([]);
   const [label, setLabel] = useState("");
+  const [labelEdited, setLabelEdited] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setFiles([]);
       setLabel("");
+      setLabelEdited(false);
     }
   }, [open]);
+
+  function applyFiles(next: File[]) {
+    setFiles(next);
+    if (!labelEdited) setLabel(autoLabelFor(next));
+  }
 
   function stageFiles(incoming: File[]) {
     const oversized = incoming.find((f) => f.size > MAX_UPLOAD_BYTES);
@@ -64,15 +79,16 @@ export function MediaUploadModal({
     const accepted = incoming.filter((f) => f.size <= MAX_UPLOAD_BYTES);
     if (accepted.length === 0) return;
 
-    setFiles((prev) => {
-      if (!multiple) return [accepted[accepted.length - 1]!];
-      const seen = new Set(prev.map(fileKey));
-      return [...prev, ...accepted.filter((f) => !seen.has(fileKey(f)))];
-    });
+    if (!multiple) {
+      applyFiles([accepted[accepted.length - 1]!]);
+      return;
+    }
+    const seen = new Set(files.map(fileKey));
+    applyFiles([...files, ...accepted.filter((f) => !seen.has(fileKey(f)))]);
   }
 
   function removeAt(index: number) {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+    applyFiles(files.filter((_, i) => i !== index));
   }
 
   const slug = slugifyLabel(label);
@@ -111,7 +127,10 @@ export function MediaUploadModal({
             value={label}
             maxLength={MAX_LABEL_LENGTH}
             disabled={uploading}
-            onChange={(e) => setLabel(e.target.value)}
+            onChange={(e) => {
+              setLabelEdited(true);
+              setLabel(e.target.value);
+            }}
             placeholder="Tên file"
             style={{ marginTop: 4 }}
           />
@@ -121,7 +140,9 @@ export function MediaUploadModal({
           >
             {slug
               ? `Sẽ lưu thành: ${slug}-xxxxxx`
-              : "Bỏ trống sẽ giữ tên file gốc."}
+              : files.length > 1
+                ? "Nhiều file — bỏ trống thì mỗi file giữ tên gốc của nó."
+                : "Tự lấy tên file bạn chọn, sửa lại được."}
           </Typography.Text>
         </div>
 
