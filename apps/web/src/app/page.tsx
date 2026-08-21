@@ -113,8 +113,9 @@ export default async function HomePage() {
   return (
     <>
       <section className="border-b border-orange-100 bg-gradient-to-br from-white via-orange-50/60 to-gray-50">
-        <div className="container-page grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center">
-          <div>
+        <div className="container-page grid gap-5 py-6 sm:gap-6 sm:py-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center">
+          {/* Mobile: banner lên trước phần giới thiệu; desktop giữ nguyên trái/phải */}
+          <div className="order-2 lg:order-1">
             <HeroIntro
               eyebrow={settings.siteName}
               title={settings.heroTitle || "Điện máy & thiết bị gia dụng"}
@@ -122,7 +123,8 @@ export default async function HomePage() {
               subtitle={settings.heroSubtitle || settings.tagline}
               bullets={settings.heroBullets}
             />
-            <div className="mt-6 max-w-md space-y-3 lg:max-w-none">
+            {/* Ẩn trên mobile — đã có nút gọi/Zalo nổi (ContactFab) */}
+            <div className="mt-4 hidden max-w-md space-y-3 lg:block lg:max-w-none">
               <Link href="/san-pham" className="btn-primary w-full">
                 Xem tất cả sản phẩm
               </Link>
@@ -149,11 +151,13 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {slides.length ? (
-            <HeroSlider slides={slides} fallbackAlt={settings.siteName} />
-          ) : (
-            <div className="relative hidden aspect-[16/9] overflow-hidden rounded-2xl border border-orange-100 bg-[radial-gradient(circle_at_30%_20%,#fed7aa,transparent_50%),radial-gradient(circle_at_80%_70%,#ffedd5,transparent_45%)] lg:block lg:aspect-[2/1]" />
-          )}
+          <div className="order-1 min-w-0 lg:order-2">
+            {slides.length ? (
+              <HeroSlider slides={slides} fallbackAlt={settings.siteName} />
+            ) : (
+              <div className="relative hidden aspect-[16/9] overflow-hidden rounded-2xl border border-orange-100 bg-[radial-gradient(circle_at_30%_20%,#fed7aa,transparent_50%),radial-gradient(circle_at_80%_70%,#ffedd5,transparent_45%)] lg:block lg:aspect-[2/1]" />
+            )}
+          </div>
         </div>
       </section>
 
@@ -162,10 +166,7 @@ export default async function HomePage() {
 
         if (section.kind === "video") {
           return (
-            <section
-              key={section.id}
-              className="container-page py-8 sm:py-10"
-            >
+            <section key={section.id} className="container-page py-5 sm:py-7">
               <SectionHeading title={section.title} />
               <VideoReviewSection products={products} />
             </section>
@@ -174,7 +175,7 @@ export default async function HomePage() {
 
         if (section.style === "red_banner") {
           return (
-            <section key={section.id} className="container-page pt-8 sm:pt-10">
+            <section key={section.id} className="container-page py-5 sm:py-7">
               <div className="overflow-hidden rounded-2xl border-2 border-sale">
                 <div className="bg-sale px-4 py-3">
                   <h2 className="text-center text-base font-extrabold uppercase tracking-wide text-white sm:text-lg">
@@ -228,7 +229,7 @@ function ProductShelf({
   products: Product[];
 }) {
   return (
-    <section className="container-page py-8 sm:py-10">
+    <section className="container-page py-5 sm:py-7">
       <SectionHeading title={title} href={href} />
       <ProductRow products={products} />
     </section>
@@ -243,7 +244,7 @@ function SectionHeading({
   href?: string;
 }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-4 border-b-2 border-gray-100 pb-2.5 sm:mb-5">
+    <div className="mb-3 flex items-end justify-between gap-4 border-b-2 border-gray-100 pb-2">
       <div className="min-w-0">
         <h2 className="text-lg font-bold uppercase tracking-wide text-brand sm:text-xl">
           {title}

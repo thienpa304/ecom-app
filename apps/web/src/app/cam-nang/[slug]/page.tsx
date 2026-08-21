@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { stripHtml } from "@ecom/shared";
 import { ArticleBody, readingMinutes } from "@/components/ArticleBody";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { JsonLd } from "@/components/JsonLd";
 import { PostCard } from "@/components/PostCard";
 import { SafeImage } from "@/components/SafeImage";
@@ -108,25 +109,18 @@ export default async function PostPage({ params }: { params: Params }) {
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Trang chủ", path: "/" },
-          { name: "Cẩm nang", path: "/cam-nang" },
+          { name: "Kiến thức & Kinh nghiệm", path: "/cam-nang" },
           { name: post.title },
         ])}
       />
 
-      <nav
-        className="mb-3 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 sm:text-sm"
-        aria-label="Breadcrumb"
-      >
-        <Link href="/" className="hover:text-accent">
-          Trang chủ
-        </Link>
-        <span aria-hidden>/</span>
-        <Link href="/cam-nang" className="hover:text-accent">
-          Cẩm nang
-        </Link>
-        <span aria-hidden>/</span>
-        <span className="min-w-0 break-words text-gray-800">{post.title}</span>
-      </nav>
+      <Breadcrumb
+        items={[
+          { name: "Trang chủ", path: "/" },
+          { name: "Kiến thức & Kinh nghiệm", path: "/cam-nang" },
+          { name: post.title },
+        ]}
+      />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <article className="min-w-0">

@@ -27,6 +27,8 @@ import type {
 
   OpeningHoursEntry,
 
+  PolicyPage,
+
   Post,
 
   Product,
@@ -88,6 +90,19 @@ export type PostRow = {
   author_name?: string | null;
   is_published?: boolean | null;
   published_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type PolicyPageRow = {
+  id: string;
+  title: string;
+  slug: string;
+  body?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  sort_order?: number | null;
+  is_published?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -437,6 +452,21 @@ export function mapPostRow(row: PostRow): Post {
     authorName: row.author_name ?? "",
     isPublished: Boolean(row.is_published),
     publishedAt: row.published_at ?? null,
+    createdAt: row.created_at ?? "",
+    updatedAt: row.updated_at ?? "",
+  };
+}
+
+export function mapPolicyPageRow(row: PolicyPageRow): PolicyPage {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    body: row.body ?? "",
+    metaTitle: row.meta_title ?? "",
+    metaDescription: row.meta_description ?? "",
+    sortOrder: row.sort_order ?? 0,
+    isPublished: Boolean(row.is_published),
     createdAt: row.created_at ?? "",
     updatedAt: row.updated_at ?? "",
   };

@@ -11,6 +11,7 @@ import type {
   homeSectionStyleSchema,
   leadSchema,
   openingHoursEntrySchema,
+  policyPageSchema,
   postSchema,
   productMediaSchema,
   productSchema,
@@ -25,6 +26,7 @@ export type ProductMedia = z.infer<typeof productMediaSchema>;
 export type ProductImage = ProductMedia;
 export type Product = z.infer<typeof productSchema>;
 export type Post = z.infer<typeof postSchema>;
+export type PolicyPage = z.infer<typeof policyPageSchema>;
 export type Lead = z.infer<typeof leadSchema>;
 export type HomeSectionKind = z.infer<typeof homeSectionKindSchema>;
 export type HomeSectionStyle = z.infer<typeof homeSectionStyleSchema>;

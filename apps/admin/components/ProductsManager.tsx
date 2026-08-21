@@ -26,7 +26,29 @@ import {
   togglePublishAction,
 } from "@/lib/actions/products";
 import { formatVnd } from "@/lib/format";
-import type { ProductListItem } from "@/lib/store";
+import type { ProductListItem, ProductSort } from "@/lib/store";
+
+const DEFAULT_PAGE_SIZE = 20;
+
+/**
+ * `price` is the list price column; `sale_price` is the optional discount, so
+ * the labels say "giá gốc" to make clear which number the ordering uses.
+ */
+const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
+  { value: "created_desc", label: "Mới nhất" },
+  { value: "name_asc", label: "Tên A → Z" },
+  { value: "name_desc", label: "Tên Z → A" },
+  { value: "price_asc", label: "Giá gốc tăng dần" },
+  { value: "price_desc", label: "Giá gốc giảm dần" },
+];
+
+type ProductFilters = {
+  q?: string;
+  brand?: string;
+  category?: string;
+  published?: string;
+  sort?: string;
+};
 
 type Props = {
   products: ProductListItem[];
@@ -35,11 +57,7 @@ type Props = {
   pageSize: number;
   brands: Brand[];
   categories: Category[];
-  filters: {
-    q?: string;
-    brand?: string;
-    published?: string;
-  };
+  filters: ProductFilters;
 };
 
 export function ProductsManager({
@@ -54,6 +72,7 @@ export function ProductsManager({
   const router = useRouter();
   const { modal, message } = App.useApp();
   const [pending, startTransition] = useTransition();
+  const [filterForm] = Form.useForm<ProductFilters>();
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
@@ -66,39 +85,56 @@ export function ProductsManager({
     [categories],
   );
 
-  function pushQuery(next: {
-    q?: string;
-    brand?: string;
-    published?: string;
-    page?: number;
-    pageSize?: number;
-  }) {
+  // Child names alone are ambiguous ("Máy nổ" can sit under several parents),
+  // so the option label carries the parent name.
+  const categoryOptions = useMemo(() => {
+    const names = new Map(categories.map((c) => [c.id, c.name]));
+    return categories
+      .map((c) => ({
+        value: c.id,
+        label: c.parentId
+          ? `${names.get(c.parentId) ?? "?"} › ${c.name}`
+          : c.name,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "vi"));
+  }, [categories]);
+
+  // A key present in `next` always wins, even when its value is undefined —
+  // that is what lets "allowClear" on a Select actually drop the filter.
+  function pushQuery(
+    next: ProductFilters & { page?: number; pageSize?: number },
+  ) {
     const params = new URLSearchParams();
-    const q = next.q ?? filters.q;
-    const brand = next.brand ?? filters.brand;
-    const published = next.published ?? filters.published;
+    const pick = <K extends keyof ProductFilters>(key: K) =>
+      key in next ? next[key] : filters[key];
+
+    const q = pick("q");
+    const brand = pick("brand");
+    const category = pick("category");
+    const published = pick("published");
+    const sort = pick("sort");
     const p = next.page ?? page;
     const ps = next.pageSize ?? pageSize;
 
     if (q?.trim()) params.set("q", q.trim());
     if (brand) params.set("brand", brand);
+    if (category) params.set("category", category);
     if (published) params.set("published", published);
+    if (sort && sort !== "created_desc") params.set("sort", sort);
     if (p > 1) params.set("page", String(p));
-    if (ps !== 20) params.set("pageSize", String(ps));
+    if (ps !== DEFAULT_PAGE_SIZE) params.set("pageSize", String(ps));
 
     const qs = params.toString();
     router.push(qs ? `/products?${qs}` : "/products");
   }
 
-  function applyFilters(values: {
-    q?: string;
-    brand?: string;
-    published?: string;
-  }) {
+  function applyFilters(values: ProductFilters) {
     pushQuery({
       q: values.q,
       brand: values.brand,
+      category: values.category,
       published: values.published,
+      sort: values.sort,
       page: 1,
     });
   }
@@ -143,12 +179,15 @@ export function ProductsManager({
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
       <Card size="small">
         <Form
+          form={filterForm}
           layout={isMobile ? "vertical" : "inline"}
           onFinish={applyFilters}
           initialValues={{
             q: filters.q ?? "",
             brand: filters.brand ?? undefined,
+            category: filters.category ?? undefined,
             published: filters.published ?? undefined,
+            sort: filters.sort ?? "created_desc",
           }}
         >
           <Row gutter={[12, 0]} style={{ width: "100%" }}>
@@ -157,7 +196,7 @@ export function ProductsManager({
                 <Input allowClear placeholder="Tên, model…" />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12} md={6} lg={5}>
+            <Col xs={24} sm={12} md={8} lg={4}>
               <Form.Item
                 name="brand"
                 label="Thương hiệu"
@@ -170,7 +209,22 @@ export function ProductsManager({
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12} md={5} lg={4}>
+            <Col xs={24} sm={12} md={8} lg={5}>
+              <Form.Item
+                name="category"
+                label="Danh mục"
+                style={{ marginBottom: 12 }}
+              >
+                <Select
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="Tất cả"
+                  options={categoryOptions}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={4}>
               <Form.Item
                 name="published"
                 label="Xuất bản"
@@ -186,7 +240,19 @@ export function ProductsManager({
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={5} lg={9}>
+            <Col xs={24} sm={12} md={8} lg={5}>
+              <Form.Item
+                name="sort"
+                label="Sắp xếp"
+                style={{ marginBottom: 12 }}
+              >
+                <Select
+                  options={SORT_OPTIONS}
+                  onChange={() => filterForm.submit()}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={10} lg={24}>
               <Form.Item
                 label={isMobile ? " " : undefined}
                 style={{ marginBottom: 12 }}

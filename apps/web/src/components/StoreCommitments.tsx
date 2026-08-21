@@ -13,11 +13,11 @@ export function StoreCommitments() {
   return (
     <section
       aria-labelledby="commitments-heading"
-      className="mt-4 min-w-0 rounded-lg border border-gray-200 bg-brand-soft/60 p-4"
+      className="min-w-0 rounded-lg border border-gray-200 bg-brand-soft/60 p-4"
     >
       <h2
         id="commitments-heading"
-        className="mb-3 text-sm font-extrabold uppercase tracking-wide text-brand sm:text-base"
+        className="mb-2.5 text-sm font-extrabold tracking-wide text-brand"
       >
         Điện máy Lộc Phát Đạt cam kết
       </h2>
@@ -27,7 +27,7 @@ export function StoreCommitments() {
             <span className="mt-0.5 shrink-0 text-call-dark">
               <CommitmentIcon name={item.icon} />
             </span>
-            <span className="min-w-0 break-words text-sm font-semibold uppercase leading-snug text-gray-800">
+            <span className="min-w-0 break-words text-[13px] font-medium leading-snug text-gray-800">
               {item.text}
             </span>
           </li>
@@ -39,7 +39,7 @@ export function StoreCommitments() {
 
 function CommitmentIcon({ name }: { name: Commitment["icon"] }) {
   const shared = {
-    className: "h-5 w-5",
+    className: "h-4 w-4",
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",

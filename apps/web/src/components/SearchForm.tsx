@@ -315,7 +315,7 @@ export function SearchForm({
                 index === activeIndex ? "bg-accent/5" : "hover:bg-gray-50"
               }`}
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-100 bg-gray-50">
+              <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-100 bg-gray-50">
                 {item.imageUrl ? (
                   <SafeImage
                     src={item.imageUrl}
@@ -327,6 +327,15 @@ export function SearchForm({
                 ) : (
                   <SearchIcon className="h-4 w-4 text-gray-300" />
                 )}
+                {item.hasVideo ? (
+                  <span
+                    className="absolute bottom-0.5 right-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/65 text-white"
+                    title="Có video review"
+                  >
+                    <PlayIcon className="ml-px h-2.5 w-2.5" />
+                    <span className="sr-only">Có video review</span>
+                  </span>
+                ) : null}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-gray-900">
@@ -369,6 +378,14 @@ function SearchIcon({ className }: { className?: string }) {
     >
       <circle cx="11" cy="11" r="7" />
       <path strokeLinecap="round" d="M20 20l-3.5-3.5" />
+    </svg>
+  );
+}
+
+function PlayIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5.5v13l11-6.5z" />
     </svg>
   );
 }

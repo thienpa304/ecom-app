@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Brand, Category, SiteSettings } from "@ecom/shared";
 import { SafeImage } from "@/components/SafeImage";
-import { getBrands, getCategories } from "@/lib/data";
+import { getBrands, getCategories, listPolicyPages } from "@/lib/data";
 
 const KEYWORD_CATEGORY_LIMIT = 6;
 const KEYWORD_BRAND_LIMIT = 5;
@@ -55,9 +55,10 @@ function buildSearchKeywords(
 
 export async function Footer({ settings }: { settings: SiteSettings }) {
   const tel = settings.phone.replace(/\D/g, "");
-  const [allBrands, allCategories] = await Promise.all([
+  const [allBrands, allCategories, policyPages] = await Promise.all([
     getBrands(),
     getCategories(),
+    listPolicyPages(),
   ]);
 
   const brands = [...allBrands].sort((a, b) =>
@@ -111,8 +112,8 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
   return (
     <footer className="mt-auto border-t border-gray-200 bg-white">
       <div
-        className={`container-page grid gap-8 py-10 ${
-          hasEmbeds ? "lg:grid-cols-3" : "lg:grid-cols-2"
+        className={`container-page grid gap-6 py-7 sm:grid-cols-2 ${
+          hasEmbeds ? "lg:grid-cols-5" : "lg:grid-cols-4"
         }`}
       >
         <div>
@@ -164,57 +165,58 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
           </ul>
         </div>
 
-        <div>
-          <p className="text-sm font-semibold text-gray-900">Liên kết</p>
-          <ul className="mt-2 space-y-1 text-sm text-gray-600">
-            <li>
-              <Link href="/" className="hover:text-accent">
-                Trang chủ
-              </Link>
-            </li>
-            <li>
-              <Link href="/san-pham" className="hover:text-accent">
-                Danh mục sản phẩm
-              </Link>
-            </li>
-            <li>
-              <Link href="/cam-nang" className="hover:text-accent">
-                Cẩm nang
-              </Link>
-            </li>
-          </ul>
+        {categories.length > 0 ? (
+          <div className="min-w-0">
+            <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+              Danh mục sản phẩm
+            </p>
+            <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
+              {categories.map((category) => (
+                <li key={category.id}>
+                  <Link
+                    href={`/danh-muc/${category.slug}`}
+                    className="break-words hover:text-accent"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
-          {categories.length > 0 ? (
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Danh mục
-              </p>
-              <ul className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs leading-5 text-gray-600">
-                {categories.map((category) => (
-                  <li key={category.id}>
-                    <Link
-                      href={`/danh-muc/${category.slug}`}
-                      className="hover:text-accent"
-                    >
-                      {category.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+        {policyPages.length > 0 ? (
+          <div className="min-w-0">
+            <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+              Hỗ trợ khách hàng
+            </p>
+            <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
+              {policyPages.map((page) => (
+                <li key={page.id}>
+                  <Link
+                    href={`/chinh-sach/${page.slug}`}
+                    className="break-words hover:text-accent"
+                  >
+                    {page.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
+        <div className="min-w-0">
           {brands.length > 0 ? (
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-accent">
                 Thương hiệu
               </p>
-              <ul className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 text-xs leading-5 text-gray-600">
+              <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
                 {brands.map((brand) => (
                   <li key={brand.id}>
                     <Link
                       href={`/thuong-hieu/${brand.slug}`}
-                      className="hover:text-accent"
+                      className="break-words hover:text-accent"
                     >
                       {brand.name}
                     </Link>
@@ -238,15 +240,36 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
                     rel="noopener noreferrer"
                     aria-label={label}
                     title={label}
-                    className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-sm transition hover:scale-110 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    className="flex h-11 w-11 items-center justify-center rounded-full text-white shadow-sm transition hover:scale-110 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     style={{ backgroundColor: bg }}
                   >
-                    <Icon className="h-6 w-6" />
+                    <Icon className="h-5 w-5" />
                   </a>
                 ))}
               </div>
             </div>
           ) : null}
+
+          <div className="mt-6">
+            <p className="text-sm font-semibold text-gray-900">Liên kết</p>
+            <ul className="mt-2 space-y-1 text-sm text-gray-600">
+              <li>
+                <Link href="/" className="hover:text-accent">
+                  Trang chủ
+                </Link>
+              </li>
+              <li>
+                <Link href="/san-pham" className="hover:text-accent">
+                  Danh mục sản phẩm
+                </Link>
+              </li>
+              <li>
+                <Link href="/cam-nang" className="hover:text-accent">
+                  Kiến thức &amp; Kinh nghiệm
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {hasEmbeds ? (

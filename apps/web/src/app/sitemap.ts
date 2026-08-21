@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next";
-import { listSitemapEntries, type SitemapEntry } from "@/lib/data";
+import {
+  listPolicyPages,
+  listSitemapEntries,
+  type SitemapEntry,
+} from "@/lib/data";
 import { absoluteUrl } from "@/lib/site";
 
 function toDate(value?: string): Date | undefined {
@@ -30,7 +34,10 @@ function newestLastModified(entries: SitemapEntry[]): Date | undefined {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries = await listSitemapEntries();
+  const [entries, policyPages] = await Promise.all([
+    listSitemapEntries(),
+    listPolicyPages(),
+  ]);
   const latest = toDate(entries.latest);
 
   return [
@@ -79,6 +86,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       (slug) => `/cam-nang/${slug}`,
       "monthly",
       0.6,
+    ),
+    ...toSitemapItems(
+      policyPages.map((page) => ({
+        slug: page.slug,
+        lastModified: page.updatedAt,
+      })),
+      (slug) => `/chinh-sach/${slug}`,
+      "monthly",
+      0.3,
     ),
   ];
 }

@@ -1,3 +1,6 @@
+import { AccordionItem } from "@/components/AccordionItem";
+import { SectionCard } from "@/components/SectionCard";
+
 export function StorePolicies({
   shippingPolicy,
   returnPolicy,
@@ -10,32 +13,24 @@ export function StorePolicies({
   if (!shipping && !returns) return null;
 
   return (
-    <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
-      <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold uppercase text-gray-900">
-        Chính sách mua hàng và bảo hành
-      </h2>
-      <div className="grid min-w-0 gap-4 px-4 py-4 sm:grid-cols-2 sm:gap-6">
-        {shipping && (
-          <div className="min-w-0">
-            <h3 className="mb-1.5 text-sm font-semibold text-gray-900">
-              Giao hàng
-            </h3>
-            <p className="min-w-0 whitespace-pre-line break-words text-sm leading-relaxed text-gray-600">
-              {shipping}
-            </p>
-          </div>
-        )}
-        {returns && (
-          <div className="min-w-0">
-            <h3 className="mb-1.5 text-sm font-semibold text-gray-900">
-              Đổi trả &amp; bảo hành
-            </h3>
-            <p className="min-w-0 whitespace-pre-line break-words text-sm leading-relaxed text-gray-600">
-              {returns}
-            </p>
-          </div>
-        )}
-      </div>
-    </section>
+    <SectionCard
+      title="Chính sách mua hàng và bảo hành"
+      bodyClassName="min-w-0 divide-y divide-gray-100"
+    >
+      {shipping && (
+        <AccordionItem title="Giao hàng">
+          <p className="min-w-0 whitespace-pre-line break-words text-sm leading-relaxed text-gray-600">
+            {shipping}
+          </p>
+        </AccordionItem>
+      )}
+      {returns && (
+        <AccordionItem title="Đổi trả & bảo hành">
+          <p className="min-w-0 whitespace-pre-line break-words text-sm leading-relaxed text-gray-600">
+            {returns}
+          </p>
+        </AccordionItem>
+      )}
+    </SectionCard>
   );
 }

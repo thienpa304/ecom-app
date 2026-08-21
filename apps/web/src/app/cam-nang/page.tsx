@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { JsonLd } from "@/components/JsonLd";
 import { Pagination } from "@/components/Pagination";
 import { PostCard } from "@/components/PostCard";
@@ -10,7 +11,7 @@ import { absoluteUrl } from "@/lib/site";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const PATH = "/cam-nang";
-const HEADLINE = "Cẩm nang chọn và dùng máy xịt rửa cao áp";
+const HEADLINE = "Kiến thức & kinh nghiệm chọn và dùng máy xịt rửa cao áp";
 const INTRO =
   "Hướng dẫn chọn máy theo nhu cầu thực tế, giải thích thông số, và cách xử lý các lỗi thường gặp — viết từ kinh nghiệm bán và bảo hành hàng ngày tại cửa hàng.";
 
@@ -64,20 +65,16 @@ export default async function CamNangPage({
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Trang chủ", path: "/" },
-          { name: "Cẩm nang" },
+          { name: "Kiến thức & Kinh nghiệm" },
         ])}
       />
 
-      <nav
-        className="mb-3 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 sm:text-sm"
-        aria-label="Breadcrumb"
-      >
-        <Link href="/" className="hover:text-accent">
-          Trang chủ
-        </Link>
-        <span aria-hidden>/</span>
-        <span className="min-w-0 break-words text-gray-800">Cẩm nang</span>
-      </nav>
+      <Breadcrumb
+        items={[
+          { name: "Trang chủ", path: "/" },
+          { name: "Kiến thức & Kinh nghiệm" },
+        ]}
+      />
 
       <header className="mb-5 border-b-2 border-gray-100 pb-3">
         <h1 className="text-xl font-extrabold uppercase tracking-wide text-brand sm:text-2xl">
@@ -90,7 +87,7 @@ export default async function CamNangPage({
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center">
           <p className="font-medium text-gray-800">Chưa có bài viết nào</p>
           <p className="mt-1 text-sm text-gray-500">
-            Cẩm nang đang được cập nhật, mời bạn quay lại sau.
+            Nội dung đang được cập nhật, mời bạn quay lại sau.
           </p>
           <Link
             href="/san-pham"

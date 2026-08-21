@@ -7,6 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ContactFab } from "@/components/ContactFab";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { JsonLd } from "@/components/JsonLd";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { getSiteSettings, listCategoryNav } from "@/lib/data";
@@ -92,6 +93,11 @@ export default async function RootLayout({
           navCategories={navCategories}
         />
         <main className="min-w-0 flex-1 pb-28 sm:pb-8">{children}</main>
+        <WhyChooseUs
+          siteName={settings.siteName}
+          phone={settings.phone}
+          zaloUrl={settings.zaloUrl}
+        />
         <Footer settings={settings} />
         <ContactFab phone={settings.phone} zaloUrl={settings.zaloUrl} />
         {GA_ID ? (

@@ -5,7 +5,15 @@ import { MobileFilters } from "@/components/MobileFilters";
 import { Pagination } from "@/components/Pagination";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductFilters } from "@/components/ProductFilters";
-import { getBrands, getCategories, getSiteSettings, listProducts } from "@/lib/data";
+import { SectionCard } from "@/components/SectionCard";
+import { VideoReviewSection } from "@/components/VideoReviewSection";
+import {
+  getBrands,
+  getCategories,
+  getSiteSettings,
+  listProducts,
+  listVideoProductsBySearch,
+} from "@/lib/data";
 import { siteShareImage } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
@@ -90,7 +98,7 @@ export default async function CatalogPage({
   if (pageSize !== 12) query.set("pageSize", String(pageSize));
   const queryString = query.toString();
 
-  const [brands, categories, result] = await Promise.all([
+  const [brands, categories, result, videoProducts] = await Promise.all([
     getBrands(),
     getCategories(),
     listProducts({
@@ -102,6 +110,7 @@ export default async function CatalogPage({
       pageSize,
       q,
     }),
+    q ? listVideoProductsBySearch(q) : Promise.resolve([]),
   ]);
 
   return (
@@ -153,6 +162,12 @@ export default async function CatalogPage({
               ))}
             </div>
           )}
+
+          {videoProducts.length > 0 ? (
+            <SectionCard title="Video review">
+              <VideoReviewSection products={videoProducts} />
+            </SectionCard>
+          ) : null}
 
           <Pagination
             page={result.page}

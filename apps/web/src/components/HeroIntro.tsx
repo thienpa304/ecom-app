@@ -47,16 +47,16 @@ export function HeroIntro({
         )}
       </h1>
 
-      <span className="mt-3 block h-1 w-20 rounded-full bg-accent" aria-hidden />
+      <span className="mt-2 block h-1 w-20 rounded-full bg-accent" aria-hidden />
 
       {subtitle ? (
-        <p className="mt-3 max-w-xl text-xs text-gray-600 sm:text-sm">
+        <p className="mt-2 max-w-xl text-xs text-gray-600 sm:text-sm">
           {subtitle}
         </p>
       ) : null}
 
       {bullets.length ? (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-3 space-y-2.5">
           {bullets.map((bullet, i) => (
             <li key={i} className="flex gap-2.5">
               <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">

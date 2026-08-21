@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   mapProductRow,
+  videoMedia,
   type ProductMediaRow,
   type ProductRow,
 } from "@ecom/shared";
@@ -18,6 +19,7 @@ export type SearchSuggestItem = {
   price: number;
   salePrice: number | null;
   imageUrl: string | null;
+  hasVideo: boolean;
 };
 
 type ProductWithMedia = ProductRow & {
@@ -35,6 +37,7 @@ function toSuggestion(row: ProductWithMedia): SearchSuggestItem {
   const { product_media, ...productRow } = row;
   const product = mapProductRow(productRow, product_media ?? []);
   const firstImage = product.media.find((item) => item.kind === "image");
+  const hasVideo = videoMedia(product).length > 0;
 
   return {
     name: product.name,
@@ -43,6 +46,7 @@ function toSuggestion(row: ProductWithMedia): SearchSuggestItem {
     price: product.price,
     salePrice: product.salePrice,
     imageUrl: firstImage?.url ?? null,
+    hasVideo,
   };
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Category } from "@ecom/shared";
 import { CatalogToolbar } from "@/components/CatalogToolbar";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { JsonLd } from "@/components/JsonLd";
 import { MobileFilters } from "@/components/MobileFilters";
 import { Pagination } from "@/components/Pagination";
@@ -154,22 +155,13 @@ export default async function CategoryPage({
         ])}
       />
 
-      <nav
-        className="mb-3 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 sm:text-sm"
-        aria-label="Breadcrumb"
-      >
-        <Link href="/" className="hover:text-accent">
-          Trang chủ
-        </Link>
-        <span aria-hidden>/</span>
-        <Link href="/san-pham" className="hover:text-accent">
-          Sản phẩm
-        </Link>
-        <span aria-hidden>/</span>
-        <span className="min-w-0 break-words text-gray-800">
-          {category.name}
-        </span>
-      </nav>
+      <Breadcrumb
+        items={[
+          { name: "Trang chủ", path: "/" },
+          { name: "Sản phẩm", path: "/san-pham" },
+          { name: category.name },
+        ]}
+      />
 
       <header className="mb-4 border-b-2 border-gray-100 pb-3 sm:mb-5">
         <h1 className="text-xl font-extrabold uppercase tracking-wide text-brand sm:text-2xl">

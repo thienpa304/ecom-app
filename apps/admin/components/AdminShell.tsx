@@ -4,6 +4,7 @@ import {
   AppstoreOutlined,
   DashboardOutlined,
   FileImageOutlined,
+  FileTextOutlined,
   LayoutOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -55,6 +56,12 @@ const NAV = [
     href: "/posts",
     label: "Cẩm nang",
     icon: <ReadOutlined />,
+  },
+  {
+    key: "/policies",
+    href: "/policies",
+    label: "Trang chính sách",
+    icon: <FileTextOutlined />,
   },
   {
     key: "/home-sections",

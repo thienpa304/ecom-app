@@ -5,6 +5,7 @@ import {
   mapCategoryRow,
   mapHomeSectionRow,
   mapLeadRow,
+  mapPolicyPageRow,
   mapPostRow,
   mapProductRow,
   mapSiteSettingsRow,
@@ -19,6 +20,8 @@ import {
   type HomeSectionRow,
   type Lead,
   type LeadRow,
+  type PolicyPage,
+  type PolicyPageRow,
   type Post,
   type PostRow,
   type Product,
@@ -85,12 +88,33 @@ export type ProductListItem = {
   isPublished: boolean;
 };
 
+export const PRODUCT_SORTS = {
+  created_desc: { column: "created_at", ascending: false },
+  name_asc: { column: "name", ascending: true },
+  name_desc: { column: "name", ascending: false },
+  price_asc: { column: "price", ascending: true },
+  price_desc: { column: "price", ascending: false },
+} as const;
+
+export type ProductSort = keyof typeof PRODUCT_SORTS;
+
+export const DEFAULT_PRODUCT_SORT: ProductSort = "created_desc";
+
+export function normalizeProductSort(value?: string | null): ProductSort {
+  if (value && Object.hasOwn(PRODUCT_SORTS, value)) {
+    return value as ProductSort;
+  }
+  return DEFAULT_PRODUCT_SORT;
+}
+
 export type ListProductsParams = {
   page?: number;
   pageSize?: number;
+  sort?: ProductSort;
   filters?: {
     q?: string;
     brandId?: string;
+    categoryId?: string;
     published?: string;
   };
 };
@@ -140,11 +164,14 @@ export async function listProducts(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  const sort = PRODUCT_SORTS[params.sort ?? DEFAULT_PRODUCT_SORT];
+
   const supabase = createServerClient();
   let query = supabase
     .from("products")
     .select(PRODUCT_LIST_COLUMNS, { count: "exact" })
-    .order("created_at", { ascending: false })
+    .order(sort.column, { ascending: sort.ascending })
+    .order("id", { ascending: true })
     .range(from, to);
 
   const q = filters.q?.trim();
@@ -156,6 +183,9 @@ export async function listProducts(
   }
   if (filters.brandId) {
     query = query.eq("brand_id", filters.brandId);
+  }
+  if (filters.categoryId) {
+    query = query.eq("category_id", filters.categoryId);
   }
   if (filters.published === "1") {
     query = query.eq("is_published", true);
@@ -495,6 +525,167 @@ export async function togglePostPublished(id: string): Promise<Post | null> {
   return updatePost(id, { ...post, isPublished, publishedAt });
 }
 
+export type PolicyPageInput = Omit<
+  PolicyPage,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+/**
+ * Postgres 42P01 = undefined_table. Xảy ra khi chủ shop chưa chạy migration
+ * `20260821090000_policy_pages.sql`. Trang admin bắt mã này để hiện hướng dẫn
+ * chạy migration thay vì crash trắng trang.
+ */
+export const POLICY_PAGES_TABLE_MISSING = "POLICY_PAGES_TABLE_MISSING";
+
+const PG_UNDEFINED_TABLE = "42P01";
+/** PostgREST trả mã này khi bảng không có trong schema cache. */
+const PGRST_UNKNOWN_TABLE = "PGRST205";
+const PG_UNIQUE_VIOLATION = "23505";
+
+function isMissingTableError(error: { code?: string; message: string }): boolean {
+  if (error.code === PG_UNDEFINED_TABLE) return true;
+  if (error.code === PGRST_UNKNOWN_TABLE) return true;
+  return /could not find the table|relation .* does not exist/i.test(
+    error.message,
+  );
+}
+
+function policyPageError(
+  error: { code?: string; message: string },
+  fallback: string,
+): Error {
+  if (isMissingTableError(error)) {
+    return new Error(POLICY_PAGES_TABLE_MISSING);
+  }
+  if (error.code === PG_UNIQUE_VIOLATION) {
+    return new Error("Slug này đã được dùng cho một trang chính sách khác");
+  }
+  return new Error(`${fallback}: ${error.message}`);
+}
+
+function policyPageFields(input: PolicyPageInput) {
+  return {
+    title: input.title,
+    slug: input.slug,
+    body: input.body,
+    meta_title: input.metaTitle,
+    meta_description: input.metaDescription,
+    sort_order: input.sortOrder,
+    is_published: input.isPublished,
+  };
+}
+
+export async function listPolicyPages(): Promise<PolicyPage[]> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("policy_pages")
+    .select("*")
+    .order("sort_order")
+    .order("title");
+
+  if (error) {
+    throw policyPageError(error, "Failed to fetch policy pages");
+  }
+  return ((data ?? []) as PolicyPageRow[]).map(mapPolicyPageRow);
+}
+
+export async function getPolicyPageById(
+  id: string,
+): Promise<PolicyPage | undefined> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("policy_pages")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw policyPageError(error, "Failed to fetch policy page");
+  }
+  if (!data) return undefined;
+  return mapPolicyPageRow(data as PolicyPageRow);
+}
+
+/**
+ * Id đọc được theo slug (`policy-bao-hanh`) thay vì timestamp như products —
+ * slug là unique nên id theo slug vẫn duy nhất. Nếu id đã bị chiếm (slug cũ bị
+ * đổi rồi tạo lại) thì thêm hậu tố số.
+ */
+async function nextPolicyPageId(slug: string): Promise<string> {
+  const base = `policy-${slug}`;
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("policy_pages")
+    .select("id")
+    .like("id", `${base}%`);
+
+  if (error) {
+    throw policyPageError(error, "Failed to check policy page id");
+  }
+
+  const taken = new Set(((data ?? []) as { id: string }[]).map((r) => r.id));
+  if (!taken.has(base)) return base;
+
+  for (let suffix = 2; suffix <= 50; suffix += 1) {
+    const candidate = `${base}-${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base}-${Date.now()}`;
+}
+
+export async function createPolicyPage(
+  input: PolicyPageInput,
+): Promise<PolicyPage> {
+  const id = await nextPolicyPageId(input.slug);
+  const supabase = createServerClient();
+
+  const { data, error } = await supabase
+    .from("policy_pages")
+    .insert({ id, ...policyPageFields(input) })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw policyPageError(error, "Failed to create policy page");
+  }
+  return mapPolicyPageRow(data as PolicyPageRow);
+}
+
+export async function updatePolicyPage(
+  id: string,
+  input: PolicyPageInput,
+): Promise<PolicyPage | null> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("policy_pages")
+    .update({
+      ...policyPageFields(input),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw policyPageError(error, "Failed to update policy page");
+  }
+  if (!data) return null;
+  return mapPolicyPageRow(data as PolicyPageRow);
+}
+
+export async function deletePolicyPage(id: string): Promise<boolean> {
+  const supabase = createServerClient();
+  const { error, count } = await supabase
+    .from("policy_pages")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  if (error) {
+    throw policyPageError(error, "Failed to delete policy page");
+  }
+  return (count ?? 0) > 0;
+}
+
 export async function createBrand(input: Omit<Brand, "id">): Promise<Brand> {
   const id = `brand-${Date.now()}`;
   const supabase = createServerClient();
@@ -576,6 +767,50 @@ export async function createCategory(
     throw new Error(`Failed to create category: ${error.message}`);
   }
   return mapCategoryRow(data as CategoryRow);
+}
+
+export async function updateCategory(
+  id: string,
+  input: Omit<Category, "id">,
+): Promise<Category | null> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .update({
+      name: input.name,
+      slug: input.slug,
+      parent_id: input.parentId,
+      sort_order: input.sortOrder,
+    })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to update category: ${error.message}`);
+  }
+  if (!data) return null;
+  return mapCategoryRow(data as CategoryRow);
+}
+
+export async function reorderCategories(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+
+  const supabase = createServerClient();
+  const results = await Promise.all(
+    ids.map((id, index) =>
+      supabase
+        .from("categories")
+        .update({ sort_order: index + 1 })
+        .eq("id", id),
+    ),
+  );
+
+  for (const res of results) {
+    if (res.error) {
+      throw new Error(`Failed to reorder categories: ${res.error.message}`);
+    }
+  }
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {

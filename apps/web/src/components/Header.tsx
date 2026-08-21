@@ -27,7 +27,7 @@ export function Header({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-        <div className="container-page flex items-center gap-2 py-2.5 sm:gap-4 sm:py-3">
+        <div className="container-page flex items-center gap-2 py-2 sm:gap-4 sm:py-2.5">
           {logoUrl ? (
             <Link href="/" className="flex shrink-0 items-center">
               <SafeImage
@@ -36,7 +36,7 @@ export function Header({
                 width={500}
                 height={200}
                 priority
-                className="h-9 w-auto object-contain sm:h-14"
+                className="h-8 w-auto object-contain sm:h-11"
               />
             </Link>
           ) : (
@@ -50,7 +50,7 @@ export function Header({
 
           <Suspense
             fallback={
-              <div className="h-10 min-w-0 flex-1 animate-pulse rounded-lg bg-gray-100 sm:h-11" />
+              <div className="h-9 min-w-0 flex-1 animate-pulse rounded-lg bg-gray-100 sm:h-10" />
             }
           >
             <SearchForm placeholder={searchPlaceholder} />
@@ -59,7 +59,7 @@ export function Header({
           <nav className="hidden shrink-0 sm:block" aria-label="Liên hệ">
             <a
               href={`tel:${tel}`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-call px-3 py-1.5 text-white transition hover:bg-call-dark focus:outline-none focus:ring-2 focus:ring-call/40"
+              className="inline-flex min-h-10 items-center gap-2 rounded-md bg-call px-3 py-1 text-white transition hover:bg-call-dark focus:outline-none focus:ring-2 focus:ring-call/40"
               aria-label={`${ctaLabel} ${phone}`}
             >
               <PhoneIcon className="h-5 w-5 shrink-0" />
@@ -80,10 +80,10 @@ export function Header({
         className="border-b border-gray-200 bg-white"
         aria-label="Danh mục chính"
       >
-        <div className="container-page flex items-center gap-1 overflow-x-auto py-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-x-2 sm:gap-y-1 sm:overflow-x-visible [&::-webkit-scrollbar]:hidden">
+        <div className="container-page flex items-center gap-0.5 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-x-1.5 sm:gap-y-0.5 sm:overflow-x-visible [&::-webkit-scrollbar]:hidden">
           <Link
             href="/san-pham"
-            className="shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-[15px] font-bold text-gray-900 transition hover:bg-accent/10 hover:text-accent"
+            className="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-bold text-gray-900 transition hover:bg-accent/10 hover:text-accent"
           >
             Tất cả sản phẩm
           </Link>
@@ -91,7 +91,7 @@ export function Header({
             <div key={category.id} className="group relative shrink-0">
               <Link
                 href={`/danh-muc/${category.slug}`}
-                className="flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2 text-[15px] font-semibold text-gray-700 transition hover:bg-accent/10 hover:text-accent group-focus-within:bg-accent/10 group-hover:bg-accent/10 group-hover:text-accent"
+                className="flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-semibold text-gray-700 transition hover:bg-accent/10 hover:text-accent group-focus-within:bg-accent/10 group-hover:bg-accent/10 group-hover:text-accent"
               >
                 {category.name}
                 {children.length ? (
@@ -116,9 +116,9 @@ export function Header({
           ))}
           <Link
             href="/cam-nang"
-            className="shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-[15px] font-bold text-accent transition hover:bg-accent/10"
+            className="shrink-0 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-bold text-accent transition hover:bg-accent/10"
           >
-            Cẩm nang
+            Kiến thức
           </Link>
         </div>
       </nav>

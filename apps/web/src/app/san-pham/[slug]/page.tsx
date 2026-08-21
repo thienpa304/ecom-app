@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { STOCK_STATUS, primaryImage } from "@ecom/shared";
+import { STOCK_STATUS, primaryImage, videoMedia } from "@ecom/shared";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { FaqSection } from "@/components/FaqSection";
 import { JsonLd } from "@/components/JsonLd";
-import { LeadForm } from "@/components/LeadForm";
+import { SectionCard } from "@/components/SectionCard";
 import { StorePolicies } from "@/components/StorePolicies";
+import { VideoReviewSection } from "@/components/VideoReviewSection";
 import {
   descriptionPlainText,
   ProductDescription,
@@ -23,6 +25,7 @@ import {
   getSiteSettings,
   listProducts,
   listPublishedProductSlugs,
+  listVideoProducts,
 } from "@/lib/data";
 import { discountPercent, formatVnd } from "@/lib/format";
 import { breadcrumbJsonLd, faqJsonLd, productJsonLd } from "@/lib/seo";
@@ -131,6 +134,18 @@ export default async function ProductDetailPage({
   );
   const relatedProducts = categoryPeers.slice(0, 4);
 
+  // Ưu tiên video của sản phẩm cùng danh mục (đã có sẵn media trong
+  // categoryPeers); nếu danh mục chưa có video nào thì lấy danh sách chung.
+  const categoryVideoProducts = categoryPeers.filter(
+    (item) => videoMedia(item).length > 0,
+  );
+  const videoProducts =
+    categoryVideoProducts.length > 0
+      ? categoryVideoProducts.slice(0, 4)
+      : (await listVideoProducts(5))
+          .filter((item) => item.id !== product.id)
+          .slice(0, 4);
+
   const faqData = faqJsonLd(settings.faqs ?? []);
 
   const crumbs = [
@@ -148,44 +163,19 @@ export default async function ProductDetailPage({
   ];
 
   return (
-    <div className="container-page min-w-0 py-6 sm:py-8">
+    <div className="container-page min-w-0 py-4 sm:py-6">
       <JsonLd data={productJsonLd(product, { brand, category, settings })} />
       <JsonLd data={breadcrumbJsonLd(crumbs)} />
       {faqData ? <JsonLd data={faqData} /> : null}
 
-      <nav
-        className="mb-4 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500 sm:text-sm"
-        aria-label="Breadcrumb"
-      >
-        <Link href="/" className="hover:text-accent">
-          Trang chủ
-        </Link>
-        <span aria-hidden>/</span>
-        <Link href="/san-pham" className="hover:text-accent">
-          Sản phẩm
-        </Link>
-        {category && (
-          <>
-            <span aria-hidden>/</span>
-            <Link
-              href={`/danh-muc/${category.slug}`}
-              className="hover:text-accent"
-            >
-              {category.name}
-            </Link>
-          </>
-        )}
-        <span aria-hidden>/</span>
-        <span className="min-w-0 break-words text-gray-800">{product.name}</span>
-      </nav>
+      <Breadcrumb items={crumbs} />
 
-      <div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-8">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-2 lg:gap-7">
         <div className="min-w-0">
           <ProductGallery media={product.media} name={product.name} />
-          <StoreCommitments />
         </div>
 
-        <div className="min-w-0 space-y-4 sm:space-y-5">
+        <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
           {brand && (
             <Link
               href={`/thuong-hieu/${brand.slug}`}
@@ -245,23 +235,19 @@ export default async function ProductDetailPage({
             productModel={product.model}
           />
 
-          <div
-            id="lien-he"
-            className="rounded-lg border border-gray-200 bg-white p-4"
-          >
-            <LeadForm productId={product.id} productName={product.name} />
+          {/* mt-auto để mép dưới khối cam kết khớp mép dưới ảnh gallery */}
+          <div className="lg:mt-auto">
+            <StoreCommitments />
           </div>
         </div>
       </div>
 
-      <section className="mt-8 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-10">
-        <h2
-          id="specs-heading"
-          className="border-b border-gray-100 px-4 py-3 text-base font-bold uppercase text-gray-900"
+      <div className="mt-5 min-w-0 space-y-4 sm:mt-7 sm:space-y-5">
+        <SectionCard
+          title="Thông số kỹ thuật"
+          headingId="specs-heading"
+          bodyClassName="min-w-0 overflow-x-auto"
         >
-          Thông số kỹ thuật
-        </h2>
-        <div className="overflow-x-auto">
           <table
             className="w-full min-w-0 table-fixed text-sm"
             aria-labelledby="specs-heading"
@@ -302,30 +288,40 @@ export default async function ProductDetailPage({
                 ))}
             </tbody>
           </table>
-        </div>
-      </section>
+        </SectionCard>
 
-      {product.description ? (
-        <section className="mt-6 min-w-0 rounded-lg border border-gray-200 bg-white sm:mt-8">
-          <h2 className="border-b border-gray-100 px-4 py-3 text-base font-bold uppercase text-gray-900">
-            Mô tả sản phẩm
-          </h2>
-          <div className="min-w-0 px-4 py-4">
+        {product.description ? (
+          <SectionCard title="Mô tả sản phẩm">
             <ProductDescription html={product.description} />
-          </div>
-        </section>
-      ) : null}
+          </SectionCard>
+        ) : null}
 
-      <StorePolicies
-        shippingPolicy={settings.shippingPolicy}
-        returnPolicy={settings.returnPolicy}
-      />
+        <StorePolicies
+          shippingPolicy={settings.shippingPolicy}
+          returnPolicy={settings.returnPolicy}
+        />
 
-      <FaqSection faqs={settings.faqs ?? []} />
+        <FaqSection faqs={settings.faqs ?? []} />
 
-      <RelatedProducts products={relatedProducts} />
+        {videoProducts.length > 0 && (
+          <SectionCard title="Video review sản phẩm">
+            <VideoReviewSection products={videoProducts} />
+          </SectionCard>
+        )}
 
-      <RecentlyViewed currentSlug={product.slug} products={categoryPeers} />
+        <RelatedProducts
+          products={relatedProducts}
+          viewAllHref={
+            category ? `/danh-muc/${category.slug}` : "/san-pham"
+          }
+        />
+
+        <RecentlyViewed
+          currentSlug={product.slug}
+          products={categoryPeers}
+          viewAllHref="/san-pham"
+        />
+      </div>
     </div>
   );
 }

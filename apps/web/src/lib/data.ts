@@ -7,9 +7,11 @@ import {
   mapCategoryRow,
   mapHomeSectionRow,
   mapLeadRow,
+  mapPolicyPageRow,
   mapPostRow,
   mapProductRow,
   mapSiteSettingsRow,
+  videoMedia,
   type Brand,
   type BrandRow,
   type Category,
@@ -18,6 +20,8 @@ import {
   type HomeSectionRow,
   type Lead,
   type LeadRow,
+  type PolicyPage,
+  type PolicyPageRow,
   type Post,
   type PostRow,
   type Product,
@@ -297,6 +301,70 @@ const loadVideoProducts = unstable_cache(
 
 export function listVideoProducts(limit = 4): Promise<Product[]> {
   return loadVideoProducts(limit);
+}
+
+const VIDEO_MEDIA_KINDS = ["video", "embed"];
+
+async function queryVideoProductsBySearch(
+  q: string,
+  limit: number,
+): Promise<Product[]> {
+  const searchOr = buildSearchOr(q);
+  if (!searchOr) return [];
+
+  const supabase = createServerClient();
+
+  // Bước 1: chỉ lấy id sản phẩm khớp từ khóa VÀ có media video/embed.
+  // Inner join + lọc trên bảng nhúng để không phải quét toàn bộ product_media.
+  const { data: idRows, error: idError } = await supabase
+    .from("products")
+    .select("id, product_media!inner(kind)")
+    .eq("is_published", true)
+    .or(searchOr)
+    .in("product_media.kind", VIDEO_MEDIA_KINDS)
+    .order("sold_count", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (idError) {
+    console.error("listVideoProductsBySearch:", idError.message);
+    return [];
+  }
+
+  const ids = [
+    ...new Set((idRows ?? []).map((row) => (row as { id: string }).id)),
+  ];
+  if (ids.length === 0) return [];
+
+  // Bước 2: lấy đủ sản phẩm + toàn bộ media (cần ảnh poster fallback).
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, product_media(*)")
+    .in("id", ids)
+    .order("sold_count", { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error("listVideoProductsBySearch:", error.message);
+    return [];
+  }
+
+  return mapRows(data as ProductWithMedia[]).filter(
+    (product) => videoMedia(product).length > 0,
+  );
+}
+
+export function listVideoProductsBySearch(
+  q: string,
+  limit = 4,
+): Promise<Product[]> {
+  const normalized = q.trim();
+  if (!normalized) return Promise.resolve([]);
+
+  const cacheKey = JSON.stringify({ q: normalized, limit });
+  return unstable_cache(
+    () => queryVideoProductsBySearch(normalized, limit),
+    ["video-products-search", cacheKey],
+    { revalidate: REVALIDATE_SECONDS, tags: ["products"] },
+  )();
 }
 
 export async function getProductBySlug(
@@ -788,6 +856,73 @@ export async function listPosts(
     ["list-posts", JSON.stringify({ page, pageSize })],
     { revalidate: REVALIDATE_SECONDS, tags: ["posts"] },
   )();
+}
+
+/**
+ * Bảng chưa tồn tại vì chủ shop chưa chạy migration
+ * `20260821090000_policy_pages.sql`. Khi đó storefront phải chạy bình thường
+ * (footer chỉ ẩn cột chính sách, trang /chinh-sach trả 404) thay vì sập toàn
+ * site — vì footer render ở layout nên một lỗi ở đây sẽ làm chết MỌI trang.
+ *
+ * PostgREST báo `PGRST205` ("Could not find the table ... in the schema
+ * cache"); `42P01` là mã undefined_table của Postgres thuần. Nhận cả hai, và
+ * dò thêm theo message để chắc chắn không phụ thuộc phiên bản PostgREST.
+ */
+function isMissingTableError(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  if (error.code === "PGRST205" || error.code === "42P01") return true;
+  const message = error.message?.toLowerCase() ?? "";
+  return (
+    message.includes("could not find the table") ||
+    message.includes("does not exist")
+  );
+}
+
+const loadPolicyPages = unstable_cache(
+  async (): Promise<PolicyPage[]> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("policy_pages")
+      .select("*")
+      .eq("is_published", true)
+      .order("sort_order")
+      .order("title");
+
+    if (error) {
+      if (!isMissingTableError(error)) {
+        console.error("listPolicyPages:", error.message);
+      }
+      return [];
+    }
+    return ((data ?? []) as PolicyPageRow[]).map(mapPolicyPageRow);
+  },
+  ["policy-pages"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["policy-pages"] },
+);
+
+export function listPolicyPages(): Promise<PolicyPage[]> {
+  return loadPolicyPages();
+}
+
+export async function getPolicyPageBySlug(
+  slug: string,
+): Promise<PolicyPage | undefined> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("policy_pages")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingTableError(error)) return undefined;
+    throw new Error(`Failed to fetch policy page: ${error.message}`);
+  }
+  if (!data) return undefined;
+  return mapPolicyPageRow(data as PolicyPageRow);
 }
 
 const loadLatestPosts = unstable_cache(

@@ -78,6 +78,19 @@ export const postSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const policyPageSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  body: z.string(),
+  metaTitle: z.string(),
+  metaDescription: z.string(),
+  sortOrder: z.number(),
+  isPublished: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 export const leadSchema = z.object({
   id: z.string(),
   productId: z.string().nullable(),
@@ -213,6 +226,16 @@ export const postInputSchema = z.object({
   authorName: z.string().trim().default(""),
   isPublished: z.boolean(),
   publishedAt: z.string().trim().nullable(),
+});
+
+export const policyPageInputSchema = z.object({
+  title: z.string().trim().min(1, "Nhập tiêu đề trang"),
+  slug: slugInputSchema,
+  body: z.string().default(""),
+  metaTitle: z.string().trim().default(""),
+  metaDescription: z.string().trim().default(""),
+  sortOrder: z.number().int().nonnegative(),
+  isPublished: z.boolean(),
 });
 
 export const categoryInputSchema = z.object({
