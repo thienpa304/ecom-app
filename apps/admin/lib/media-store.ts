@@ -3,7 +3,9 @@ import {
   MAX_UPLOAD_MB,
   storagePathFromPublicUrl,
 } from "@ecom/shared";
-import { PRODUCT_IMAGES_BUCKET, createServerClient } from "./supabase";
+import { compressUploadBuffer } from "./media-compress";
+import { deleteObjects, listObjects, publicUrlForKey, putObject } from "./r2";
+import { createServerClient } from "./supabase";
 
 export type MediaKind = "image" | "video" | "other";
 
@@ -92,9 +94,7 @@ function validateUploadFile(file: File): void {
 }
 
 function publicUrlFor(path: string): string {
-  const supabase = createServerClient();
-  return supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path)
-    .data.publicUrl;
+  return publicUrlForKey(path);
 }
 
 export async function setMediaLabel(
@@ -163,7 +163,6 @@ export async function uploadProductMedia(
 ): Promise<string> {
   validateUploadFile(file);
 
-  const supabase = createServerClient();
   const kind = mediaKindFromName(file.name);
   const folder =
     prefix === "img" || prefix === "video" || prefix === "media"
@@ -179,16 +178,15 @@ export async function uploadProductMedia(
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const path = `${folder}/${baseName ? `${baseName}-` : ""}${suffix}.${ext}`;
 
-  const { error } = await supabase.storage
-    .from(PRODUCT_IMAGES_BUCKET)
-    .upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type || undefined,
-    });
+  const original = Buffer.from(await file.arrayBuffer());
+  const { buffer } = await compressUploadBuffer(original, ext);
 
-  if (error) {
-    throw new Error(`Failed to upload media: ${error.message}`);
+  try {
+    await putObject(path, buffer, file.type || undefined);
+  } catch (error) {
+    throw new Error(
+      `Failed to upload media: ${error instanceof Error ? error.message : error}`,
+    );
   }
 
   if (trimmedLabel) {
@@ -231,34 +229,32 @@ async function listFolderAssets(
   folder: string,
   filter: "image" | "video" | "all",
 ): Promise<MediaAsset[]> {
-  const supabase = createServerClient();
-  const { data, error } = await supabase.storage
-    .from(PRODUCT_IMAGES_BUCKET)
-    .list(folder || undefined, {
-      limit: FOLDER_FETCH_LIMIT,
-      sortBy: { column: "created_at", order: "desc" },
-    });
-
-  if (error) {
-    console.error(`listMediaAssets(${folder}):`, error.message);
+  let objects;
+  try {
+    objects = await listObjects(folder, FOLDER_FETCH_LIMIT);
+  } catch (error) {
+    console.error(
+      `listMediaAssets(${folder}):`,
+      error instanceof Error ? error.message : error,
+    );
     return [];
   }
 
   const assets: MediaAsset[] = [];
-  for (const item of data ?? []) {
-    if (!item.name || item.id == null) continue;
-    const kind = mediaKindFromName(item.name);
+  for (const object of objects) {
+    const name = object.key.split("/").pop() ?? "";
+    if (!name) continue;
+    const kind = mediaKindFromName(name);
     if (filter === "image" && kind !== "image") continue;
     if (filter === "video" && kind !== "video") continue;
-    const storagePath = folder ? `${folder}/${item.name}` : item.name;
     assets.push({
-      path: storagePath,
-      url: publicUrlFor(storagePath),
-      name: item.name,
+      path: object.key,
+      url: publicUrlFor(object.key),
+      name,
       label: null,
-      size: item.metadata?.size ?? null,
+      size: object.size,
       kind,
-      updatedAt: item.updated_at ?? item.created_at ?? null,
+      updatedAt: object.lastModified,
     });
   }
   return assets;
@@ -433,12 +429,12 @@ export async function deleteMediaAssets(
     ? await purgeMediaReferences(paths)
     : 0;
 
-  const supabase = createServerClient();
-  const { error } = await supabase
-    .storage.from(PRODUCT_IMAGES_BUCKET)
-    .remove(paths);
-  if (error) {
-    throw new Error(`Failed to delete media: ${error.message}`);
+  try {
+    await deleteObjects(paths);
+  } catch (error) {
+    throw new Error(
+      `Failed to delete media: ${error instanceof Error ? error.message : error}`,
+    );
   }
 
   await deleteMediaLabels(paths);

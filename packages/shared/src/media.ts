@@ -17,16 +17,32 @@ export function inferMediaKindFromUrl(url: string): ProductMedia["kind"] {
   return "image";
 }
 
+function decodePath(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
+/**
+ * Recover the storage object key from a public media URL.
+ *
+ * Handles both the Cloudflare R2 host media lives on now and the legacy
+ * Supabase Storage URLs still present on rows written before the migration.
+ */
 export function storagePathFromPublicUrl(url: string): string | null {
-  const match = url.match(
+  const mediaBase = process.env.NEXT_PUBLIC_MEDIA_BASE_URL?.replace(/\/+$/, "");
+  if (mediaBase && url.startsWith(`${mediaBase}/`)) {
+    return decodePath(url.slice(mediaBase.length + 1)) || null;
+  }
+
+  const legacy = url.match(
     /\/storage\/v1\/object\/public\/product-images\/(.+)$/i,
   );
-  if (!match?.[1]) return null;
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return match[1];
-  }
+  if (legacy?.[1]) return decodePath(legacy[1]);
+
+  return null;
 }
 
 export function sortProductMedia(
