@@ -5,6 +5,13 @@ const supabaseHost =
     "/",
   )[0] || "mldnnchxmthiqecqmdml.supabase.co";
 
+// Media now lives in Cloudflare R2. Supabase stays allowlisted until every
+// stored URL has been repointed (see scripts/rewrite-media-urls.mjs).
+const mediaHost =
+  process.env.NEXT_PUBLIC_MEDIA_BASE_URL?.replace(/^https?:\/\//, "").split(
+    "/",
+  )[0] || "img.dienmaylocphatdat.vn";
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@ecom/shared"],
   poweredByHeader: false,
@@ -23,6 +30,7 @@ const nextConfig: NextConfig = {
         hostname: supabaseHost,
         pathname: "/storage/v1/object/public/**",
       },
+      { protocol: "https", hostname: mediaHost },
       { protocol: "https", hostname: "i.ytimg.com" },
       { protocol: "https", hostname: "picsum.photos" },
       { protocol: "https", hostname: "fastly.picsum.photos" },
