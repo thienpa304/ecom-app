@@ -21,7 +21,7 @@ const HOME_TITLE = "Máy Xịt Rửa Cao Áp, Máy Nén Khí, Máy Phát Điện
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   return {
-    title: HOME_TITLE,
+    title: { absolute: `${HOME_TITLE} | ${s.siteName}` },
     description: s.metaDescription || s.tagline,
     alternates: { canonical: "/" },
     openGraph: {
