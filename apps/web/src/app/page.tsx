@@ -16,10 +16,12 @@ import { JsonLd } from "@/components/JsonLd";
 import { siteShareImage, websiteJsonLd } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
+const HOME_TITLE = "Máy Xịt Rửa Cao Áp, Máy Nén Khí, Máy Phát Điện Chính Hãng";
+
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   return {
-    title: { absolute: `${s.siteName} — Sản phẩm` },
+    title: HOME_TITLE,
     description: s.metaDescription || s.tagline,
     alternates: { canonical: "/" },
     openGraph: {
@@ -27,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "vi_VN",
       siteName: s.siteName,
       url: absoluteUrl("/"),
-      title: `${s.siteName} — Sản phẩm`,
+      title: `${HOME_TITLE} | ${s.siteName}`,
       description: s.metaDescription || s.tagline,
       ...(siteShareImage(s) ? { images: [{ url: siteShareImage(s) }] } : {}),
     },

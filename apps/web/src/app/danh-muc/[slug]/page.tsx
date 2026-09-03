@@ -17,7 +17,7 @@ import {
   listProducts,
   listPublishedCategorySlugs,
 } from "@/lib/data";
-import { breadcrumbJsonLd, siteShareImage } from "@/lib/seo";
+import { breadcrumbJsonLd, itemListJsonLd, siteShareImage } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
 type Params = Promise<{ slug: string }>;
@@ -47,8 +47,10 @@ function byOrderThenName(a: Category, b: Category): number {
   return a.name.localeCompare(b.name, "vi");
 }
 
-function categoryDescription(name: string, siteName: string): string {
-  return `${name} chính hãng tại ${siteName} — giá tốt, bảo hành đầy đủ, tư vấn miễn phí và giao hàng toàn quốc.`;
+function categoryDescription(category: Category, siteName: string): string {
+  const custom = category.description.trim();
+  if (custom) return custom;
+  return `${category.name} chính hãng tại ${siteName} — giá tốt, bảo hành đầy đủ, tư vấn miễn phí và giao hàng toàn quốc.`;
 }
 
 async function findCategory(slug: string): Promise<Category | undefined> {
@@ -80,7 +82,7 @@ export async function generateMetadata({
 
   const settings = await getSiteSettings();
   const path = `/danh-muc/${category.slug}`;
-  const description = categoryDescription(category.name, settings.siteName);
+  const description = categoryDescription(category, settings.siteName);
   const image = siteShareImage(settings);
 
   return {
@@ -154,6 +156,9 @@ export default async function CategoryPage({
           { name: category.name },
         ])}
       />
+      {result.items.length ? (
+        <JsonLd data={itemListJsonLd(result.items)} />
+      ) : null}
 
       <Breadcrumb
         items={[
@@ -168,7 +173,7 @@ export default async function CategoryPage({
           {category.name}
         </h1>
         <p className="mt-1.5 max-w-3xl text-sm text-gray-600">
-          {categoryDescription(category.name, settings.siteName)}
+          {categoryDescription(category, settings.siteName)}
         </p>
 
         {children.length ? (

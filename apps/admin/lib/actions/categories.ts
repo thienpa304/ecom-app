@@ -32,6 +32,7 @@ function readCategoryForm(formData: FormData) {
     slug: slugRaw || slugify(name),
     parentId: parentRaw === "" ? null : parentRaw,
     sortOrder: Number(formData.get("sortOrder") ?? 0),
+    description: String(formData.get("description") ?? ""),
   });
 }
 

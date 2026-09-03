@@ -759,6 +759,7 @@ export async function createCategory(
       slug: input.slug,
       parent_id: input.parentId,
       sort_order: input.sortOrder,
+      description: input.description,
     })
     .select("*")
     .single();
@@ -781,6 +782,7 @@ export async function updateCategory(
       slug: input.slug,
       parent_id: input.parentId,
       sort_order: input.sortOrder,
+      description: input.description,
     })
     .eq("id", id)
     .select("*")

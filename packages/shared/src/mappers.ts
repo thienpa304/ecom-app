@@ -55,6 +55,8 @@ export type CategoryRow = {
 
   sort_order: number;
 
+  description?: string | null;
+
 };
 
 
@@ -409,6 +411,8 @@ export function mapCategoryRow(row: CategoryRow): Category {
     parentId: row.parent_id,
 
     sortOrder: row.sort_order,
+
+    description: row.description ?? "",
 
   };
 

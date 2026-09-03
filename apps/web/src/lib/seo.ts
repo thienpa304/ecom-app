@@ -48,8 +48,17 @@ type OpeningHoursJsonLd = {
   closes: string;
 };
 
+const PRICE_VALID_DAYS = 30;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 function clean(value: string | undefined): string {
   return value?.trim() ?? "";
+}
+
+function priceValidUntil(now = new Date()): string {
+  return new Date(now.getTime() + PRICE_VALID_DAYS * MS_PER_DAY)
+    .toISOString()
+    .slice(0, 10);
 }
 
 function postalAddressJsonLd(
@@ -146,7 +155,32 @@ export function organizationJsonLd(settings: SiteSettings) {
     ...(geo ? { geo } : {}),
     ...(openingHoursSpecification.length ? { openingHoursSpecification } : {}),
     ...(priceRange ? { priceRange } : {}),
-    sameAs: settings.zaloUrl ? [settings.zaloUrl] : [],
+    sameAs: [
+      settings.zaloUrl,
+      settings.facebookUrl,
+      settings.youtubeUrl,
+      settings.tiktokUrl,
+    ]
+      .map(clean)
+      .filter(Boolean),
+  };
+}
+
+export function itemListJsonLd(products: Product[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    numberOfItems: products.length,
+    itemListElement: products.map((product, index) => {
+      const image = imageMedia(product)[0]?.url;
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        url: absoluteUrl(`/san-pham/${product.slug}`),
+        name: product.name,
+        ...(image ? { image } : {}),
+      };
+    }),
   };
 }
 
@@ -202,6 +236,7 @@ export function productJsonLd(
       url: absoluteUrl(`/san-pham/${product.slug}`),
       priceCurrency: "VND",
       price: String(price),
+      priceValidUntil: priceValidUntil(),
       availability: AVAILABILITY[product.stockStatus],
       itemCondition: "https://schema.org/NewCondition",
       ...(hasShippingPolicy

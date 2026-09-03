@@ -7,6 +7,7 @@ export const seedCategories: Category[] = [
     slug: "may-xit-rua-ap-luc",
     parentId: null,
     sortOrder: 1,
+    description: "",
   },
   {
     id: "cat-gia-dinh",
@@ -14,6 +15,7 @@ export const seedCategories: Category[] = [
     slug: "may-xit-rua-gia-dinh",
     parentId: "cat-may-xit-rua",
     sortOrder: 1,
+    description: "",
   },
   {
     id: "cat-cong-nghiep",
@@ -21,6 +23,7 @@ export const seedCategories: Category[] = [
     slug: "may-xit-rua-cong-nghiep",
     parentId: "cat-may-xit-rua",
     sortOrder: 2,
+    description: "",
   },
   {
     id: "cat-phu-kien",
@@ -28,6 +31,7 @@ export const seedCategories: Category[] = [
     slug: "phu-kien-may-xit-rua",
     parentId: "cat-may-xit-rua",
     sortOrder: 3,
+    description: "",
   },
 ];
 

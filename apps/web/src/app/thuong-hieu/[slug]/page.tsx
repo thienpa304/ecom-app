@@ -17,7 +17,7 @@ import {
   listProducts,
   listPublishedBrandSlugs,
 } from "@/lib/data";
-import { breadcrumbJsonLd, siteShareImage } from "@/lib/seo";
+import { breadcrumbJsonLd, itemListJsonLd, siteShareImage } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
 type Params = Promise<{ slug: string }>;
@@ -156,6 +156,9 @@ export default async function BrandPage({
           { name: brand.name },
         ])}
       />
+      {result.items.length ? (
+        <JsonLd data={itemListJsonLd(result.items)} />
+      ) : null}
 
       <Breadcrumb
         items={[

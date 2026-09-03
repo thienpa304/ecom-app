@@ -12,6 +12,7 @@ export const categorySchema = z.object({
   slug: z.string(),
   parentId: z.string().nullable(),
   sortOrder: z.number().int(),
+  description: z.string(),
 });
 
 export const brandSchema = z.object({
@@ -243,6 +244,7 @@ export const categoryInputSchema = z.object({
   slug: slugInputSchema,
   parentId: z.string().nullable(),
   sortOrder: z.number().int().nonnegative(),
+  description: z.string().trim().default(""),
 });
 
 export const homeSectionInputSchema = z

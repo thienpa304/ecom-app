@@ -40,6 +40,7 @@ type CategoryFormValues = {
   slug?: string;
   parentId?: string | null;
   sortOrder?: number;
+  description?: string;
 };
 
 type CategoryTreeRow = Category & {
@@ -186,6 +187,7 @@ export function CategoriesManager({ categories }: { categories: Category[] }) {
       slug: category.slug,
       parentId: category.parentId ?? undefined,
       sortOrder: category.sortOrder,
+      description: category.description,
     });
   }
 
@@ -200,6 +202,7 @@ export function CategoriesManager({ categories }: { categories: Category[] }) {
     fd.set("slug", values.slug ?? "");
     fd.set("parentId", values.parentId ?? "");
     fd.set("sortOrder", String(values.sortOrder ?? 0));
+    fd.set("description", values.description ?? "");
 
     const target = editing;
     startTransition(async () => {
@@ -320,6 +323,13 @@ export function CategoriesManager({ categories }: { categories: Category[] }) {
             </Form.Item>
             <Form.Item label="Thứ tự" name="sortOrder">
               <InputNumber style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item
+              label="Mô tả danh mục (SEO)"
+              name="description"
+              extra="Hiện dưới tiêu đề trang danh mục và làm meta description. Viết riêng cho từng danh mục: dùng cho ai, khác gì danh mục gần nó, 1–2 câu khoảng 120–160 ký tự. Để trống thì hệ thống dùng câu chung."
+            >
+              <Input.TextArea rows={3} showCount maxLength={300} />
             </Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={pending}>
