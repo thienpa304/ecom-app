@@ -66,6 +66,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: canonicalPath },
     openGraph: {
+      siteName: s.siteName,
       url: absoluteUrl(canonicalPath),
       title: `${title} | ${s.siteName}`,
       description,

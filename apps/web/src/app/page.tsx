@@ -12,7 +12,8 @@ import {
   listProducts,
   listVideoProducts,
 } from "@/lib/data";
-import { siteShareImage } from "@/lib/seo";
+import { JsonLd } from "@/components/JsonLd";
+import { siteShareImage, websiteJsonLd } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,6 +23,9 @@ export async function generateMetadata(): Promise<Metadata> {
     description: s.metaDescription || s.tagline,
     alternates: { canonical: "/" },
     openGraph: {
+      type: "website",
+      locale: "vi_VN",
+      siteName: s.siteName,
       url: absoluteUrl("/"),
       title: `${s.siteName} — Sản phẩm`,
       description: s.metaDescription || s.tagline,
@@ -112,6 +116,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={websiteJsonLd(settings)} />
       <section className="border-b border-orange-100 bg-gradient-to-br from-white via-orange-50/60 to-gray-50">
         <div className="container-page grid gap-5 py-6 sm:gap-6 sm:py-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-center">
           {/* Mobile: banner lên trước phần giới thiệu; desktop giữ nguyên trái/phải */}

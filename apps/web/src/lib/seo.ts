@@ -114,6 +114,15 @@ export function siteShareImage(settings: SiteSettings): string {
   );
 }
 
+export function websiteJsonLd(settings: SiteSettings) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: settings.siteName,
+    url: absoluteUrl("/"),
+  };
+}
+
 export function organizationJsonLd(settings: SiteSettings) {
   const address = postalAddressJsonLd(settings);
   const geo = geoJsonLd(settings);

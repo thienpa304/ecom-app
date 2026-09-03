@@ -47,6 +47,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: absoluteUrl(path) },
     openGraph: {
+      siteName: settings.siteName,
       title,
       description,
       url: absoluteUrl(path),
