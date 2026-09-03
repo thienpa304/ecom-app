@@ -628,9 +628,17 @@ const loadSitemapEntries = unstable_cache(
       return { slug: row.slug, lastModified: new Date(time).toISOString() };
     });
 
+    const categoryTreeTimes = new Map<string, number>();
+    for (const category of categories) {
+      for (const id of collectCategoryIds(categories, category.id)) {
+        const time = categoryTimes.get(id);
+        if (time !== undefined) trackLatest(categoryTreeTimes, category.id, time);
+      }
+    }
+
     return {
       products,
-      categories: toSitemapEntries(categories, categoryTimes),
+      categories: toSitemapEntries(categories, categoryTreeTimes),
       brands: toSitemapEntries(brands, brandTimes),
       posts,
       latest:
