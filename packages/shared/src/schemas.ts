@@ -147,6 +147,7 @@ export const openingHoursEntrySchema = z.object({
   days: z.array(z.string()),
   opens: z.string(),
   closes: z.string(),
+  label: z.string().optional(),
 });
 
 export const faqEntrySchema = z.object({

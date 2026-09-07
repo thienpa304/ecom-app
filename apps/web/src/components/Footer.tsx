@@ -1,5 +1,10 @@
 import Link from "next/link";
-import type { Brand, Category, SiteSettings } from "@ecom/shared";
+import type {
+  Brand,
+  Category,
+  OpeningHoursEntry,
+  SiteSettings,
+} from "@ecom/shared";
 import { SafeImage } from "@/components/SafeImage";
 import { getBrands, getCategories, listPolicyPages } from "@/lib/data";
 
@@ -7,10 +12,66 @@ const KEYWORD_CATEGORY_LIMIT = 6;
 const KEYWORD_BRAND_LIMIT = 5;
 const KEYWORD_COMBO_LIMIT = 5;
 
+const DAY_KEY_ORDER = ["mo", "tu", "we", "th", "fr", "sa", "su"] as const;
+
+const DAY_KEY_LABELS: Record<string, string> = {
+  mo: "Thứ 2",
+  tu: "Thứ 3",
+  we: "Thứ 4",
+  th: "Thứ 5",
+  fr: "Thứ 6",
+  sa: "Thứ 7",
+  su: "Chủ nhật",
+};
+
 type SearchKeyword = {
   label: string;
   href: string;
 };
+
+function toDayKey(storedDay: string): string {
+  return storedDay.trim().toLowerCase().slice(0, 2);
+}
+
+function formatDayRange(days: string[]): string {
+  const keys = days.map(toDayKey);
+  const indexes = DAY_KEY_ORDER.map((day, index) =>
+    keys.includes(day) ? index : -1,
+  ).filter((index) => index >= 0);
+  if (indexes.length === 0) return "";
+
+  const first = indexes[0];
+  const last = indexes[indexes.length - 1];
+  const isUnbrokenRange =
+    indexes.length > 2 && last - first === indexes.length - 1;
+  if (isUnbrokenRange) {
+    return `${DAY_KEY_LABELS[DAY_KEY_ORDER[first]]} - ${DAY_KEY_LABELS[DAY_KEY_ORDER[last]]}`;
+  }
+
+  return indexes
+    .map((index) => DAY_KEY_LABELS[DAY_KEY_ORDER[index]])
+    .join(", ");
+}
+
+function formatClockAsVietnamese(storedTime: string): string {
+  const trimmed = storedTime.trim();
+  const hourAndMinute = /^(\d{1,2}):(\d{2})/.exec(trimmed);
+  if (!hourAndMinute) return trimmed;
+  return `${Number(hourAndMinute[1])}h${hourAndMinute[2]}`;
+}
+
+function formatOpeningHours(entries: OpeningHoursEntry[]): string[] {
+  return entries.flatMap((entry) => {
+    const days = formatDayRange(entry.days ?? []);
+    const opens = formatClockAsVietnamese(entry.opens ?? "");
+    const closes = formatClockAsVietnamese(entry.closes ?? "");
+    if (!days || !opens || !closes) return [];
+
+    const hours = `${days}: ${opens} - ${closes}`;
+    const label = entry.label?.trim();
+    return [label ? `${label}: ${hours}` : hours];
+  });
+}
 
 function buildSearchKeywords(
   categories: Category[],
@@ -73,6 +134,7 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
     );
 
   const searchKeywords = buildSearchKeywords(categories, brands);
+  const openingHours = formatOpeningHours(settings.openingHours ?? []);
 
   const socials = [
     {
@@ -121,9 +183,9 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
             <SafeImage
               src={settings.logoSquareUrl}
               alt={settings.siteName}
-              width={96}
-              height={96}
-              className="h-20 w-20 object-contain"
+              width={128}
+              height={128}
+              className="h-24 w-24 object-contain sm:h-28 sm:w-28"
             />
           ) : null}
           <p className="mt-3 text-lg font-extrabold text-gray-900">
@@ -185,23 +247,42 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
           </div>
         ) : null}
 
-        {policyPages.length > 0 ? (
+        {policyPages.length > 0 || openingHours.length > 0 ? (
           <div className="min-w-0">
-            <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-              Hỗ trợ khách hàng
-            </p>
-            <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
-              {policyPages.map((page) => (
-                <li key={page.id}>
-                  <Link
-                    href={`/chinh-sach/${page.slug}`}
-                    className="break-words hover:text-accent"
-                  >
-                    {page.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {policyPages.length > 0 ? (
+              <>
+                <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+                  Hỗ trợ khách hàng
+                </p>
+                <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
+                  {policyPages.map((page) => (
+                    <li key={page.id}>
+                      <Link
+                        href={`/chinh-sach/${page.slug}`}
+                        className="break-words hover:text-accent"
+                      >
+                        {page.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {openingHours.length > 0 ? (
+              <div className={policyPages.length > 0 ? "mt-6" : undefined}>
+                <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+                  Thời gian làm việc
+                </p>
+                <ul className="mt-2 space-y-1 text-sm leading-6 text-gray-600">
+                  {openingHours.map((line) => (
+                    <li key={line} className="break-words">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -327,8 +408,21 @@ export async function Footer({ settings }: { settings: SiteSettings }) {
         </div>
       ) : null}
 
-      <div className="border-t border-gray-100 py-4 text-center text-xs text-gray-500">
-        © {new Date().getFullYear()} {settings.siteName}.
+      <div className="border-t border-gray-100 py-5">
+        <div className="container-page flex flex-col items-center gap-3">
+          {settings.logoUrl ? (
+            <SafeImage
+              src={settings.logoUrl}
+              alt={settings.siteName}
+              width={240}
+              height={64}
+              className="h-9 w-auto max-w-[220px] object-contain sm:h-10"
+            />
+          ) : null}
+          <p className="text-center text-xs text-gray-500">
+            © {new Date().getFullYear()} {settings.siteName}.
+          </p>
+        </div>
       </div>
     </footer>
   );
