@@ -716,7 +716,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
 
               <Form.Item
                 label={`Giờ mở cửa (tối đa ${OPENING_HOURS_MAX} khung giờ)`}
-                extra="Mỗi dòng là một khung giờ áp dụng cho các ngày được chọn. Ví dụ: T2–T7 mở 08:00, đóng 18:00."
+                extra="Mỗi dòng là một khung giờ áp dụng cho các ngày được chọn. Ví dụ: T2–T7 mở 08:00, đóng 18:00. Nhãn là tuỳ chọn, hiện ở đầu dòng trên web — ví dụ: Tại cửa hàng, Online."
               >
                 <Space direction="vertical" style={{ width: "100%" }}>
                   <Space wrap>
@@ -725,7 +725,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
                       onClick={() =>
                         setOpeningHours((prev) => [
                           ...prev,
-                          { days: [], opens: "08:00", closes: "18:00" },
+                          {
+                            days: [],
+                            opens: "08:00",
+                            closes: "18:00",
+                            label: "",
+                          },
                         ])
                       }
                       disabled={openingHours.length >= OPENING_HOURS_MAX}
@@ -756,6 +761,14 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
                         padding: 8,
                       }}
                     >
+                      <Input
+                        value={entry.label ?? ""}
+                        onChange={(e) =>
+                          patchHours(index, { label: e.target.value })
+                        }
+                        placeholder="Nhãn — Tại cửa hàng"
+                        style={{ width: 180 }}
+                      />
                       <Select
                         mode="multiple"
                         value={entry.days}
