@@ -8,7 +8,7 @@ import type {
   SiteSettings,
 } from "@ecom/shared";
 import { imageMedia, stripHtml } from "@ecom/shared";
-import { absoluteUrl, getSiteUrl } from "./site";
+import { absoluteUrl } from "./site";
 
 const AVAILABILITY: Record<Product["stockStatus"], string> = {
   in_stock: "https://schema.org/InStock",
@@ -125,16 +125,12 @@ export function siteShareImage(settings: SiteSettings): string {
   );
 }
 
-function lowercaseBareDomain(): string {
-  return getSiteUrl().replace(/^https?:\/\//i, "").toLowerCase();
-}
-
 export function websiteJsonLd(settings: SiteSettings) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: settings.siteName,
-    alternateName: [SHORT_SITE_NAME, lowercaseBareDomain()],
+    alternateName: SHORT_SITE_NAME,
     url: absoluteUrl("/"),
   };
 }
