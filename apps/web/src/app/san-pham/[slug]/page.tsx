@@ -6,8 +6,8 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { FaqSection } from "@/components/FaqSection";
 import { JsonLd } from "@/components/JsonLd";
 import { SectionCard } from "@/components/SectionCard";
+import { ProductVideoReviews } from "@/components/ProductVideoReviews";
 import { StorePolicies } from "@/components/StorePolicies";
-import { VideoReviewSection } from "@/components/VideoReviewSection";
 import {
   descriptionPlainText,
   ProductDescription,
@@ -25,7 +25,6 @@ import {
   getSiteSettings,
   listProducts,
   listPublishedProductSlugs,
-  listVideoProducts,
 } from "@/lib/data";
 import { discountPercent, formatVnd } from "@/lib/format";
 import { breadcrumbJsonLd, faqJsonLd, productJsonLd } from "@/lib/seo";
@@ -134,17 +133,11 @@ export default async function ProductDetailPage({
   );
   const relatedProducts = categoryPeers.slice(0, 4);
 
-  // Ưu tiên video của sản phẩm cùng danh mục (đã có sẵn media trong
-  // categoryPeers); nếu danh mục chưa có video nào thì lấy danh sách chung.
-  const categoryVideoProducts = categoryPeers.filter(
-    (item) => videoMedia(item).length > 0,
-  );
-  const videoProducts =
-    categoryVideoProducts.length > 0
-      ? categoryVideoProducts.slice(0, 4)
-      : (await listVideoProducts(5))
-          .filter((item) => item.id !== product.id)
-          .slice(0, 4);
+  const productVideos = videoMedia(product);
+  const specsGridClass =
+    productVideos.length > 0
+      ? "grid min-w-0 gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start"
+      : "grid min-w-0 gap-4 sm:gap-5";
 
   const faqData = faqJsonLd(settings.faqs ?? []);
 
@@ -243,71 +236,67 @@ export default async function ProductDetailPage({
       </div>
 
       <div className="mt-5 min-w-0 space-y-4 sm:mt-7 sm:space-y-5">
-        <SectionCard
-          title="Thông số kỹ thuật"
-          headingId="specs-heading"
-          bodyClassName="min-w-0 overflow-x-auto"
-        >
-          <table
-            className="w-full min-w-0 table-fixed text-sm"
-            aria-labelledby="specs-heading"
-          >
-            <tbody>
-              <tr className="border-b border-gray-50 odd:bg-gray-50/60">
-                <th className="w-[38%] break-words px-4 py-2.5 text-left align-top font-medium text-gray-600 sm:w-1/3">
-                  Model
-                </th>
-                <td className="break-words px-4 py-2.5 text-gray-900">
-                  {product.model}
-                </td>
-              </tr>
-              {product.motor && (
-                <tr className="border-b border-gray-50 odd:bg-gray-50/60">
-                  <th className="break-words px-4 py-2.5 text-left align-top font-medium text-gray-600">
-                    Động cơ
-                  </th>
-                  <td className="break-words px-4 py-2.5 text-gray-900">
-                    {product.motor}
-                  </td>
-                </tr>
-              )}
-              {Object.entries(product.specs)
-                .filter(([key]) => !isDuplicateSpec(key))
-                .map(([key, value]) => (
-                  <tr
-                    key={key}
-                    className="border-b border-gray-50 odd:bg-gray-50/60"
-                  >
-                    <th className="break-words px-4 py-2.5 text-left align-top font-medium text-gray-600">
-                      {key}
+        <div className={specsGridClass}>
+          <div className="min-w-0 space-y-4 sm:space-y-5">
+            <SectionCard
+              title="Thông số kỹ thuật"
+              headingId="specs-heading"
+              bodyClassName="min-w-0 overflow-x-auto"
+            >
+              <table
+                className="w-full min-w-0 table-fixed text-sm"
+                aria-labelledby="specs-heading"
+              >
+                <tbody>
+                  <tr className="border-b border-gray-50 odd:bg-gray-50/60">
+                    <th className="w-[38%] break-words px-4 py-2.5 text-left align-top font-medium text-gray-600 sm:w-1/3">
+                      Model
                     </th>
                     <td className="break-words px-4 py-2.5 text-gray-900">
-                      {value}
+                      {product.model}
                     </td>
                   </tr>
-                ))}
-            </tbody>
-          </table>
-        </SectionCard>
+                  {product.motor && (
+                    <tr className="border-b border-gray-50 odd:bg-gray-50/60">
+                      <th className="break-words px-4 py-2.5 text-left align-top font-medium text-gray-600">
+                        Động cơ
+                      </th>
+                      <td className="break-words px-4 py-2.5 text-gray-900">
+                        {product.motor}
+                      </td>
+                    </tr>
+                  )}
+                  {Object.entries(product.specs)
+                    .filter(([key]) => !isDuplicateSpec(key))
+                    .map(([key, value]) => (
+                      <tr
+                        key={key}
+                        className="border-b border-gray-50 odd:bg-gray-50/60"
+                      >
+                        <th className="break-words px-4 py-2.5 text-left align-top font-medium text-gray-600">
+                          {key}
+                        </th>
+                        <td className="break-words px-4 py-2.5 text-gray-900">
+                          {value}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </SectionCard>
 
-        {product.description ? (
-          <SectionCard title="Mô tả sản phẩm">
-            <ProductDescription html={product.description} />
-          </SectionCard>
-        ) : null}
+            {product.description ? (
+              <SectionCard title="Mô tả sản phẩm">
+                <ProductDescription html={product.description} />
+              </SectionCard>
+            ) : null}
+          </div>
 
-        <StorePolicies
-          shippingPolicy={settings.shippingPolicy}
-          returnPolicy={settings.returnPolicy}
-        />
-
-        <FaqSection faqs={settings.faqs ?? []} />
-
-        {videoProducts.length > 0 && (
-          <SectionCard title="Video review sản phẩm">
-            <VideoReviewSection products={videoProducts} />
-          </SectionCard>
-        )}
+          <ProductVideoReviews
+            videos={productVideos}
+            productName={product.name}
+          />
+        </div>
 
         <RelatedProducts
           products={relatedProducts}
@@ -321,6 +310,13 @@ export default async function ProductDetailPage({
           products={categoryPeers}
           viewAllHref="/san-pham"
         />
+
+        <StorePolicies
+          shippingPolicy={settings.shippingPolicy}
+          returnPolicy={settings.returnPolicy}
+        />
+
+        <FaqSection faqs={settings.faqs ?? []} />
       </div>
     </div>
   );

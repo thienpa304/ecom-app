@@ -42,6 +42,7 @@ export type SortValue =
 export type ListProductsParams = {
   brandSlug?: string | string[];
   categorySlug?: string;
+  excludeCategorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
   price?: string;
@@ -81,9 +82,18 @@ function resolvePriceRange(params: ListProductsParams): {
   return { min: params.minPrice, max: params.maxPrice };
 }
 
+const ALLOWED_PAGE_SIZES = [12, 24, 48] as const;
+
 function clampPageSize(size?: number): number {
-  if (size === 24) return 24;
-  return 12;
+  const allowed = ALLOWED_PAGE_SIZES.find((option) => option === size);
+  return allowed ?? 12;
+}
+
+export function pageSizeCovering(needed: number): number {
+  return (
+    ALLOWED_PAGE_SIZES.find((option) => option >= needed) ??
+    ALLOWED_PAGE_SIZES[ALLOWED_PAGE_SIZES.length - 1]
+  );
 }
 
 function normalizeSlugs(value?: string | string[]): string[] {
@@ -692,6 +702,16 @@ async function queryListProducts(
     categoryIds = collectCategoryIds(categories, matched.id);
   }
 
+  let excludedCategoryIds: string[] = [];
+  if (params.excludeCategorySlug) {
+    const excluded = categories.find(
+      (c) => c.slug === params.excludeCategorySlug,
+    );
+    if (excluded) {
+      excludedCategoryIds = collectCategoryIds(categories, excluded.id);
+    }
+  }
+
   if (brandSlugs.length && brandIds.length === 0) {
     return {
       items: [],
@@ -718,6 +738,10 @@ async function queryListProducts(
     query = query.eq("category_id", categoryIds[0]!);
   } else if (categoryIds.length > 1) {
     query = query.in("category_id", categoryIds);
+  }
+
+  if (excludedCategoryIds.length) {
+    query = query.not("category_id", "in", `(${excludedCategoryIds.join(",")})`);
   }
 
   if (min != null) {
@@ -769,6 +793,7 @@ export async function listProducts(
   const normalized: ListProductsParams = {
     brandSlug: normalizeSlugs(params.brandSlug).join(",") || undefined,
     categorySlug: params.categorySlug || undefined,
+    excludeCategorySlug: params.excludeCategorySlug || undefined,
     minPrice: params.minPrice,
     maxPrice: params.maxPrice,
     price: params.price || undefined,

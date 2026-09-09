@@ -11,6 +11,7 @@ import {
   listHomeSections,
   listProducts,
   listVideoProducts,
+  pageSizeCovering,
 } from "@/lib/data";
 import { JsonLd } from "@/components/JsonLd";
 import { siteShareImage, websiteJsonLd } from "@/lib/seo";
@@ -39,6 +40,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const N = HOME_SECTION_PRODUCT_COUNT;
 
+const TOP_SELLERS_PRODUCT_COUNT = 8;
+const TOP_SELLERS_EXCLUDED_CATEGORY_SLUG = "phu-tung-va-linh-kien";
+
 export default async function HomePage() {
   const [settings, sections] = await Promise.all([
     getSiteSettings(),
@@ -46,19 +50,21 @@ export default async function HomePage() {
   ]);
 
   const maxLimit = sections.reduce((m, s) => Math.max(m, s.productLimit), N);
-  const soldOffset =
-    sections.find((s) => s.kind === "top_sellers")?.productLimit ?? 0;
+  const soldOffset = sections.some((s) => s.kind === "top_sellers")
+    ? TOP_SELLERS_PRODUCT_COUNT
+    : 0;
 
   const [soldList, newestList, categorySections, videoProducts] =
     await Promise.all([
       listProducts({
         sort: "sold_desc",
-        pageSize: soldOffset + maxLimit > 12 ? 24 : 12,
+        excludeCategorySlug: TOP_SELLERS_EXCLUDED_CATEGORY_SLUG,
+        pageSize: pageSizeCovering(soldOffset + maxLimit),
         page: 1,
       }),
       listProducts({
         sort: "newest",
-        pageSize: maxLimit > 12 ? 24 : 12,
+        pageSize: pageSizeCovering(maxLimit),
         page: 1,
       }),
       listHomeCategorySections(maxLimit),
@@ -76,7 +82,7 @@ export default async function HomePage() {
       case "top_sellers":
         return {
           section,
-          products: soldList.items.slice(0, section.productLimit),
+          products: soldList.items.slice(0, TOP_SELLERS_PRODUCT_COUNT),
           href: "/san-pham",
         };
       case "featured":
@@ -191,7 +197,7 @@ export default async function HomePage() {
                   </h2>
                 </div>
                 <div className="bg-sale/5 p-3 sm:p-4">
-                  <ProductRow products={products} />
+                  <ProductRow products={products} withArrows />
                 </div>
               </div>
             </section>
