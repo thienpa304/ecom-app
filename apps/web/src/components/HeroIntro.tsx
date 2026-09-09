@@ -31,20 +31,21 @@ export function HeroIntro({
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-        {eyebrow}
-      </p>
-
-      <h1 className="mt-2 text-xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-2xl">
-        {parts ? (
-          <>
-            {parts.before}
-            <span className="text-brand">{parts.match}</span>
-            {parts.after}
-          </>
-        ) : (
-          title
-        )}
+      <h1 className="text-xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-2xl">
+        <span className="block text-xs font-semibold uppercase tracking-wider text-accent">
+          {eyebrow}
+        </span>
+        <span className="mt-2 block">
+          {parts ? (
+            <>
+              {parts.before}
+              <span className="text-brand">{parts.match}</span>
+              {parts.after}
+            </>
+          ) : (
+            title
+          )}
+        </span>
       </h1>
 
       <span className="mt-2 block h-1 w-20 rounded-full bg-accent" aria-hidden />
