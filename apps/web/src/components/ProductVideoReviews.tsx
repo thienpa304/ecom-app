@@ -44,10 +44,13 @@ export function ProductVideoReviews({
     <SectionCard
       title="Video review về sản phẩm này"
       headingId="product-video-reviews-heading"
-      bodyClassName="min-w-0 space-y-4 px-4 py-4"
+      bodyClassName="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] lg:block lg:space-y-4 lg:overflow-x-visible [&::-webkit-scrollbar]:hidden"
     >
       {entries.map((entry) => (
-        <figure key={entry.id} className="min-w-0">
+        <figure
+          key={entry.id}
+          className="w-[78%] min-w-0 shrink-0 snap-start lg:w-full"
+        >
           <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
             <ProductVideoFrame entry={entry} />
           </div>

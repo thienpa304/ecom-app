@@ -110,20 +110,25 @@ export function Header({
         className="border-b border-gray-200 bg-white"
         aria-label="Danh mục chính"
       >
-        <div className="container-page flex items-center gap-0.5 overflow-x-auto py-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-x-1.5 lg:overflow-x-visible [&::-webkit-scrollbar]:hidden">
-          <div className="group relative shrink-0">
-            <Link
-              href="/san-pham"
+        <div className="container-page flex flex-wrap items-center gap-x-0.5 gap-y-1 py-1 sm:gap-x-1.5">
+          <details className="group relative shrink-0">
+            <summary
               aria-label="Tất cả sản phẩm, mở danh sách danh mục"
-              aria-haspopup="true"
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-bold text-gray-900 transition hover:bg-accent/10 hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 group-focus-within:bg-accent/10 group-focus-within:text-accent group-hover:bg-accent/10 group-hover:text-accent"
+              className="flex cursor-pointer list-none items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-bold text-gray-900 transition hover:bg-accent/10 hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 group-open:bg-accent/10 group-open:text-accent lg:group-hover:bg-accent/10 lg:group-hover:text-accent [&::-webkit-details-marker]:hidden"
             >
               <HamburgerIcon className="h-4 w-4 shrink-0" />
               Tất cả sản phẩm
-            </Link>
+              <ChevronDownIcon className="h-3.5 w-3.5 shrink-0 transition group-open:rotate-180" />
+            </summary>
 
             {navCategories.length ? (
-              <div className="absolute left-0 top-full z-50 hidden w-[min(60rem,calc(100vw-1.5rem))] gap-x-6 gap-y-4 rounded-xl border border-gray-200 bg-white p-4 shadow-xl lg:grid-cols-4 lg:group-focus-within:grid lg:group-hover:grid">
+              <div className="absolute left-0 top-full z-50 hidden w-[min(60rem,calc(100vw-1.5rem))] grid-cols-1 gap-x-6 gap-y-4 rounded-xl border border-gray-200 bg-white p-4 shadow-xl group-open:grid sm:grid-cols-2 lg:grid-cols-4 lg:group-hover:grid">
+                <Link
+                  href="/san-pham"
+                  className="block rounded-lg bg-accent/10 px-2 py-1.5 text-sm font-bold text-accent transition hover:bg-accent/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 sm:col-span-2 lg:col-span-4"
+                >
+                  Xem tất cả sản phẩm →
+                </Link>
                 {navCategories.map(({ category, children }) => (
                   <div key={category.id} className="min-w-0">
                     <Link
@@ -150,7 +155,7 @@ export function Header({
                 ))}
               </div>
             ) : null}
-          </div>
+          </details>
 
           {quickNavLinks.map((item) =>
             item.isPlainAnchor ? (
@@ -192,6 +197,23 @@ function HamburgerIcon({ className }: { className?: string }) {
       aria-hidden
     >
       <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M6 9l6 6 6-6" />
     </svg>
   );
 }
